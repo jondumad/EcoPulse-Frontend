@@ -1,0 +1,84 @@
+class Mission {
+  final int id;
+  final String title;
+  final String description;
+  final String locationName;
+  final String? locationGps;
+  final DateTime startTime;
+  final DateTime endTime;
+  final int pointsValue;
+  final int? maxVolunteers;
+  final int currentVolunteers;
+  final String priority; // 'Low', 'Normal', 'High', 'Critical'
+  final bool isEmergency;
+  final String status; // 'Open', 'InProgress', 'Completed', 'Cancelled'
+  final List<Category> categories;
+  final bool isRegistered; // Helper for UI state
+
+  Mission({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.locationName,
+    this.locationGps,
+    required this.startTime,
+    required this.endTime,
+    required this.pointsValue,
+    this.maxVolunteers,
+    required this.currentVolunteers,
+    required this.priority,
+    required this.isEmergency,
+    required this.status,
+    required this.categories,
+    this.isRegistered = false,
+  });
+
+  factory Mission.fromJson(Map<String, dynamic> json) {
+    return Mission(
+      id: json['id'],
+      title: json['title'],
+      description: json['description'],
+      locationName: json['locationName'],
+      locationGps: json['locationGps'],
+      startTime: DateTime.parse(json['startTime']),
+      endTime: DateTime.parse(json['endTime']),
+      pointsValue: json['pointsValue'],
+      maxVolunteers: json['maxVolunteers'],
+      currentVolunteers: json['currentVolunteers'] ?? 0,
+      priority: json['priority'] ?? 'Normal',
+      isEmergency: json['isEmergency'] ?? false,
+      status: json['status'] ?? 'Open',
+      categories:
+          (json['missionCategories'] as List?)
+              ?.map((mc) => Category.fromJson(mc['category']))
+              .toList() ??
+          [],
+      isRegistered:
+          json['registrations'] != null &&
+          (json['registrations'] as List).isNotEmpty,
+    );
+  }
+}
+
+class Category {
+  final int id;
+  final String name;
+  final String color; // Hex string
+  final String icon; // Emoji or icon name
+
+  Category({
+    required this.id,
+    required this.name,
+    required this.color,
+    required this.icon,
+  });
+
+  factory Category.fromJson(Map<String, dynamic> json) {
+    return Category(
+      id: json['id'],
+      name: json['name'],
+      color: json['color'] ?? '#3498DB',
+      icon: json['icon'] ?? '🌱',
+    );
+  }
+}

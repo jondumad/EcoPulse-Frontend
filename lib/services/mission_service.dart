@@ -1,0 +1,99 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'auth_service.dart';
+import '../models/mission_model.dart';
+
+class MissionService {
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  String get baseUrl => AuthService.baseUrl;
+
+  Future<List<Mission>> getMissions({String? category, String? search}) async {
+    final token = await _storage.read(key: 'jwt_token');
+
+    final queryParams = <String, String>{};
+    if (category != null) queryParams['category'] = category;
+    if (search != null) queryParams['search'] = search;
+
+    final uri = Uri.parse(
+      '$baseUrl/missions',
+    ).replace(queryParameters: queryParams);
+
+    final response = await http.get(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => Mission.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load missions');
+    }
+  }
+
+  Future<Mission> getMissionById(int id) async {
+    final token = await _storage.read(key: 'jwt_token');
+    final response = await http.get(
+      Uri.parse('$baseUrl/missions/$id'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return Mission.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to load mission details');
+    }
+  }
+
+  Future<bool> registerForMission(int missionId) async {
+    final token = await _storage.read(key: 'jwt_token');
+    final response = await http.post(
+      Uri.parse('$baseUrl/missions/$missionId/register'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    return response.statusCode == 201 || response.statusCode == 200;
+  }
+
+  Future<bool> cancelRegistration(int missionId) async {
+    final token = await _storage.read(key: 'jwt_token');
+    final response = await http.delete(
+      Uri.parse('$baseUrl/missions/$missionId/register'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    return response.statusCode == 200;
+  }
+
+  Future<Mission> createMission(Map<String, dynamic> missionData) async {
+    final token = await _storage.read(key: 'jwt_token');
+    final response = await http.post(
+      Uri.parse('$baseUrl/missions'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(missionData),
+    );
+
+    if (response.statusCode == 201) {
+      return Mission.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to create mission');
+    }
+  }
+}

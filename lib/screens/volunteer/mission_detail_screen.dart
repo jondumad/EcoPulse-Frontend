@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/mission_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/mission_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
+import 'check_in_screen.dart';
+import '../coordinator/qr_display.dart';
 
 class MissionDetailScreen extends StatelessWidget {
   final Mission mission;
@@ -13,6 +16,8 @@ class MissionDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<AuthProvider>(context).user;
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -119,6 +124,45 @@ class MissionDetailScreen extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
 
+                const SizedBox(height: 24),
+
+                if (user?.role == 'Coordinator' || user?.role == 'SuperAdmin')
+                  EcoPulseButton(
+                    label: 'Show QR Code',
+                    icon: Icons.qr_code,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => QRDisplayScreen(
+                            missionId: mission.id,
+                            missionTitle: mission.title,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                if (user?.role == 'Volunteer' && mission.isRegistered) ...[
+                  const SizedBox(height: 12),
+                  EcoPulseButton(
+                    label: 'Check In',
+                    icon: Icons.login,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CheckInScreen(
+                            missionId: mission.id,
+                            missionTitle: mission.title,
+                            missionGps: mission.locationGps ?? '',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+
                 const SizedBox(height: 100), // Space for bottom button
               ]),
             ),
@@ -142,6 +186,8 @@ class MissionDetailScreen extends StatelessWidget {
             final isFull =
                 mission.maxVolunteers != null &&
                 mission.currentVolunteers >= mission.maxVolunteers!;
+
+            if (user?.role != 'Volunteer') return const SizedBox.shrink();
 
             return EcoPulseButton(
               label: mission.isRegistered

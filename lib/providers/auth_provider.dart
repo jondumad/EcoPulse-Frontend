@@ -14,11 +14,16 @@ class AuthProvider with ChangeNotifier {
   // Check token on app start
   Future<void> initAuth() async {
     _setLoading(true);
+    await refreshProfile();
+    _setLoading(false);
+  }
+
+  Future<void> refreshProfile() async {
     final user = await _authService.getProfile();
     if (user != null) {
       _user = user;
+      notifyListeners();
     }
-    _setLoading(false);
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {

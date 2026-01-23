@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/active_mission_tracker.dart';
 import 'profile_screen.dart';
 import 'volunteer/mission_list_screen.dart';
 import 'coordinator/create_mission_screen.dart';
+import 'coordinator/verification_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -36,7 +38,17 @@ class _MainShellState extends State<MainShell> {
     ];
 
     return Scaffold(
-      body: screens[_selectedIndex],
+      body: Stack(
+        children: [
+          screens[_selectedIndex],
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: const ActiveMissionTracker(),
+          ),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
@@ -76,7 +88,7 @@ class _MainShellState extends State<MainShell> {
             {
               'title': 'Verify',
               'icon': Icons.verified_user_outlined,
-              'screen': const Center(child: Text('Verification Tool')),
+              'screen': const VerificationScreen(),
             },
             {
               'title': 'Team',

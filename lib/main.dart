@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/mission_provider.dart';
+import 'providers/attendance_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_shell.dart';
 
@@ -19,6 +20,7 @@ class EcoPulseApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => MissionProvider()),
+        ChangeNotifierProvider(create: (_) => AttendanceProvider()),
       ],
       child: const EcoPulseAppView(),
     );
@@ -36,9 +38,10 @@ class _EcoPulseAppViewState extends State<EcoPulseAppView> {
   @override
   void initState() {
     super.initState();
-    // Initialize auth check after binding
+    // Initialize auth and attendance check after binding
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AuthProvider>(context, listen: false).initAuth();
+      Provider.of<AttendanceProvider>(context, listen: false).refresh();
     });
   }
 

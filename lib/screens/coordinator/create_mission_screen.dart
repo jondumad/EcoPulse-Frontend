@@ -25,7 +25,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
 
   String _priority = 'Normal';
   bool _isEmergency = false;
-  List<int> _selectedCategoryIds = [1]; // Environmental by default
+  final List<int> _selectedCategoryIds = [1]; // Environmental by default
 
   @override
   Widget build(BuildContext context) {
@@ -147,7 +147,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
 
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _priority,
+                initialValue: _priority,
                 decoration: const InputDecoration(labelText: 'Priority'),
                 items: ['Low', 'Normal', 'High', 'Critical']
                     .map((p) => DropdownMenuItem(value: p, child: Text(p)))
@@ -161,7 +161,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
                 subtitle: const Text('Highlight as urgent to volunteers'),
                 value: _isEmergency,
                 onChanged: (v) => setState(() => _isEmergency = v),
-                activeColor: Colors.redAccent,
+                activeThumbColor: Colors.redAccent,
               ),
 
               const SizedBox(height: 32),
@@ -199,7 +199,6 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
       ),
     );
 
-    // TODO: Connect to MissionService
     final provider = Provider.of<MissionProvider>(context, listen: false);
 
     try {
@@ -207,6 +206,8 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
         'title': _titleController.text,
         'description': _descriptionController.text,
         'locationName': _locationNameController.text,
+        'locationGps':
+            '-6.8222, 107.1394', // Default coordinate for Cianjur area as placeholder
         'startTime': startDateTime.toIso8601String(),
         'endTime': endDateTime.toIso8601String(),
         'pointsValue': int.parse(_pointsController.text),

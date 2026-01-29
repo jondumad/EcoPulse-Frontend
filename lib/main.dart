@@ -50,6 +50,7 @@ class _EcoPulseAppViewState extends State<EcoPulseAppView> {
     return MaterialApp(
       title: 'EcoPulse',
       theme: AppTheme.lightTheme,
+      themeMode: ThemeMode.light,
       home: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           if (auth.isLoading) {

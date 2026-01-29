@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
-import '../theme/app_theme.dart';
 import '../widgets/eco_pulse_widgets.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -9,16 +9,14 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final now = DateTime.now();
+    return EcoPulseLayout(
       appBar: AppBar(
         title: const Text('My Profile'),
+        backgroundColor: Colors.transparent,
+        foregroundColor: EcoColors.ink,
+        elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              // Navigate to settings
-            },
-          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
@@ -27,7 +25,7 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Consumer<AuthProvider>(
+      child: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           final user = auth.user;
           if (user == null) {
@@ -35,52 +33,84 @@ class ProfileScreen extends StatelessWidget {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header Profile Card
+                // Header (Date & Greeting)
+                Text(
+                  DateFormat('MMM dd, yyyy').format(now).toUpperCase(),
+                  style: EcoText.monoSM(context),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Hello,\n${user.name.split(' ').first}',
+                        style: EcoText.displayLG(context),
+                      ),
+                    ),
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: EcoColors.forest,
+                      child: Text(
+                        user.name[0].toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // Hero Card (Profile & Role)
                 EcoPulseCard(
+                  variant: CardVariant.hero,
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundColor: AppTheme.primaryBlue.withValues(
-                          alpha: 0.1,
-                        ),
-                        child: Text(
-                          user.name[0].toUpperCase(),
-                          style: Theme.of(context).textTheme.displaySmall
-                              ?.copyWith(color: AppTheme.primaryBlue),
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              user.role.toUpperCase(),
+                              style: const TextStyle(
+                                fontFamily: 'JetBrains Mono',
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          const Icon(Icons.fingerprint, color: Colors.white54),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        user.name,
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
+                      const SizedBox(height: 24),
                       Text(
                         user.email,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.textGrey,
-                        ),
+                        style: const TextStyle(color: Colors.white70),
                       ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryGreen.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          user.role,
-                          style: TextStyle(
-                            color: AppTheme.primaryGreen,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      const SizedBox(height: 8),
+                      Text(
+                        user.name,
+                        style: const TextStyle(
+                          fontFamily: 'Fraunces',
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
@@ -88,39 +118,53 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Gamification Stats (Visible mainly for Volunteers)
+                // Volunteer Stats & Gamification
                 if (user.role == 'Volunteer') ...[
-                  Text(
-                    'Your Impact',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+                  Text('Field Statistics', style: EcoText.displayMD(context)),
                   const SizedBox(height: 16),
+                  
                   Row(
                     children: [
                       Expanded(
-                        child: _StatCard(
-                          label: 'Total Points',
-                          value: user.totalPoints.toString(),
-                          icon: Icons.star,
-                          color: AppTheme.accentOrange,
+                        child: EcoPulseCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'TOTAL POINTS',
+                                style: EcoText.monoSM(context),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '${user.totalPoints}',
+                                style: EcoText.displayMD(context),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: _StatCard(
-                          label: 'Level',
-                          value: _calculateLevel(user.totalPoints),
-                          icon: Icons.military_tech,
-                          color: AppTheme.primaryBlue,
+                        child: EcoPulseCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('RANK', style: EcoText.monoSM(context)),
+                              const SizedBox(height: 8),
+                              Text(
+                                _calculateLevel(user.totalPoints),
+                                style: EcoText.displayMD(context),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
 
-                  // Progress to next level
+                  // Progress
                   EcoPulseCard(
-                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -128,34 +172,33 @@ class ProfileScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Next Milestone',
-                              style: Theme.of(context).textTheme.titleSmall,
+                              'NEXT MILESTONE',
+                              style: EcoText.monoSM(context),
                             ),
                             Text(
-                              '${user.totalPoints} / 1000', // Example logic
-                              style: Theme.of(context).textTheme.labelSmall,
+                              '${user.totalPoints} / 1000',
+                              style: EcoText.monoSM(context),
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(2),
                           child: LinearProgressIndicator(
-                            value: user.totalPoints / 1000, // Example logic
-                            minHeight: 12,
-                            backgroundColor: AppTheme.textMedium.withValues(
-                              alpha: 0.2,
-                            ),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppTheme.primaryGreen,
+                            value: user.totalPoints / 1000,
+                            minHeight: 8,
+                            backgroundColor: EcoColors.clay,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              EcoColors.forest,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         Text(
-                          'Earn ${1000 - user.totalPoints} more points to reach Community Hero',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: AppTheme.textGrey),
+                          'Earn ${1000 - user.totalPoints} more points to reach Community Hero status.',
+                          style: EcoText.bodyMD(context).copyWith(
+                            color: EcoColors.ink.withValues(alpha: 0.6),
+                          ),
                         ),
                       ],
                     ),
@@ -171,59 +214,8 @@ class ProfileScreen extends StatelessWidget {
 
   String _calculateLevel(int points) {
     if (points < 100) return 'Newbie';
-    if (points < 500) return 'Active Citizen';
-    if (points < 1000) return 'Community Hero';
+    if (points < 500) return 'Active';
+    if (points < 1000) return 'Hero';
     return 'Legend';
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceWhite,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: Theme.of(
-              context,
-            ).textTheme.displaySmall?.copyWith(fontSize: 24),
-          ),
-          Text(
-            label,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: AppTheme.textGrey),
-          ),
-        ],
-      ),
-    );
   }
 }

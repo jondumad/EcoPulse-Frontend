@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart' as ll;
 import '../../providers/attendance_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/eco_pulse_widgets.dart';
 
 class CheckInScreen extends StatefulWidget {
   final int missionId;
@@ -137,33 +140,58 @@ class _CheckInScreenState extends State<CheckInScreen> {
       appBar: AppBar(title: Text('Check-In: ${widget.missionTitle}')),
       body: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            color: AppTheme.primaryGreen.withValues(alpha: 0.1),
-            child: _isLoadingLocation
-                ? const Center(child: CircularProgressIndicator())
-                : Column(
-                    children: [
-                      Icon(
-                        _isInRange ? Icons.check_circle : Icons.location_on,
-                        size: 48,
-                        color: _isInRange ? Colors.green : Colors.orange,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _isInRange ? 'In Range ✓' : '$_distance meters away',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+          SizedBox(
+            height: 250,
+            child: Stack(
+              children: [
+                _isLoadingLocation
+                    ? const Center(child: CircularProgressIndicator())
+                    : _buildMap(),
+
+                // Overlay Status Info
+                Positioned(
+                  top: 16,
+                  left: 16,
+                  right: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 10,
                         ),
-                      ),
-                      if (!_isInRange)
-                        const Text(
-                          'Move closer to the mission location to scan QR',
-                          textAlign: TextAlign.center,
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _isInRange ? Icons.check_circle : Icons.location_on,
+                          color: _isInRange
+                              ? EcoColors.forest
+                              : EcoColors.terracotta,
+                          size: 20,
                         ),
-                    ],
+                        const SizedBox(width: 8),
+                        Text(
+                          _isInRange ? 'In Range ✓' : '$_distance meters away',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'JetBrains Mono',
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                ),
+              ],
+            ),
           ),
           Expanded(
             child: !_isInRange
@@ -194,6 +222,69 @@ class _CheckInScreenState extends State<CheckInScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMap() {
+    final parts = widget.missionGps.split(',');
+    final missionLatLng = parts.length == 2
+        ? ll.LatLng(
+            double.tryParse(parts[0]) ?? 0,
+            double.tryParse(parts[1]) ?? 0,
+          )
+        : const ll.LatLng(0, 0);
+
+    final userLatLng = _currentPosition != null
+        ? ll.LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+        : missionLatLng;
+
+    return FlutterMap(
+      options: MapOptions(initialCenter: missionLatLng, initialZoom: 16.0),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.example.civic',
+        ),
+        CircleLayer(
+          circles: [
+            CircleMarker(
+              point: missionLatLng,
+              radius: 100, // 100 meters
+              useRadiusInMeter: true,
+              color: EcoColors.forest.withValues(alpha: 0.1),
+              borderColor: EcoColors.forest,
+              borderStrokeWidth: 2,
+            ),
+          ],
+        ),
+        MarkerLayer(
+          markers: [
+            // Mission Marker
+            Marker(
+              point: missionLatLng,
+              width: 30,
+              height: 30,
+              child: const Icon(Icons.flag, color: EcoColors.forest),
+            ),
+            // User Marker
+            if (_currentPosition != null)
+              Marker(
+                point: userLatLng,
+                width: 20,
+                height: 20,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.blue,
+                    shape: BoxShape.circle,
+                    border: Border.fromBorderSide(
+                      BorderSide(color: Colors.white, width: 2),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

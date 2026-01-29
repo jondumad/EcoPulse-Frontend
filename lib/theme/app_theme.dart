@@ -1,162 +1,159 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 
 class AppTheme {
-  // Brand Colors
-  static const Color primaryGreen = Color(0xFF2ECC71); // Success
-  static const Color primaryBlue = Color(0xFF3498DB); // Community
-  static const Color accentOrange = Color(0xFFF1C40F); // Warnings
+  // Eco-Pulse Color Palette
+  static const Color clay = Color(0xFFF4F1EE); // Main background
+  static const Color forest = Color(0xFF1B4332); // Primary actions, trust
+  static const Color violet = Color(0xFF7F30FF); // Highlights, energy
+  static const Color terracotta = Color(0xFFD66853); // Warnings, tags
+  static const Color ink = Color(0xFF1A1C1E); // Text, dark cards
 
-  static const Color backgroundLight = Color(0xFFF8F9FA); // Off-white
-  static const Color surfaceWhite = Color(0xFFFFFFFF); // Pure white
-  static const Color textDark = Color(0xFF2C3E50); // Dark gray
-  static const Color textGrey = Color(0xFF7F8C8D); // Medium gray
-  static const Color textMedium = Color(
-    0xFF95A5A6,
-  ); // Light gray for borders/dividers
+  static const Color glass = Color.fromRGBO(255, 255, 255, 0.6);
+  static const Color paperShadow = Color.fromRGBO(0, 0, 0, 0.05);
+  static const Color borderSubtle = Color.fromRGBO(0, 0, 0, 0.05);
 
-  static ThemeData get lightTheme {
+  // Legacy Mappings (Temporary for Refactoring)
+  static const Color primaryGreen = forest;
+  static const Color primaryBlue = forest; // Mapping to primary forest for now
+  static const Color accentOrange = terracotta;
+  static const Color backgroundLight = clay;
+  static const Color surfaceWhite = Colors.white;
+  static const Color textDark = ink;
+  static const Color textGrey = Color(
+    0xFF7F8C8D,
+  ); // Keep original grey for now or map to ink.withAlpha
+  static const Color textMedium = Color(0xFF95A5A6);
+
+  static final ThemeData lightTheme = _buildLightTheme();
+
+  static ThemeData _buildLightTheme() {
     return ThemeData(
       useMaterial3: true,
-      scaffoldBackgroundColor: backgroundLight,
+      scaffoldBackgroundColor: clay,
       colorScheme: const ColorScheme.light(
-        primary: primaryGreen,
-        secondary: primaryBlue,
-        tertiary: accentOrange,
-        surface: surfaceWhite,
-        error: Color(0xFFE74C3C),
+        primary: forest,
+        secondary: violet,
+        tertiary: terracotta,
+        onSurface: ink,
+        surface: clay,
+        error: terracotta,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
-        onSurface: textDark,
       ),
       textTheme: TextTheme(
-        displayLarge: GoogleFonts.poppins(
+        // Fraunces - Display & Headers
+        displayLarge: GoogleFonts.fraunces(
+          fontSize: 48,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -1,
+          color: ink,
+        ),
+        displayMedium: GoogleFonts.fraunces(
           fontSize: 32,
-          fontWeight: FontWeight.bold,
-          color: textDark,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -1,
+          color: ink,
         ),
-        displayMedium: GoogleFonts.poppins(
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-          color: textDark,
+        displaySmall: GoogleFonts.fraunces(
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          color: ink,
         ),
-        displaySmall: GoogleFonts.poppins(
-          fontSize: 24,
-          fontWeight: FontWeight.w600,
-          color: textDark,
-        ),
-        headlineMedium: GoogleFonts.poppins(
+        headlineMedium: GoogleFonts.fraunces(
           fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: textDark,
+          fontWeight: FontWeight.w700,
+          color: ink,
         ),
-        titleLarge: GoogleFonts.poppins(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: textDark,
-        ),
+
+        // Inter - Body
         bodyLarge: GoogleFonts.inter(
-          fontSize: 16,
-          color: textDark,
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
           height: 1.5,
+          color: ink,
         ),
         bodyMedium: GoogleFonts.inter(
-          fontSize: 14,
-          color: textDark,
-          height: 1.4,
-        ),
-        labelLarge: GoogleFonts.poppins(
-          // Buttons
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-        labelSmall: GoogleFonts.firaCode(
-          // Numbers/Stats
           fontSize: 12,
+          fontWeight: FontWeight.w400,
+          color: ink,
+        ),
+
+        // JetBrains Mono - Data & Labels
+        labelLarge: GoogleFonts.jetBrainsMono(
+          fontSize: 11,
           fontWeight: FontWeight.w500,
-          color: textGrey,
+          letterSpacing: 1,
+          color: ink,
+        ),
+        labelSmall: GoogleFonts.jetBrainsMono(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1,
+          color: ink,
         ),
       ),
       cardTheme: CardThemeData(
-        color: surfaceWhite,
-        elevation: 2,
-        shadowColor: Colors.black.withValues(alpha: 0.05),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+        color: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          side: const BorderSide(color: borderSubtle, width: 1),
+          borderRadius: BorderRadius.circular(2),
+        ),
+        margin: EdgeInsets.zero,
       ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: surfaceWhite,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 16,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: clay,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          fontFamily: 'Fraunces',
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: ink,
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: textMedium),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: textMedium.withValues(alpha: 0.3)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryBlue, width: 2),
-        ),
-        labelStyle: GoogleFonts.inter(color: textGrey),
-        hintStyle: GoogleFonts.inter(color: textMedium),
+        iconTheme: IconThemeData(color: ink),
+        systemOverlayStyle:
+            SystemUiOverlayStyle.dark, // Keep status bar icons dark
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryBlue,
+          backgroundColor: forest,
           foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(50), // Pill shape
+            borderRadius: BorderRadius.circular(40),
           ),
-          textStyle: GoogleFonts.poppins(
-            fontSize: 16,
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: primaryBlue,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          side: const BorderSide(color: primaryBlue, width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(50),
-          ),
-          textStyle: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
         ),
-      ),
-      appBarTheme: AppBarTheme(
-        backgroundColor: backgroundLight,
-        surfaceTintColor:
-            Colors.transparent, // Disable Material 3 changing color on scroll
-        elevation: 0,
-        centerTitle: true,
-        titleTextStyle: GoogleFonts.poppins(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: textDark,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(2),
+          borderSide: const BorderSide(color: borderSubtle),
         ),
-        iconTheme: const IconThemeData(color: textDark),
-      ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: surfaceWhite,
-        selectedItemColor: primaryBlue,
-        unselectedItemColor: textGrey,
-        type: BottomNavigationBarType.fixed,
-        elevation: 8,
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(2),
+          borderSide: const BorderSide(color: borderSubtle),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(2),
+          borderSide: const BorderSide(color: forest, width: 2),
+        ),
+        labelStyle: GoogleFonts.inter(color: ink.withValues(alpha: 0.6)),
+        hintStyle: GoogleFonts.inter(color: ink.withValues(alpha: 0.4)),
       ),
     );
   }

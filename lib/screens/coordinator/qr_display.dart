@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../providers/attendance_provider.dart';
-import '../../theme/app_theme.dart';
+import '../../widgets/eco_pulse_widgets.dart';
 
 class QRDisplayScreen extends StatefulWidget {
   final int missionId;
@@ -86,9 +86,14 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Mission QR Code')),
-      body: Center(
+    return EcoPulseLayout(
+      appBar: AppBar(
+        title: const Text('Mission QR Code'),
+        backgroundColor: Colors.transparent,
+        foregroundColor: EcoColors.ink,
+        elevation: 0,
+      ),
+      child: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -96,21 +101,18 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
             children: [
               Text(
                 widget.missionTitle,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: EcoText.displayMD(context),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-              const Text(
-                'Show this QR code to volunteers for check-in',
+              Text(
+                'Scan to check in',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+                style: EcoText.bodyMD(context).copyWith(color: Colors.grey),
               ),
               const SizedBox(height: 40),
               if (_isLoading)
-                const CircularProgressIndicator()
+                const CircularProgressIndicator(color: EcoColors.forest)
               else if (_error != null)
                 Column(
                   children: [
@@ -119,48 +121,49 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
                       style: const TextStyle(color: Colors.red),
                     ),
                     const SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: _fetchQR,
-                      child: const Text('Retry'),
-                    ),
+                    EcoPulseButton(label: 'Retry', onPressed: _fetchQR),
                   ],
                 )
               else if (_qrToken != null)
-                Column(
+                Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 10,
-                            spreadRadius: 5,
+                    EcoPulseCard(
+                      variant: CardVariant.paper,
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        children: [
+                          QrImageView(
+                            data: _qrToken!,
+                            version: QrVersions.auto,
+                            size: 250.0,
+                            eyeStyle: const QrEyeStyle(
+                              eyeShape: QrEyeShape.square,
+                              color: EcoColors.forest,
+                            ),
+                            dataModuleStyle: const QrDataModuleStyle(
+                              dataModuleShape: QrDataModuleShape.square,
+                              color: EcoColors.forest,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'REFRESH IN',
+                            style: EcoText.monoSM(context),
+                          ),
+                          Text(
+                            '${_secondsLeft ~/ 60}:${(_secondsLeft % 60).toString().padLeft(2, '0')}',
+                            style: EcoText.displayMD(context),
                           ),
                         ],
                       ),
-                      child: QrImageView(
-                        data: _qrToken!,
-                        version: QrVersions.auto,
-                        size: 250.0,
-                        eyeStyle: const QrEyeStyle(
-                          eyeShape: QrEyeShape.square,
-                          color: AppTheme.primaryGreen,
-                        ),
-                        dataModuleStyle: const QrDataModuleStyle(
-                          dataModuleShape: QrDataModuleShape.square,
-                          color: AppTheme.primaryGreen,
-                        ),
-                      ),
                     ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Refreshes in: ${_secondsLeft ~/ 60}:${(_secondsLeft % 60).toString().padLeft(2, '0')}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
+                    const Positioned(
+                      top: -10,
+                      right: 20,
+                      child: EcoPulseTag(
+                        label: 'LIVE TOKEN',
+                        isRotated: true,
                       ),
                     ),
                   ],

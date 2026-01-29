@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/eco_pulse_widgets.dart';
-import '../theme/app_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -22,12 +21,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     {
       'name': 'Volunteer',
       'icon': Icons.volunteer_activism,
-      'description': 'Participate in missions and earn rewards',
+      'description': 'Participate in missions',
     },
     {
       'name': 'Coordinator',
       'icon': Icons.group_work,
-      'description': 'Organize missions and verify attendees',
+      'description': 'Organize missions',
     },
   ];
 
@@ -46,13 +45,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(result['message']),
-              backgroundColor: Theme.of(context).colorScheme.error,
+              backgroundColor: Colors.redAccent,
             ),
           );
         } else {
-          Navigator.pop(
-            context,
-          ); // Go back to login or let main wrapper handle it
+          Navigator.pop(context);
         }
       }
     }
@@ -60,139 +57,132 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Create Account')),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Join the Movement',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Select your role to get started.',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(color: AppTheme.textGrey),
-                ),
-                const SizedBox(height: 24),
-                // Role Selection
-                Row(
-                  children: _roles.map((role) {
-                    final isSelected = _selectedRole == role['name'];
-                    return Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                        child: GestureDetector(
-                          onTap: () =>
-                              setState(() => _selectedRole = role['name']),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppTheme.primaryGreen.withValues(alpha: 0.1)
-                                  : AppTheme.surfaceWhite,
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppTheme.primaryGreen
-                                    : AppTheme.textMedium.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                width: 2,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  role['icon'],
+    return EcoPulseLayout(
+      appBar: AppBar(
+        title: const Text('Create Account'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: EcoColors.ink,
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Join the Movement', style: EcoText.displayLG(context)),
+            const SizedBox(height: 8),
+            Text(
+              'Select your role to get started.',
+              style: EcoText.bodyMD(context),
+            ),
+            const SizedBox(height: 24),
+
+            EcoPulseCard(
+              variant: CardVariant.paper,
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Role Selection
+                    Row(
+                      children: _roles.map((role) {
+                        final isSelected = _selectedRole == role['name'];
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                            child: GestureDetector(
+                              onTap: () =>
+                                  setState(() => _selectedRole = role['name']),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
                                   color: isSelected
-                                      ? AppTheme.primaryGreen
-                                      : AppTheme.textGrey,
-                                  size: 32,
+                                      ? EcoColors.forest.withValues(alpha: 0.1)
+                                      : Colors.transparent,
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? EcoColors.forest
+                                        : EcoColors.paperShadow,
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  role['name'],
-                                  style: Theme.of(context).textTheme.titleSmall
-                                      ?.copyWith(
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      role['icon'],
+                                      color: isSelected
+                                          ? EcoColors.forest
+                                          : EcoColors.ink,
+                                      size: 28,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      role['name'],
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
                                         fontWeight: FontWeight.bold,
                                         color: isSelected
-                                            ? AppTheme.primaryGreen
-                                            : AppTheme.textGrey,
+                                            ? EcoColors.forest
+                                            : EcoColors.ink,
                                       ),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 32),
+
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Full Name',
+                        prefixIcon: Icon(Icons.person_outline),
+                        border: OutlineInputBorder(),
                       ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 32),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Full Name',
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your name';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email Address',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock_outline),
-                  ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 32),
-                Consumer<AuthProvider>(
-                  builder: (context, auth, _) {
-                    return EcoPulseButton(
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'Email Address',
+                        prefixIcon: Icon(Icons.email_outlined),
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _passwordController,
+                      decoration: const InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: Icon(Icons.lock_outline),
+                        border: OutlineInputBorder(),
+                      ),
+                      obscureText: true,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 32),
+                    EcoPulseButton(
                       label: 'Create Account',
                       onPressed: _submit,
-                      isLoading: auth.isLoading,
-                    );
-                  },
+                      isLoading: Provider.of<AuthProvider>(context).isLoading,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

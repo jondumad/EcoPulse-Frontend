@@ -4,11 +4,14 @@ import 'package:intl/intl.dart';
 import '../../providers/mission_provider.dart';
 import '../../models/mission_model.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/eco_pulse_widgets.dart';
+import '../../components/paper_card.dart';
+import '../../components/eco_pulse_buttons.dart';
 import 'mission_detail_screen.dart';
+import 'mission_map.dart';
 
 class MissionListScreen extends StatefulWidget {
-  const MissionListScreen({super.key});
+  final VoidCallback? onToggleView;
+  const MissionListScreen({super.key, this.onToggleView});
 
   @override
   State<MissionListScreen> createState() => _MissionListScreenState();
@@ -35,124 +38,207 @@ class _MissionListScreenState extends State<MissionListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Volunteer Missions'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => _onFilterChanged(),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Search and Filter Bar
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search missions...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        _onFilterChanged();
-                      },
-                    ),
-                  ),
-                  onSubmitted: (_) => _onFilterChanged(),
-                ),
-                const SizedBox(height: 12),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
+    return Container(
+      color: AppTheme.clay,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Custom Header
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 12.0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      _buildCategoryChip(null, 'All'),
-                      _buildCategoryChip('Environmental', '🌱 Eco'),
-                      _buildCategoryChip('Social', '🤝 Social'),
-                      _buildCategoryChip('Educational', '📚 Education'),
-                      _buildCategoryChip('Health', '❤️ Health'),
+                      Text(
+                        DateFormat(
+                          'MMM dd, yyyy',
+                        ).format(DateTime.now()).toUpperCase(),
+                        style: AppTheme.lightTheme.textTheme.labelLarge
+                            ?.copyWith(
+                              color: AppTheme.ink.withValues(alpha: 0.5),
+                            ),
+                      ),
+                      const Spacer(),
+                      // Maybe Avatar here if we had access to user provider easily without passing it down
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    'Field Operations',
+                    style: AppTheme.lightTheme.textTheme.displayMedium,
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          // Mission List
-          Expanded(
-            child: Consumer<MissionProvider>(
-              builder: (context, provider, _) {
-                if (provider.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (provider.error != null) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+            // Search and Filter Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _searchController,
+                    style: const TextStyle(
+                      color: AppTheme.ink,
+                      fontSize: 14,
+                      fontFamily: 'Inter',
+                    ),
+                    keyboardAppearance: Brightness.light,
+                    decoration: const InputDecoration(
+                      hintText: 'Search field logs...',
+                      prefixIcon: Icon(Icons.search, color: AppTheme.ink),
+                      fillColor: AppTheme.clay,
+                    ),
+                    onSubmitted: (_) => _onFilterChanged(),
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () {
+                        if (widget.onToggleView != null) {
+                          widget.onToggleView!();
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MissionMap(),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.map_outlined, size: 18),
+                      label: const Text('View on Map'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.ink,
+                        textStyle: const TextStyle(
+                          fontFamily: 'JetBrains Mono',
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
                       children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 48,
-                          color: Colors.red,
-                        ),
-                        const SizedBox(height: 16),
-                        Text('Error: ${provider.error}'),
-                        const SizedBox(height: 16),
-                        EcoPulseButton(
-                          label: 'Retry',
-                          onPressed: () => _onFilterChanged(),
-                        ),
+                        _buildCategoryChip(null, 'ALL'),
+                        _buildCategoryChip('Environmental', 'ECO'),
+                        _buildCategoryChip('Social', 'SOCIAL'),
+                        _buildCategoryChip('Educational', 'EDU'),
+                        _buildCategoryChip('Health', 'HEALTH'),
                       ],
                     ),
-                  );
-                }
-
-                if (provider.missions.isEmpty) {
-                  return const Center(
-                    child: Text('No missions found for these filters.'),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: provider.missions.length,
-                  itemBuilder: (context, index) {
-                    final mission = provider.missions[index];
-                    return _MissionCard(mission: mission);
-                  },
-                );
-              },
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+
+            const SizedBox(height: 16),
+
+            // Mission List
+            Expanded(
+              child: Consumer<MissionProvider>(
+                builder: (context, provider, _) {
+                  if (provider.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (provider.error != null) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: AppTheme.terracotta,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Sync Error: ${provider.error}',
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            EcoPulseButton(
+                              label: 'Retry Sync',
+                              onPressed: () => _onFilterChanged(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (provider.missions.isEmpty) {
+                    return Center(
+                      child: Text(
+                        'No active field logs found.',
+                        style: AppTheme.lightTheme.textTheme.bodyLarge
+                            ?.copyWith(
+                              color: AppTheme.ink.withValues(alpha: 0.5),
+                            ),
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
+                    itemCount: provider.missions.length,
+                    itemBuilder: (context, index) {
+                      final mission = provider.missions[index];
+                      return _MissionCard(mission: mission);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCategoryChip(String? category, String label) {
     final isSelected = _selectedCategory == category;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: (selected) {
-          setState(() {
-            _selectedCategory = selected ? category : null;
-          });
-          _onFilterChanged();
-        },
-        selectedColor: AppTheme.primaryBlue.withValues(alpha: 0.2),
-        labelStyle: TextStyle(
-          color: isSelected ? AppTheme.primaryBlue : AppTheme.textDark,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedCategory = isSelected ? null : category;
+        });
+        _onFilterChanged();
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.ink : Colors.transparent,
+          border: Border.all(
+            color: isSelected
+                ? AppTheme.ink
+                : AppTheme.ink.withValues(alpha: 0.2),
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : AppTheme.ink,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+            fontFamily: 'JetBrains Mono', // Direct font usage
+          ),
         ),
       ),
     );
@@ -166,7 +252,7 @@ class _MissionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return EcoPulseCard(
+    return PaperCard(
       onTap: () {
         Navigator.push(
           context,
@@ -180,47 +266,59 @@ class _MissionCard extends StatelessWidget {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Text(
                   mission.title,
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: AppTheme.lightTheme.textTheme.displaySmall?.copyWith(
+                    fontSize: 20,
+                  ), // Slightly smaller for list
                   overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
                 ),
               ),
               if (mission.isEmergency)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Text(
-                    'URGENT',
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                Transform.rotate(
+                  angle: 0.05,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.terracotta,
+                      borderRadius: BorderRadius.circular(2),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black12,
+                          offset: Offset(1, 1),
+                          blurRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'URGENT',
+                      style: AppTheme.lightTheme.textTheme.labelSmall?.copyWith(
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Row(
             children: [
               const Icon(
                 Icons.location_on_outlined,
                 size: 16,
-                color: AppTheme.textGrey,
+                color: AppTheme.ink,
               ),
               const SizedBox(width: 4),
               Text(
                 mission.locationName,
-                style: Theme.of(context).textTheme.bodySmall,
+                style: AppTheme.lightTheme.textTheme.bodyMedium,
               ),
             ],
           ),
@@ -230,16 +328,16 @@ class _MissionCard extends StatelessWidget {
               const Icon(
                 Icons.calendar_today_outlined,
                 size: 16,
-                color: AppTheme.textGrey,
+                color: AppTheme.ink,
               ),
               const SizedBox(width: 4),
               Text(
                 DateFormat('MMM dd, HH:mm').format(mission.startTime),
-                style: Theme.of(context).textTheme.bodySmall,
+                style: AppTheme.lightTheme.textTheme.bodyMedium,
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Row(
             children: [
               ...mission.categories
@@ -247,54 +345,33 @@ class _MissionCard extends StatelessWidget {
                   .map((cat) => _CategoryTag(category: cat)),
               const Spacer(),
               Text(
-                '+${mission.pointsValue} pts',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppTheme.primaryGreen,
-                  fontWeight: FontWeight.bold,
-                ),
+                '+${mission.pointsValue} PTS',
+                style:
+                    AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                      color: AppTheme.forest,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: 'JetBrains Mono',
+                    ) ??
+                    const TextStyle(
+                      color: AppTheme.forest,
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          LinearProgressIndicator(
-            value: mission.maxVolunteers != null
-                ? mission.currentVolunteers / mission.maxVolunteers!
-                : 1.0,
-            backgroundColor: AppTheme.textMedium.withValues(alpha: 0.1),
-            valueColor: AlwaysStoppedAnimation<Color>(
-              mission.isEmergency ? Colors.redAccent : AppTheme.primaryBlue,
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: mission.maxVolunteers != null
+                  ? mission.currentVolunteers / mission.maxVolunteers!
+                  : 0.1, // Show a bit if null
+              backgroundColor: AppTheme.ink.withValues(alpha: 0.1),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                mission.isEmergency ? AppTheme.terracotta : AppTheme.forest,
+              ),
+              minHeight: 6,
             ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${mission.currentVolunteers}${mission.maxVolunteers != null ? "/${mission.maxVolunteers}" : ""} joined',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(fontSize: 10),
-              ),
-              if (mission.isRegistered)
-                const Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      size: 12,
-                      color: AppTheme.primaryGreen,
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      'Registered',
-                      style: TextStyle(
-                        color: AppTheme.primaryGreen,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-            ],
           ),
         ],
       ),
@@ -309,31 +386,22 @@ class _CategoryTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color color = Color(
-      int.parse(category.color.replaceFirst('#', '0xFF')),
-    );
     return Container(
       margin: const EdgeInsets.only(right: 6),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        color: AppTheme.ink.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: AppTheme.ink.withValues(alpha: 0.1)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(category.icon, style: const TextStyle(fontSize: 10)),
-          const SizedBox(width: 4),
-          Text(
-            category.name,
-            style: TextStyle(
-              color: color,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+      child: Text(
+        category.name.toUpperCase(),
+        style: const TextStyle(
+          color: AppTheme.ink,
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          fontFamily: 'JetBrains Mono',
+        ),
       ),
     );
   }

@@ -1,16 +1,13 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user_model.dart';
 
 class AuthService {
   static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:3000/api';
-    }
-    // For Android emulator
-    return 'http://10.0.2.2:3000/api';
+    // Using localhost works for Web and Physical Android devices (via adb reverse tcp:3000 tcp:3000)
+    return 'http://localhost:3000/api';
   }
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
@@ -53,12 +50,16 @@ class AuthService {
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
-      );
+      debugPrint('Attempting login to: $baseUrl/auth/login');
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 10));
 
+      debugPrint('Login response status: ${response.statusCode}');
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
@@ -70,6 +71,7 @@ class AuthService {
         return {'success': false, 'message': data['error'] ?? 'Login failed'};
       }
     } catch (e) {
+      debugPrint('Login error: $e');
       return {'success': false, 'message': 'Connection error: $e'};
     }
   }
@@ -79,20 +81,25 @@ class AuthService {
       final token = await _storage.read(key: 'jwt_token');
       if (token == null) return null;
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/auth/me'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      debugPrint('Refreshing profile from: $baseUrl/auth/me');
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/auth/me'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
+      debugPrint('Profile response status: ${response.statusCode}');
       if (response.statusCode == 200) {
         return User.fromJson(jsonDecode(response.body));
       } else {
         return null;
       }
     } catch (e) {
+      debugPrint('Profile fetch error: $e');
       return null;
     }
   }

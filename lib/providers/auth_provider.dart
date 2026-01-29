@@ -28,15 +28,17 @@ class AuthProvider with ChangeNotifier {
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     _setLoading(true);
-    final result = await _authService.login(email, password);
+    try {
+      final result = await _authService.login(email, password);
 
-    if (result['success']) {
-      _user = User.fromJson(result['user']);
-      notifyListeners();
+      if (result['success']) {
+        _user = User.fromJson(result['user']);
+        notifyListeners();
+      }
+      return result;
+    } finally {
+      _setLoading(false);
     }
-
-    _setLoading(false);
-    return result;
   }
 
   Future<Map<String, dynamic>> register(
@@ -46,15 +48,17 @@ class AuthProvider with ChangeNotifier {
     String role,
   ) async {
     _setLoading(true);
-    final result = await _authService.register(name, email, password, role);
+    try {
+      final result = await _authService.register(name, email, password, role);
 
-    if (result['success']) {
-      _user = User.fromJson(result['user']);
-      notifyListeners();
+      if (result['success']) {
+        _user = User.fromJson(result['user']);
+        notifyListeners();
+      }
+      return result;
+    } finally {
+      _setLoading(false);
     }
-
-    _setLoading(false);
-    return result;
   }
 
   Future<void> logout() async {

@@ -30,30 +30,74 @@ class _CheckInScreenState extends State<CheckInScreen> {
   bool _isProcessing = false;
   Position? _currentPosition;
   StreamSubscription<Position>? _positionStream;
+  StreamSubscription<ServiceStatus>? _serviceStatusStream;
   bool _isInRange = false;
   int _distance = 0;
   bool _isLoadingLocation = true;
+  String? _locationError;
 
   @override
   void initState() {
     super.initState();
     _initLocation();
+    try {
+      _serviceStatusStream = Geolocator.getServiceStatusStream().listen((
+        status,
+      ) {
+        if (status == ServiceStatus.enabled) {
+          _initLocation();
+        }
+      });
+    } catch (_) {
+      // Service status stream not supported on this platform
+    }
   }
 
   Future<void> _initLocation() async {
+    if (mounted) {
+      setState(() {
+        _locationError = null;
+        _isLoadingLocation = true;
+      });
+    }
+
     bool serviceEnabled;
     LocationPermission permission;
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return;
+    if (!serviceEnabled) {
+      if (mounted) {
+        setState(() {
+          _locationError = 'Location services are disabled.';
+          _isLoadingLocation = false;
+        });
+      }
+      return;
+    }
 
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return;
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          setState(() {
+            _locationError = 'Location permission denied.';
+            _isLoadingLocation = false;
+          });
+        }
+        return;
+      }
     }
 
-    if (permission == LocationPermission.deniedForever) return;
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        setState(() {
+          _locationError = 'Location permissions are permanently denied.';
+          _isLoadingLocation = false;
+        });
+      }
+      return;
+    }
 
     _positionStream =
         Geolocator.getPositionStream(
@@ -96,6 +140,7 @@ class _CheckInScreenState extends State<CheckInScreen> {
   @override
   void dispose() {
     _positionStream?.cancel();
+    _serviceStatusStream?.cancel();
     controller.dispose();
     super.dispose();
   }
@@ -145,7 +190,46 @@ class _CheckInScreenState extends State<CheckInScreen> {
             child: Stack(
               children: [
                 _isLoadingLocation
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 16),
+                            Text(
+                              'Ascertaining location...',
+                              style: TextStyle(fontFamily: 'JetBrains Mono'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : _locationError != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.location_off,
+                                size: 48,
+                                color: EcoColors.terracotta,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _locationError!,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: EcoColors.ink),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _initLocation,
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
                     : _buildMap(),
 
                 // Overlay Status Info
@@ -200,6 +284,7 @@ class _CheckInScreenState extends State<CheckInScreen> {
                     children: [
                       MobileScanner(
                         controller: controller,
+                        fit: BoxFit.cover,
                         onDetect: (capture) {
                           final List<Barcode> barcodes = capture.barcodes;
                           for (final barcode in barcodes) {
@@ -210,9 +295,11 @@ class _CheckInScreenState extends State<CheckInScreen> {
                           }
                         },
                       ),
-                      CustomPaint(
-                        painter: ScannerOverlay(
-                          AppTheme.primaryGreen.withValues(alpha: 0.5),
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: ScannerOverlay(
+                            AppTheme.primaryGreen.withValues(alpha: 0.5),
+                          ),
                         ),
                       ),
                       if (_isProcessing)

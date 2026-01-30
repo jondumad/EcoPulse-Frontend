@@ -14,6 +14,7 @@ class Mission {
   final String status; // 'Open', 'InProgress', 'Completed', 'Cancelled'
   final List<Category> categories;
   final bool isRegistered; // Helper for UI state
+  final String? registrationStatus; // 'Registered', 'CheckedIn', 'Completed', 'Cancelled'
 
   Mission({
     required this.id,
@@ -31,9 +32,15 @@ class Mission {
     required this.status,
     required this.categories,
     this.isRegistered = false,
+    this.registrationStatus,
   });
 
   factory Mission.fromJson(Map<String, dynamic> json) {
+    String? regStatus;
+    if (json['registrations'] != null && (json['registrations'] as List).isNotEmpty) {
+      regStatus = json['registrations'][0]['status'];
+    }
+
     return Mission(
       id: json['id'],
       title: json['title'],
@@ -53,9 +60,8 @@ class Mission {
               ?.map((mc) => Category.fromJson(mc['category']))
               .toList() ??
           [],
-      isRegistered:
-          json['registrations'] != null &&
-          (json['registrations'] as List).isNotEmpty,
+      isRegistered: regStatus != null && regStatus != 'Cancelled',
+      registrationStatus: regStatus,
     );
   }
 }

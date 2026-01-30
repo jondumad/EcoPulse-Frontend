@@ -9,6 +9,7 @@ import 'profile_screen.dart';
 import 'volunteer/mission_hub.dart';
 import 'coordinator/create_mission_screen.dart';
 import 'coordinator/verification_screen.dart';
+import 'coordinator/coordinator_mission_list.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -37,26 +38,34 @@ class _MainShellState extends State<MainShell> {
         Icons.person_outline, // Profile
       ];
     } else {
-      content = _buildAdminCoordinatorContent(user.role);
-      navItems = user.role == 'Coordinator'
-          ? [
-              Icons.assignment_outlined,
-              Icons.verified_user_outlined,
-              Icons.groups_outlined,
-              Icons.person_outline,
-            ]
-          : [
-              Icons.dashboard_outlined,
-              Icons.people_outline,
-              Icons.settings_outlined,
-              Icons.person_outline,
-            ];
+      content = _buildCoordinatorContent();
+      navItems = [
+        Icons.assignment_outlined,
+        Icons.verified_user_outlined,
+        Icons.groups_outlined,
+        Icons.person_outline,
+      ];
     }
 
     return Scaffold(
       extendBody: true,
       backgroundColor: AppTheme.clay,
       appBar: AppBar(
+        title: Text(
+          _selectedIndex == navItems.length - 1
+              ? 'My Profile'
+              : (user.role == 'Volunteer'
+                    ? (_selectedIndex == 0 ? 'Field Logs' : 'Badges')
+                    : (_selectedIndex == 0
+                          ? 'Create Mission'
+                          : _selectedIndex == 1
+                          ? 'Verification'
+                          : 'Team')),
+          style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
+            fontFamily: 'Fraunces',
+            fontWeight: FontWeight.w900,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -111,25 +120,14 @@ class _MainShellState extends State<MainShell> {
     return screens[_selectedIndex];
   }
 
-  Widget _buildAdminCoordinatorContent(String role) {
-    if (role == 'Coordinator') {
-      final screens = [
-        const CreateMissionScreen(),
-        const VerificationScreen(),
-        // TODO: Create a 'Current Missions' hub for Coordinators to quickly access QR codes for check-in
-        const Center(child: Text('Team Management')),
-        const ProfileScreen(),
-      ];
-      return screens[_selectedIndex];
-    } else {
-      // Admin
-      final screens = [
-        const Center(child: Text('Admin Dashboard')),
-        const Center(child: Text('User Management')),
-        const Center(child: Text('App Settings')),
-        const ProfileScreen(),
-      ];
-      return screens[_selectedIndex];
-    }
+  Widget _buildCoordinatorContent() {
+    final screens = [
+      const CreateMissionScreen(),
+      const VerificationScreen(),
+      // Current Missions Hub for Coordinators
+      const CoordinatorMissionListScreen(),
+      const ProfileScreen(),
+    ];
+    return screens[_selectedIndex];
   }
 }

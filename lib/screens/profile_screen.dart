@@ -2,35 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
+import '../providers/mission_provider.dart';
 import '../widgets/eco_pulse_widgets.dart';
+import '../components/mission_card.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (!mounted) return;
+      Provider.of<MissionProvider>(context, listen: false).fetchMissions();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     return EcoPulseLayout(
-      appBar: AppBar(
-        title: const Text('My Profile'),
-        backgroundColor: Colors.transparent,
-        foregroundColor: EcoColors.ink,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              Provider.of<AuthProvider>(context, listen: false).logout();
-            },
-          ),
-        ],
-      ),
-      child: Consumer<AuthProvider>(
-        builder: (context, auth, _) {
+      child: Consumer2<AuthProvider, MissionProvider>(
+        builder: (context, auth, missionProvider, _) {
           final user = auth.user;
           if (user == null) {
             return const Center(child: Text('Not logged in'));
           }
+
+          final activeMissions = missionProvider.missions
+              .where((m) => m.isRegistered && m.registrationStatus != 'Completed')
+              .toList();
+
+          final completedMissions = missionProvider.missions
+              .where((m) => m.registrationStatus == 'Completed')
+              .toList();
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -52,6 +62,21 @@ class ProfileScreen extends StatelessWidget {
                         style: EcoText.displayLG(context),
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.logout_outlined,
+                        color: EcoColors.ink,
+                      ),
+                      onPressed: () {
+                        Provider.of<AuthProvider>(
+                          context,
+                          listen: false,
+                        ).logout();
+                      },
+                      tooltip: 'Logout',
+                    ),
+                    const SizedBox(width: 12),
                     CircleAvatar(
                       radius: 28,
                       backgroundColor: EcoColors.forest,
@@ -116,13 +141,13 @@ class ProfileScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
                 // Volunteer Stats & Gamification
                 if (user.role == 'Volunteer') ...[
                   Text('Field Statistics', style: EcoText.displayMD(context)),
                   const SizedBox(height: 16),
-                  
+
                   Row(
                     children: [
                       Expanded(
@@ -203,11 +228,67 @@ class ProfileScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 32),
+
+                  // Registered Missions Section
+                  Text(
+                    'My Active Missions',
+                    style: EcoText.displayMD(context),
+                  ),
+                  const SizedBox(height: 16),
+                  if (missionProvider.isLoading && activeMissions.isEmpty)
+                    const Center(child: CircularProgressIndicator())
+                  else if (activeMissions.isEmpty)
+                    _buildEmptyState(
+                      'No active missions.\nStart your journey in the missions tab!',
+                    )
+                  else
+                    ...activeMissions.map(
+                      (mission) => Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: MissionCard(mission: mission),
+                      ),
+                    ),
+
+                  if (completedMissions.isNotEmpty) ...[
+                    const SizedBox(height: 32),
+                    Text('Mission History', style: EcoText.displayMD(context)),
+                    const SizedBox(height: 16),
+                    ...completedMissions.map(
+                      (mission) => Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: MissionCard(mission: mission),
+                      ),
+                    ),
+                  ],
                 ],
+                const SizedBox(height: 100), // Spacing for bottom nav
               ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return EcoPulseCard(
+      child: Column(
+        children: [
+          Icon(
+            Icons.assignment_outlined,
+            size: 48,
+            color: EcoColors.ink.withValues(alpha: 0.2),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: EcoText.bodyMD(
+              context,
+            ).copyWith(color: EcoColors.ink.withValues(alpha: 0.5)),
+          ),
+        ],
       ),
     );
   }

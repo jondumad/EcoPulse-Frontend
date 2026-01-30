@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/attendance_provider.dart';
 import '../widgets/eco_pulse_widgets.dart';
+import '../screens/volunteer/mission_success_summary.dart';
 
 class ActiveMissionTracker extends StatefulWidget {
   const ActiveMissionTracker({super.key});
@@ -91,9 +92,9 @@ class _ActiveMissionTrackerState extends State<ActiveMissionTracker> {
                         children: [
                           Text(
                             'ACTIVE SESSION',
-                            style: EcoText.monoSM(context).copyWith(
-                              color: Colors.white54,
-                            ),
+                            style: EcoText.monoSM(
+                              context,
+                            ).copyWith(color: Colors.white54),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -131,11 +132,18 @@ class _ActiveMissionTrackerState extends State<ActiveMissionTracker> {
                           attendance['missionId'],
                         );
                         if (context.mounted) {
-                          // TODO: Implement MissionSuccessSummary screen showing hours worked and pending points
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Mission Complete. Logging out.'),
-                              backgroundColor: EcoColors.forest,
+                          // Points calculation (simple estimation for now)
+                          // In a real app, backend would return this in the checkout response
+                          final points = mission?['pointsValue'] ?? 100;
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MissionSuccessSummaryScreen(
+                                missionTitle: missionTitle,
+                                duration: _elapsed,
+                                pointsEarned: points,
+                              ),
                             ),
                           );
                         }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/mission_model.dart';
@@ -77,9 +78,13 @@ class MissionCard extends StatelessWidget {
                     color: AppTheme.ink,
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    mission.locationName,
-                    style: AppTheme.lightTheme.textTheme.bodyMedium,
+                  Expanded(
+                    child: Text(
+                      mission.locationName,
+                      style: AppTheme.lightTheme.textTheme.bodyMedium,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   ),
                 ],
               ),
@@ -98,6 +103,10 @@ class MissionCard extends StatelessWidget {
                   ),
                 ],
               ),
+              if (mission.startTime.difference(DateTime.now()).inHours.abs() <
+                      24 &&
+                  mission.startTime.isAfter(DateTime.now()))
+                _CountdownTimer(targetDate: mission.startTime),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -140,7 +149,9 @@ class MissionCard extends StatelessWidget {
             Positioned(
               top: -8,
               right: -8,
-              child: _StatusBadge(status: mission.registrationStatus ?? 'Registered'),
+              child: _StatusBadge(
+                status: mission.registrationStatus ?? 'Registered',
+              ),
             ),
         ],
       ),
@@ -221,6 +232,77 @@ class CategoryTag extends StatelessWidget {
           fontWeight: FontWeight.w600,
           fontFamily: 'JetBrains Mono',
         ),
+      ),
+    );
+  }
+}
+
+class _CountdownTimer extends StatefulWidget {
+  final DateTime targetDate;
+  const _CountdownTimer({required this.targetDate});
+
+  @override
+  State<_CountdownTimer> createState() => _CountdownTimerState();
+}
+
+class _CountdownTimerState extends State<_CountdownTimer> {
+  late Timer _timer;
+  late Duration _timeLeft;
+
+  @override
+  void initState() {
+    super.initState();
+    _calculateTime();
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _calculateTime(),
+    );
+  }
+
+  void _calculateTime() {
+    final now = DateTime.now();
+    setState(() {
+      _timeLeft = widget.targetDate.difference(now);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_timeLeft.isNegative) return const SizedBox.shrink();
+
+    final hours = _timeLeft.inHours;
+    final minutes = _timeLeft.inMinutes % 60;
+    final seconds = _timeLeft.inSeconds % 60;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppTheme.terracotta.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: AppTheme.terracotta.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.timer, size: 12, color: AppTheme.terracotta),
+          const SizedBox(width: 6),
+          Text(
+            'STARTS IN ${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.terracotta,
+              fontFamily: 'JetBrains Mono',
+            ),
+          ),
+        ],
       ),
     );
   }

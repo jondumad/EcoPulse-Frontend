@@ -13,43 +13,53 @@ class EcoColors {
 // --- Design System Typography Styles (Helpers) ---
 class EcoText {
   static TextStyle displayXL(BuildContext context) => const TextStyle(
-        fontFamily: 'Fraunces',
-        fontSize: 48,
-        fontWeight: FontWeight.w900,
-        letterSpacing: -1,
-        color: EcoColors.ink,
-      );
+    fontFamily: 'Fraunces',
+    fontSize: 48,
+    fontWeight: FontWeight.w900,
+    letterSpacing: -1,
+    color: EcoColors.ink,
+  );
 
   static TextStyle displayLG(BuildContext context) => const TextStyle(
-        fontFamily: 'Fraunces',
-        fontSize: 32,
-        fontWeight: FontWeight.w900,
-        letterSpacing: -1,
-        color: EcoColors.ink,
-      );
+    fontFamily: 'Fraunces',
+    fontSize: 32,
+    fontWeight: FontWeight.w900,
+    letterSpacing: -1,
+    color: EcoColors.ink,
+  );
 
   static TextStyle displayMD(BuildContext context) => const TextStyle(
-        fontFamily: 'Fraunces',
-        fontSize: 22,
-        fontWeight: FontWeight.w700,
-        color: EcoColors.ink,
-      );
+    fontFamily: 'Fraunces',
+    fontSize: 22,
+    fontWeight: FontWeight.w700,
+    color: EcoColors.ink,
+  );
 
   static TextStyle bodyMD(BuildContext context) => const TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        height: 1.5,
-        color: EcoColors.ink,
-      );
+    fontFamily: 'Inter',
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+    color: EcoColors.ink,
+  );
+
+  static TextStyle headerMD(BuildContext context) => displayMD(context);
+
+  static TextStyle bodyBoldMD(BuildContext context) => const TextStyle(
+    fontFamily: 'Inter',
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    height: 1.5,
+    color: EcoColors.ink,
+  );
 
   static TextStyle monoSM(BuildContext context) => const TextStyle(
-        fontFamily: 'JetBrains Mono',
-        fontSize: 11,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 1,
-        color: EcoColors.ink,
-      );
+    fontFamily: 'JetBrains Mono',
+    fontSize: 11,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 1,
+    color: EcoColors.ink,
+  );
 }
 
 // --- Components ---
@@ -75,7 +85,7 @@ class EcoPulseLayout extends StatelessWidget {
       appBar: appBar,
       body: Stack(
         children: [
-          // Grain Overlay (Simulated with opacity/pattern if asset existed, 
+          // Grain Overlay (Simulated with opacity/pattern if asset existed,
           // using a subtle noise color blend for now)
           Container(
             decoration: BoxDecoration(
@@ -246,10 +256,12 @@ class EcoPulseCard extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: BackdropFilter(
-                    filter:
-                        const ColorFilter.mode(Colors.transparent, BlendMode.srcOver), 
-                        // Flutter blur needs ImageFilter, simplified for now
-                        // Real implementation would use ImageFilter.blur
+                    filter: const ColorFilter.mode(
+                      Colors.transparent,
+                      BlendMode.srcOver,
+                    ),
+                    // Flutter blur needs ImageFilter, simplified for now
+                    // Real implementation would use ImageFilter.blur
                   ),
                 ),
               ),
@@ -261,9 +273,9 @@ class EcoPulseCard extends StatelessWidget {
                   child: Theme(
                     data: Theme.of(context).copyWith(
                       textTheme: Theme.of(context).textTheme.apply(
-                            bodyColor: Colors.white,
-                            displayColor: Colors.white,
-                          ),
+                        bodyColor: Colors.white,
+                        displayColor: Colors.white,
+                      ),
                       iconTheme: const IconThemeData(color: Colors.white),
                     ),
                     child: child,
@@ -309,11 +321,7 @@ class EcoPulseTag extends StatelessWidget {
   final String label;
   final bool isRotated;
 
-  const EcoPulseTag({
-    super.key,
-    required this.label,
-    this.isRotated = true,
-  });
+  const EcoPulseTag({super.key, required this.label, this.isRotated = true});
 
   @override
   Widget build(BuildContext context) {
@@ -349,10 +357,7 @@ class EcoPulseTag extends StatelessWidget {
 class EcoPulseStamp extends StatelessWidget {
   final String label;
 
-  const EcoPulseStamp({
-    super.key,
-    required this.label,
-  });
+  const EcoPulseStamp({super.key, required this.label});
 
   @override
   Widget build(BuildContext context) {

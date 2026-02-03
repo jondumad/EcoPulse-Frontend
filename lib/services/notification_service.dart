@@ -4,7 +4,7 @@ import '../models/notification_model.dart';
 import 'auth_service.dart';
 
 class NotificationService {
-  static const String baseUrl = 'http://localhost:3000/api/notifications';
+  String get baseUrl => '${AuthService.baseUrl}/notifications';
   final AuthService _authService = AuthService();
 
   Future<List<NotificationModel>> getNotifications() async {

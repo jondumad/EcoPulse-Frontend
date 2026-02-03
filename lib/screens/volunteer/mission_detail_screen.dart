@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as ll;
+import 'package:add_2_calendar/add_2_calendar.dart' as calendar;
 import '../../models/mission_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/mission_provider.dart';
@@ -254,7 +255,9 @@ class _MissionCard extends StatelessWidget {
             Positioned(
               top: -8,
               right: -8,
-              child: _StatusStamp(status: mission.registrationStatus ?? 'Registered'),
+              child: _StatusStamp(
+                status: mission.registrationStatus ?? 'Registered',
+              ),
             ),
         ],
       ),
@@ -436,6 +439,56 @@ class _InfoSection extends StatelessWidget {
           _InfoItem(
             icon: Icons.location_on_outlined,
             text: '${mission.locationName} • 2.3 mi',
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    final event = calendar.Event(
+                      title: mission.title,
+                      description: mission.description,
+                      location: mission.locationName,
+                      startDate: mission.startTime,
+                      endDate: mission.endTime,
+                    );
+                    calendar.Add2Calendar.addEvent2Cal(event);
+                  },
+                  icon: const Icon(Icons.calendar_month, size: 18),
+                  label: const Text('Save Date'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.ink,
+                    side: const BorderSide(color: AppTheme.borderSubtle),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Reminder set for 1 hour before!'),
+                        backgroundColor: AppTheme.forest,
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.notifications_active_outlined,
+                    size: 18,
+                  ),
+                  label: const Text('Remind Me'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.ink,
+                    side: const BorderSide(color: AppTheme.borderSubtle),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -809,8 +862,8 @@ class _ActionButtons extends StatelessWidget {
                     isCompleted
                         ? 'Mission Completed'
                         : isCheckedIn
-                            ? 'Already Checked In'
-                            : 'Check In',
+                        ? 'Already Checked In'
+                        : 'Check In',
                   ),
                 ),
               ),

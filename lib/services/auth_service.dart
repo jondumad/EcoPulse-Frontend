@@ -6,6 +6,9 @@ import '../models/user_model.dart';
 
 class AuthService {
   static String get baseUrl {
+    if (kReleaseMode) {
+      return 'https://chronic-sharia-fonbl-93682891.koyeb.app/api';
+    }
     // Using localhost works for Web and Physical Android devices (via adb reverse tcp:3000 tcp:3000)
     return 'http://localhost:3000/api';
   }

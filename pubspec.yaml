@@ -48,6 +48,9 @@ dependencies:
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
   geocoding: ^3.0.0
+  add_2_calendar: ^2.2.3
+  flutter_local_notifications: ^18.0.1
+  flutter_map_marker_cluster: ^8.2.2
 
 dev_dependencies:
   flutter_test:

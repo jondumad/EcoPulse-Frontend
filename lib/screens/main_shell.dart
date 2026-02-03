@@ -10,6 +10,7 @@ import 'volunteer/mission_hub.dart';
 import 'coordinator/create_mission_screen.dart';
 import 'coordinator/verification_screen.dart';
 import 'coordinator/coordinator_mission_list.dart';
+import 'notification_inbox_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -69,10 +70,16 @@ class _MainShellState extends State<MainShell> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          // TODO: Implement Notifications UI (Inbox) - See backend/src/controllers/attendanceController.js:254
           IconButton(
             icon: const Icon(Icons.notifications_outlined, color: AppTheme.ink),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationInboxScreen(),
+                ),
+              );
+            },
           ),
           const SizedBox(width: 8),
         ],

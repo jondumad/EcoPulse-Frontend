@@ -63,7 +63,12 @@ class MissionService {
       },
     );
 
-    return response.statusCode == 201 || response.statusCode == 200;
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return true;
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Registration failed');
+    }
   }
 
   Future<bool> cancelRegistration(int missionId) async {
@@ -76,7 +81,12 @@ class MissionService {
       },
     );
 
-    return response.statusCode == 200;
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Cancellation failed');
+    }
   }
 
   Future<Mission> createMission(Map<String, dynamic> missionData) async {

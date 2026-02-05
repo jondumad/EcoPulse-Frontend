@@ -10,11 +10,13 @@ import '../../theme/app_theme.dart';
 class QRDisplayScreen extends StatefulWidget {
   final int missionId;
   final String missionTitle;
+  final DateTime? activeUntil;
 
   const QRDisplayScreen({
     super.key,
     required this.missionId,
     required this.missionTitle,
+    this.activeUntil,
   });
 
   @override
@@ -31,7 +33,17 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchQR();
+    if (_isExpired()) {
+      _isLoading = false;
+      _error = 'Mission has ended';
+    } else {
+      _fetchQR();
+    }
+  }
+
+  bool _isExpired() {
+    if (widget.activeUntil == null) return false;
+    return DateTime.now().isAfter(widget.activeUntil!);
   }
 
   @override
@@ -131,6 +143,26 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
               const SizedBox(height: 40),
               if (_isLoading)
                 const CircularProgressIndicator(color: EcoColors.forest)
+              else if (_isExpired())
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.lock_clock,
+                        size: 64,
+                        color: AppTheme.ink.withValues(alpha: 0.4),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Mission Ended',
+                        style: AppTheme.lightTheme.textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text('QR checking is no longer available'),
+                    ],
+                  ),
+                )
               else if (_error != null)
                 Column(
                   children: [

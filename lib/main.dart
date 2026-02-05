@@ -7,6 +7,7 @@ import 'providers/attendance_provider.dart';
 import 'providers/location_provider.dart';
 import 'providers/nav_provider.dart';
 import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
 import 'screens/main_shell.dart';
 
 void main() {
@@ -56,6 +57,13 @@ class _EcoPulseAppViewState extends State<EcoPulseAppView> {
       title: 'EcoPulse',
       theme: AppTheme.lightTheme,
       themeMode: ThemeMode.light,
+      // Define central named routes
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/dashboard': (context) => const MainShell(),
+      },
+      // Use logic to determine the initial screen wrapper
       home: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           if (auth.isLoading) {

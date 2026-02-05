@@ -23,206 +23,228 @@ class MissionCard extends StatelessWidget {
     final double progress = mission.maxVolunteers != null
         ? mission.currentVolunteers / mission.maxVolunteers!
         : 0.1;
+    final bool isEnded = mission.endTime.isBefore(DateTime.now());
 
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        EcoPulseCard(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MissionDetailScreen(mission: mission),
-              ),
-            );
-          },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppTheme.clay,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        mission.categories.isNotEmpty
-                            ? mission.categories.first.icon
-                            : '🌱',
-                        style: const TextStyle(fontSize: 24),
+        Opacity(
+          opacity: isEnded ? 0.6 : 1.0,
+          child: EcoPulseCard(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MissionDetailScreen(mission: mission),
+                ),
+              );
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppTheme.clay,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          mission.categories.isNotEmpty
+                              ? mission.categories.first.icon
+                              : '🌱',
+                          style: const TextStyle(fontSize: 24),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            mission.title,
+                            style: AppTheme.lightTheme.textTheme.headlineMedium,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Consumer<LocationProvider>(
+                                builder: (context, locationProvider, _) {
+                                  return _MetaItem(
+                                    icon: Icons.location_on_outlined,
+                                    label: locationProvider.getDistanceLabel(
+                                      mission.locationGps,
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(width: 12),
+                              _MetaItem(
+                                icon: Icons.access_time,
+                                label: _formatTimeLeft(
+                                  mission.startTime.toLocal(),
+                                  mission.endTime.toLocal(),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Progress Section
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          mission.title,
-                          style: AppTheme.lightTheme.textTheme.headlineMedium,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                          'PROGRESS',
+                          style: AppTheme.lightTheme.textTheme.labelLarge,
                         ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Consumer<LocationProvider>(
-                              builder: (context, locationProvider, _) {
-                                return _MetaItem(
-                                  icon: Icons.location_on_outlined,
-                                  label: locationProvider.getDistanceLabel(
-                                    mission.locationGps,
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 12),
-                            _MetaItem(
-                              icon: Icons.access_time,
-                              label: _formatTimeLeft(
-                                mission.startTime.toLocal(),
-                              ),
-                            ),
-                          ],
+                        Text(
+                          '${(progress * 100).toInt()}%',
+                          style: AppTheme.lightTheme.textTheme.displaySmall
+                              ?.copyWith(fontSize: 18, color: AppTheme.forest),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Progress Section
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'PROGRESS',
-                        style: AppTheme.lightTheme.textTheme.labelLarge,
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 8,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: AppTheme.clay,
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                      Text(
-                        '${(progress * 100).toInt()}%',
-                        style: AppTheme.lightTheme.textTheme.displaySmall
-                            ?.copyWith(fontSize: 18, color: AppTheme.forest),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    height: 8,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: AppTheme.clay,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: progress.clamp(0.0, 1.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppTheme.forest, Color(0xFF2D6A4F)],
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: progress.clamp(0.0, 1.0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppTheme.forest, Color(0xFF2D6A4F)],
+                            ),
+                            borderRadius: BorderRadius.circular(4),
                           ),
-                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
-              // Actions
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Consumer<MissionProvider>(
-                      builder: (context, provider, _) {
-                        return EcoPulseButton(
-                          label: mission.isRegistered ? 'Continue' : 'Start',
-                          icon: Icons.play_arrow_rounded,
-                          isLoading: provider.isLoading,
-                          onPressed: () async {
-                            if (mission.isRegistered) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      MissionDetailScreen(mission: mission),
-                                ),
-                              );
+                // Actions
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Consumer<MissionProvider>(
+                        builder: (context, provider, _) {
+                          return EcoPulseButton(
+                            label: isEnded
+                                ? 'Ended'
+                                : (mission.isRegistered ? 'Continue' : 'Start'),
+                            icon: isEnded
+                                ? Icons.lock_clock
+                                : Icons.play_arrow_rounded,
+                            isLoading: provider.isLoading,
+                            isPrimary: !isEnded,
+                            onPressed: isEnded
+                                ? () {} // No-op
+                                : () async {
+                                    if (mission.isRegistered) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              MissionDetailScreen(
+                                                mission: mission,
+                                              ),
+                                        ),
+                                      );
+                                    } else {
+                                      try {
+                                        await provider.toggleRegistration(
+                                          mission.id,
+                                          false,
+                                        );
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Successfully registered!',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text('Error: $e'),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    }
+                                  },
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: EcoPulseButton(
+                        label: '',
+                        icon: Icons.map_outlined,
+                        isPrimary: false,
+                        onPressed: () async {
+                          if (mission.locationGps != null &&
+                              mission.locationGps!.contains(',')) {
+                            final coords = mission.locationGps!.split(',');
+                            final lat = coords[0].trim();
+                            final lng = coords[1].trim();
+                            final uri = Uri.parse(
+                              'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+                            );
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri);
                             } else {
-                              try {
-                                await provider.toggleRegistration(
-                                  mission.id,
-                                  false,
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Could not launch map'),
+                                  ),
                                 );
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Successfully registered!'),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Error: $e')),
-                                  );
-                                }
                               }
                             }
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: EcoPulseButton(
-                      label: '',
-                      icon: Icons.map_outlined,
-                      isPrimary: false,
-                      onPressed: () async {
-                        if (mission.locationGps != null &&
-                            mission.locationGps!.contains(',')) {
-                          final coords = mission.locationGps!.split(',');
-                          final lat = coords[0].trim();
-                          final lng = coords[1].trim();
-                          final uri = Uri.parse(
-                            'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
-                          );
-                          if (await canLaunchUrl(uri)) {
-                            await launchUrl(uri);
-                          } else {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Could not launch map'),
-                                ),
-                              );
-                            }
                           }
-                        }
-                      },
+                        },
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
-        if (isEmergency)
+        if (isEmergency && !isEnded)
           Positioned(
             left: 0,
             top: 24,
@@ -237,7 +259,7 @@ class MissionCard extends StatelessWidget {
               ),
             ),
           ),
-        if (mission.isRegistered)
+        if (mission.isRegistered && !isEnded)
           Positioned(
             top: -6,
             right: -6,
@@ -246,14 +268,47 @@ class MissionCard extends StatelessWidget {
               isRotated: true,
             ),
           ),
+        if (isEnded)
+          Positioned(
+            top: -6,
+            right: -6,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.ink,
+                borderRadius: BorderRadius.circular(4),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Text(
+                'MISSION ENDED',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 10,
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
 
-  String _formatTimeLeft(DateTime target) {
+  String _formatTimeLeft(DateTime start, DateTime end) {
     final now = DateTime.now();
-    final diff = target.difference(now);
-    if (diff.isNegative) return 'Ended';
+    if (now.isAfter(end)) return 'Ended';
+
+    final diff = start.difference(now);
+    if (diff.isNegative) {
+      // Mission has started but not ended
+      return 'In Progress';
+    }
     if (diff.inDays > 0) return '${diff.inDays}d left';
     if (diff.inHours > 0) return '${diff.inHours}h left';
     return '${diff.inMinutes}m left';

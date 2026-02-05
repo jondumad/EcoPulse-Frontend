@@ -176,7 +176,7 @@ class MissionProvider with ChangeNotifier {
       if (success) {
         // Refresh the specific mission or the whole list
         // For simplicity, refetch the missions list
-        await fetchMissions();
+        await fetchMissions(forceRefresh: true);
       }
     } catch (e) {
       _error = e.toString();
@@ -192,7 +192,7 @@ class MissionProvider with ChangeNotifier {
 
     try {
       await _missionService.createMission(missionData);
-      await fetchMissions(); // Refresh list
+      await fetchMissions(forceRefresh: true); // Refresh list
     } catch (e) {
       _error = e.toString();
       rethrow;
@@ -223,7 +223,7 @@ class MissionProvider with ChangeNotifier {
 
     try {
       await _missionService.updateMission(missionId, updateData);
-      await fetchMissions(); // Refresh the list
+      await fetchMissions(forceRefresh: true); // Refresh the list
     } catch (e) {
       _error = e.toString();
       rethrow;
@@ -240,7 +240,7 @@ class MissionProvider with ChangeNotifier {
 
     try {
       await _missionService.updateMissionStatus(missionId, status);
-      await fetchMissions(); // Refresh the list
+      await fetchMissions(forceRefresh: true); // Refresh the list
     } catch (e) {
       _error = e.toString();
       rethrow;
@@ -275,7 +275,7 @@ class MissionProvider with ChangeNotifier {
 
     try {
       await _missionService.batchAction(ids, action);
-      await fetchMissions();
+      await fetchMissions(forceRefresh: true);
     } catch (e) {
       _error = e.toString();
       rethrow;
@@ -292,7 +292,7 @@ class MissionProvider with ChangeNotifier {
 
     try {
       await _missionService.duplicateMission(missionId);
-      await fetchMissions();
+      await fetchMissions(forceRefresh: true);
     } catch (e) {
       _error = e.toString();
       rethrow;

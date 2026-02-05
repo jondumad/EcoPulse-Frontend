@@ -45,11 +45,11 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
     super.dispose();
   }
 
-  String _getCategoryIcon(String categoryName) {
-    if (widget.mission.categories.isNotEmpty) {
-      final category = widget.mission.categories.firstWhere(
+  String _getCategoryIcon(Mission mission, String categoryName) {
+    if (mission.categories.isNotEmpty) {
+      final category = mission.categories.firstWhere(
         (cat) => cat.name == categoryName,
-        orElse: () => widget.mission.categories.first,
+        orElse: () => mission.categories.first,
       );
       return category.icon;
     }
@@ -59,9 +59,19 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthProvider>(context).user;
+    final missionProvider = context.watch<MissionProvider>();
+
+    // Try to get the latest mission data from the provider to ensure reactive updates
+    final currentMission = missionProvider.missions.firstWhere(
+      (m) => m.id == widget.mission.id,
+      orElse: () => widget.mission,
+    );
+
     final isFull =
-        widget.mission.maxVolunteers != null &&
-        widget.mission.currentVolunteers >= widget.mission.maxVolunteers!;
+        currentMission.maxVolunteers != null &&
+        currentMission.currentVolunteers >= currentMission.maxVolunteers!;
+
+    final isEnded = currentMission.endTime.isBefore(DateTime.now());
 
     return Scaffold(
       backgroundColor: AppTheme.clay,
@@ -82,9 +92,43 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
                             padding: const EdgeInsets.fromLTRB(16, 80, 16, 60),
                             child: Column(
                               children: [
-                                const SizedBox(height: 0),
+                                if (isEnded) ...[
+                                  Container(
+                                    width: double.infinity,
+                                    margin: const EdgeInsets.only(bottom: 16),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.ink,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.info_outline,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            'This mission has ended. Actions are no longer available.',
+                                            style: AppTheme
+                                                .lightTheme
+                                                .textTheme
+                                                .bodyMedium
+                                                ?.copyWith(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ] else
+                                  const SizedBox(height: 0),
                                 _MissionCard(
-                                  mission: widget.mission,
+                                  mission: currentMission,
                                   isDescriptionExpanded: _isDescriptionExpanded,
                                   onDescriptionToggle: () {
                                     setState(() {
@@ -93,8 +137,9 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
                                     });
                                   },
                                   categoryIcon: _getCategoryIcon(
-                                    widget.mission.categories.isNotEmpty
-                                        ? widget.mission.categories.first.name
+                                    currentMission,
+                                    currentMission.categories.isNotEmpty
+                                        ? currentMission.categories.first.name
                                         : '',
                                   ),
                                 ),
@@ -106,9 +151,10 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
                             right: 16,
                             bottom: 16,
                             child: _ActionButtons(
-                              mission: widget.mission,
+                              mission: currentMission,
                               userRole: user?.role,
                               isFull: isFull,
+                              isEnded: isEnded,
                             ),
                           ),
                         ],
@@ -419,34 +465,49 @@ class _ActionButtons extends StatelessWidget {
   final Mission mission;
   final String? userRole;
   final bool isFull;
+  final bool isEnded;
 
   const _ActionButtons({
     required this.mission,
     required this.userRole,
     required this.isFull,
+    this.isEnded = false,
   });
 
   @override
   Widget build(BuildContext context) {
     if (userRole == 'Coordinator') {
       return _ExpandableActionButton(
-        label: 'Confirm Show QR',
-        icon: Icons.qr_code,
-        onConfirm: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => QRDisplayScreen(
-                missionId: mission.id,
-                missionTitle: mission.title,
-              ),
-            ),
-          );
-        },
+        label: isEnded ? 'Mission Ended' : 'Confirm Show QR',
+        icon: isEnded ? Icons.lock : Icons.qr_code,
+        isPrimary: !isEnded,
+        onConfirm: isEnded
+            ? null
+            : () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => QRDisplayScreen(
+                      missionId: mission.id,
+                      missionTitle: mission.title,
+                      activeUntil: mission.endTime,
+                    ),
+                  ),
+                );
+              },
       );
     }
 
     if (userRole == 'Volunteer') {
+      if (isEnded) {
+        return _ExpandableActionButton(
+          label: 'Mission Ended',
+          icon: Icons.lock_clock,
+          isPrimary: false,
+          onConfirm: null, // Disabled
+        );
+      }
+
       if (mission.isRegistered) {
         final bool isCompleted = mission.registrationStatus == 'Completed';
         final bool isCheckedIn = mission.registrationStatus == 'CheckedIn';

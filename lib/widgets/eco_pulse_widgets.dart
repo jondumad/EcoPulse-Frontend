@@ -126,100 +126,108 @@ class EcoPulseButton extends StatelessWidget {
     final bool isIconOnly = icon != null && label.isEmpty;
     const double radius = 14;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
-      decoration: BoxDecoration(
-        color:
-            backgroundColor ?? (isPrimary ? EcoColors.forest : EcoColors.clay),
-        borderRadius: BorderRadius.circular(radius),
-        border: (isPrimary || backgroundColor != null)
-            ? null
-            : Border.all(color: const Color.fromRGBO(0, 0, 0, 0.06)),
-        boxShadow: (isPrimary || backgroundColor != null)
-            ? [
-                BoxShadow(
-                  color: (backgroundColor ?? EcoColors.forest).withValues(
-                    alpha: 0.25,
-                  ),
-                  offset: const Offset(0, 4),
-                  blurRadius: 12,
-                ),
-              ]
-            : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isLoading ? null : onPressed,
+    // Disable interaction when loading
+    final bool isDisabled = isLoading || onPressed == null;
+
+    return Semantics(
+      button: true,
+      enabled: !isDisabled,
+      label: isLoading ? 'Loading' : label,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        decoration: BoxDecoration(
+          color:
+              backgroundColor ??
+              (isPrimary ? EcoColors.forest : EcoColors.clay),
           borderRadius: BorderRadius.circular(radius),
-          child: AnimatedPadding(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutCubic,
-            padding: EdgeInsets.symmetric(
-              horizontal: isIconOnly
-                  ? (isSmall ? 14 : 18)
-                  : (isSmall ? 16 : 24),
-              vertical: isSmall ? 12 : 18,
-            ),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: isLoading
-                  ? const SizedBox(
-                      key: ValueKey('loading'),
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Row(
-                      key: ValueKey('content_$label'),
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (icon != null)
-                          Icon(
-                            icon,
-                            size: 20,
-                            color:
-                                foregroundColor ??
-                                (isPrimary ? Colors.white : EcoColors.ink),
-                          ),
-                        // Internal animation for the label expansion
-                        ClipRect(
-                          child: AnimatedSize(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeOutCubic,
-                            alignment: Alignment.centerLeft,
-                            child: label.isNotEmpty
-                                ? Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        label,
-                                        style: TextStyle(
-                                          fontFamily: 'Inter',
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: isPrimary
-                                              ? (isSmall ? 14 : 16)
-                                              : (isSmall ? 12 : 14),
-                                          color:
-                                              foregroundColor ??
-                                              (isPrimary
-                                                  ? Colors.white
-                                                  : EcoColors.ink),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : const SizedBox.shrink(),
-                          ),
-                        ),
-                      ],
+          border: (isPrimary || backgroundColor != null)
+              ? null
+              : Border.all(color: const Color.fromRGBO(0, 0, 0, 0.06)),
+          boxShadow: (isPrimary || backgroundColor != null)
+              ? [
+                  BoxShadow(
+                    color: (backgroundColor ?? EcoColors.forest).withValues(
+                      alpha: 0.25,
                     ),
+                    offset: const Offset(0, 4),
+                    blurRadius: 12,
+                  ),
+                ]
+              : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: isDisabled ? null : onPressed,
+            borderRadius: BorderRadius.circular(radius),
+            child: AnimatedPadding(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              padding: EdgeInsets.symmetric(
+                horizontal: isIconOnly
+                    ? (isSmall ? 14 : 18)
+                    : (isSmall ? 16 : 24),
+                vertical: isSmall ? 12 : 18,
+              ),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: isLoading
+                    ? const SizedBox(
+                        key: ValueKey('loading'),
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      ): Row(
+                        key: ValueKey('content_$label'),
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (icon != null)
+                            Icon(
+                              icon,
+                              size: 20,
+                              color:
+                                  foregroundColor ??
+                                  (isPrimary ? Colors.white : EcoColors.ink),
+                            ),
+                          // Internal animation for the label expansion
+                          ClipRect(
+                            child: AnimatedSize(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOutCubic,
+                              alignment: Alignment.centerLeft,
+                              child: label.isNotEmpty
+                                  ? Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          label,
+                                          style: TextStyle(
+                                            fontFamily: 'Inter',
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: isPrimary
+                                                ? (isSmall ? 14 : 16)
+                                                : (isSmall ? 12 : 14),
+                                            color:
+                                                foregroundColor ??
+                                                (isPrimary
+                                                    ? Colors.white
+                                                    : EcoColors.ink),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
             ),
           ),
         ),
@@ -438,7 +446,14 @@ class EcoTextField extends StatelessWidget {
     this.maxLines = 1,
     this.keyboardType,
     this.validator,
+    this.errorText,
+    this.autofillHints,
+    this.obscureText = false,
   });
+
+  final String? errorText;
+  final Iterable<String>? autofillHints;
+  final bool obscureText;
 
   @override
   Widget build(BuildContext context) {
@@ -461,6 +476,8 @@ class EcoTextField extends StatelessWidget {
           maxLines: maxLines,
           keyboardType: keyboardType,
           validator: validator,
+          obscureText: obscureText,
+          autofillHints: autofillHints,
           style: const TextStyle(
             fontFamily: 'Inter',
             fontSize: 16,
@@ -468,6 +485,7 @@ class EcoTextField extends StatelessWidget {
           ),
           decoration: InputDecoration(
             hintText: hint,
+            errorText: errorText,
             hintStyle: TextStyle(color: EcoColors.ink.withValues(alpha: 0.3)),
             filled: true,
             fillColor: Colors.white,

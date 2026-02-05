@@ -533,7 +533,6 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
       _updateAddress(latLng);
     } catch (e) {
       setState(() => _isLoading = false);
-      print("Error getting location: $e");
     }
   }
 
@@ -558,7 +557,6 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
       }
     } catch (e) {
       // Silently fail or minimal log
-      print("Reverse geocoding failed: $e");
     }
   }
 

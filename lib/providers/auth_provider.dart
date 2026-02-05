@@ -37,10 +37,18 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Map<String, dynamic>> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(
+    String email,
+    String password, {
+    bool rememberMe = false,
+  }) async {
     _setLoading(true);
     try {
-      final result = await _authService.login(email, password);
+      final result = await _authService.login(
+        email,
+        password,
+        rememberMe: rememberMe,
+      );
 
       if (result['success']) {
         _user = User.fromJson(result['user']);

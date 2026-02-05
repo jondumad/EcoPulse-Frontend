@@ -930,21 +930,32 @@ class _CoordinatorMissionCard extends StatelessWidget {
                         Expanded(
                           flex: 1,
                           child: IconButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => QRDisplayScreen(
-                                    missionId: mission.id,
-                                    missionTitle: mission.title,
-                                  ),
-                                ),
-                              );
-                            },
+                            onPressed:
+                                _getStatusColor() == Colors.grey ||
+                                    _getStatusColor() == Colors.red[900]! ||
+                                    mission.endTime.isBefore(DateTime.now())
+                                ? null
+                                : () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => QRDisplayScreen(
+                                          missionId: mission.id,
+                                          missionTitle: mission.title,
+                                          activeUntil: mission.endTime,
+                                        ),
+                                      ),
+                                    );
+                                  },
                             icon: const Icon(Icons.qr_code_2_rounded),
                             style: IconButton.styleFrom(
                               backgroundColor: AppTheme.clay,
                               foregroundColor: AppTheme.ink,
+                              disabledBackgroundColor: AppTheme.clay
+                                  .withValues(alpha: 0.5),
+                              disabledForegroundColor: AppTheme.ink.withValues(
+                                alpha: 0.2,
+                              ),
                               padding: const EdgeInsets.symmetric(
                                 vertical: 10,
                               ), // Smaller padding

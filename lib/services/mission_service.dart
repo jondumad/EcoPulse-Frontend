@@ -10,12 +10,17 @@ class MissionService {
 
   String get baseUrl => AuthService.baseUrl;
 
-  Future<List<Mission>> getMissions({String? category, String? search}) async {
+  Future<List<Mission>> getMissions({
+    String? category,
+    String? search,
+    bool? mine,
+  }) async {
     final token = await _storage.read(key: 'jwt_token');
 
     final queryParams = <String, String>{};
     if (category != null) queryParams['category'] = category;
     if (search != null) queryParams['search'] = search;
+    if (mine == true) queryParams['mine'] = 'true';
 
     final uri = Uri.parse(
       '$baseUrl/missions',

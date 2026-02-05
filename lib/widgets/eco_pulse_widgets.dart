@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 // --- Design System Colors ---
 class EcoColors {
@@ -12,53 +13,53 @@ class EcoColors {
 
 // --- Design System Typography Styles (Helpers) ---
 class EcoText {
-  static TextStyle displayXL(BuildContext context) => const TextStyle(
-    fontFamily: 'Fraunces',
-    fontSize: 48,
+  static TextStyle displayXL(BuildContext context) => GoogleFonts.fraunces(
+    fontSize: 56,
     fontWeight: FontWeight.w900,
-    letterSpacing: -1,
+    letterSpacing: -1.5,
+    height: 1.1,
     color: EcoColors.ink,
   );
 
-  static TextStyle displayLG(BuildContext context) => const TextStyle(
-    fontFamily: 'Fraunces',
+  static TextStyle displayLG(BuildContext context) => GoogleFonts.fraunces(
     fontSize: 32,
     fontWeight: FontWeight.w900,
     letterSpacing: -1,
     color: EcoColors.ink,
   );
 
-  static TextStyle displayMD(BuildContext context) => const TextStyle(
-    fontFamily: 'Fraunces',
+  static TextStyle displayMD(BuildContext context) => GoogleFonts.fraunces(
     fontSize: 22,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w900,
+    letterSpacing: -0.5,
     color: EcoColors.ink,
   );
 
-  static TextStyle bodyMD(BuildContext context) => const TextStyle(
-    fontFamily: 'Inter',
-    fontSize: 14,
-    fontWeight: FontWeight.w400,
-    height: 1.5,
+  static TextStyle bodyMD(BuildContext context) => GoogleFonts.inter(
+    fontSize: 15,
+    fontWeight: FontWeight.w500,
     color: EcoColors.ink,
+  );
+
+  static TextStyle bodySM(BuildContext context) => GoogleFonts.inter(
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: EcoColors.ink.withValues(alpha: 0.6),
   );
 
   static TextStyle headerMD(BuildContext context) => displayMD(context);
 
-  static TextStyle bodyBoldMD(BuildContext context) => const TextStyle(
-    fontFamily: 'Inter',
-    fontSize: 14,
+  static TextStyle bodyBoldMD(BuildContext context) => GoogleFonts.inter(
+    fontSize: 15,
     fontWeight: FontWeight.w700,
-    height: 1.5,
     color: EcoColors.ink,
   );
 
-  static TextStyle monoSM(BuildContext context) => const TextStyle(
-    fontFamily: 'JetBrains Mono',
-    fontSize: 11,
-    fontWeight: FontWeight.w500,
+  static TextStyle monoSM(BuildContext context) => GoogleFonts.inter(
+    fontSize: 10,
+    fontWeight: FontWeight.w700,
     letterSpacing: 1,
-    color: EcoColors.ink,
+    color: const Color.fromRGBO(26, 28, 30, 0.6),
   );
 }
 
@@ -85,14 +86,9 @@ class EcoPulseLayout extends StatelessWidget {
       appBar: appBar,
       body: Stack(
         children: [
-          // Grain Overlay (Simulated with opacity/pattern if asset existed,
-          // using a subtle noise color blend for now)
-          Container(
-            decoration: BoxDecoration(
-              color: EcoColors.clay,
-              // Ideally use an image asset for grain
-            ),
-          ),
+          // Grain Overlay Simulation
+          Container(decoration: const BoxDecoration(color: EcoColors.clay)),
+          // Subtler texture if we had the asset, for now we rely on MainShell's GrainOverlay
           SafeArea(child: child),
         ],
       ),
@@ -108,6 +104,10 @@ class EcoPulseButton extends StatelessWidget {
   final bool isPrimary;
   final bool isLoading;
   final IconData? icon;
+  final bool isSmall;
+
+  final Color? backgroundColor;
+  final Color? foregroundColor;
 
   const EcoPulseButton({
     super.key,
@@ -116,96 +116,138 @@ class EcoPulseButton extends StatelessWidget {
     this.isPrimary = true,
     this.isLoading = false,
     this.icon,
+    this.backgroundColor,
+    this.foregroundColor,
+    this.isSmall = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (isPrimary) {
-      return Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: EcoColors.forest.withValues(alpha: 0.2),
-              offset: const Offset(0, 4),
-              blurRadius: 12,
-            ),
-          ],
-          borderRadius: BorderRadius.circular(40),
-        ),
-        child: ElevatedButton(
-          onPressed: isLoading ? null : onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: EcoColors.forest,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(40),
-            ),
-            textStyle: const TextStyle(
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-            elevation: 0, // Handled by Container
-          ),
-          child: isLoading
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
+    final bool isIconOnly = icon != null && label.isEmpty;
+    const double radius = 14;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      decoration: BoxDecoration(
+        color:
+            backgroundColor ?? (isPrimary ? EcoColors.forest : EcoColors.clay),
+        borderRadius: BorderRadius.circular(radius),
+        border: (isPrimary || backgroundColor != null)
+            ? null
+            : Border.all(color: const Color.fromRGBO(0, 0, 0, 0.06)),
+        boxShadow: (isPrimary || backgroundColor != null)
+            ? [
+                BoxShadow(
+                  color: (backgroundColor ?? EcoColors.forest).withValues(
+                    alpha: 0.25,
                   ),
-                )
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(icon, size: 20),
-                      const SizedBox(width: 8),
-                    ],
-                    Text(label),
-                  ],
+                  offset: const Offset(0, 4),
+                  blurRadius: 12,
                 ),
-        ),
-      );
-    } else {
-      // Secondary
-      return OutlinedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: EcoColors.forest,
-          side: const BorderSide(color: EcoColors.forest, width: 2),
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(40),
+              ]
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isLoading ? null : onPressed,
+          borderRadius: BorderRadius.circular(radius),
+          child: AnimatedPadding(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            padding: EdgeInsets.symmetric(
+              horizontal: isIconOnly
+                  ? (isSmall ? 14 : 18)
+                  : (isSmall ? 16 : 24),
+              vertical: isSmall ? 12 : 18,
+            ),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: isLoading
+                  ? const SizedBox(
+                      key: ValueKey('loading'),
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Row(
+                      key: ValueKey('content_$label'),
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (icon != null)
+                          Icon(
+                            icon,
+                            size: 20,
+                            color:
+                                foregroundColor ??
+                                (isPrimary ? Colors.white : EcoColors.ink),
+                          ),
+                        // Internal animation for the label expansion
+                        ClipRect(
+                          child: AnimatedSize(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeOutCubic,
+                            alignment: Alignment.centerLeft,
+                            child: label.isNotEmpty
+                                ? Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        label,
+                                        style: TextStyle(
+                                          fontFamily: 'Inter',
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: isPrimary
+                                              ? (isSmall ? 14 : 16)
+                                              : (isSmall ? 12 : 14),
+                                          color:
+                                              foregroundColor ??
+                                              (isPrimary
+                                                  ? Colors.white
+                                                  : EcoColors.ink),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
           ),
-          textStyle: const TextStyle(
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
         ),
-        child: isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 20),
-                    const SizedBox(width: 8),
-                  ],
-                  Text(label),
-                ],
-              ),
-      );
-    }
+      ),
+    );
+  }
+}
+
+// Alias for convenience to match EditMissionScreen usage
+class EcoButton extends StatelessWidget {
+  final String text;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
+  const EcoButton({
+    super.key,
+    required this.text,
+    required this.onPressed,
+    this.isLoading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return EcoPulseButton(
+      label: text,
+      onPressed: onPressed,
+      isLoading: isLoading,
+    );
   }
 }
 
@@ -231,37 +273,29 @@ class EcoPulseCard extends StatelessWidget {
       return Container(
         decoration: BoxDecoration(
           color: EcoColors.ink,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.15),
-              offset: const Offset(0, 20),
-              blurRadius: 40,
+              offset: const Offset(0, 10),
+              blurRadius: 30,
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           child: Stack(
             children: [
               // Purple Glow Accent
               Positioned(
-                top: -50,
-                right: -50,
+                top: -30,
+                right: -30,
                 child: Container(
-                  width: 150,
-                  height: 150,
+                  width: 120,
+                  height: 120,
                   decoration: BoxDecoration(
-                    color: EcoColors.violet.withValues(alpha: 0.5),
+                    color: EcoColors.violet.withValues(alpha: 0.4),
                     shape: BoxShape.circle,
-                  ),
-                  child: BackdropFilter(
-                    filter: const ColorFilter.mode(
-                      Colors.transparent,
-                      BlendMode.srcOver,
-                    ),
-                    // Flutter blur needs ImageFilter, simplified for now
-                    // Real implementation would use ImageFilter.blur
                   ),
                 ),
               ),
@@ -292,13 +326,13 @@ class EcoPulseCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: EcoColors.paperShadow),
-        borderRadius: BorderRadius.circular(2), // Almost sharp
+        border: Border.all(color: const Color.fromRGBO(0, 0, 0, 0.06)),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: const [
           BoxShadow(
-            color: EcoColors.paperShadow,
-            offset: Offset(4, 4),
-            blurRadius: 0, // Hard shadow
+            color: Color.fromRGBO(0, 0, 0, 0.04),
+            offset: Offset(0, 2),
+            blurRadius: 8,
           ),
         ],
       ),
@@ -306,9 +340,9 @@ class EcoPulseCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(2),
+          borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: padding ?? const EdgeInsets.all(20),
+            padding: padding ?? const EdgeInsets.all(24),
             child: child,
           ),
         ),
@@ -346,6 +380,7 @@ class EcoPulseTag extends StatelessWidget {
             fontSize: 10,
             fontWeight: FontWeight.w700,
             letterSpacing: 1,
+            height: 1.2,
             color: Colors.white,
           ),
         ),
@@ -383,6 +418,75 @@ class EcoPulseStamp extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class EcoTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final String? hint;
+  final int maxLines;
+  final TextInputType? keyboardType;
+  final String? Function(String?)? validator;
+
+  const EcoTextField({
+    super.key,
+    required this.controller,
+    required this.label,
+    this.hint,
+    this.maxLines = 1,
+    this.keyboardType,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: EcoColors.forest,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          keyboardType: keyboardType,
+          validator: validator,
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 16,
+            color: EcoColors.ink,
+          ),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: EcoColors.ink.withValues(alpha: 0.3)),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.all(16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: EcoColors.forest, width: 2),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

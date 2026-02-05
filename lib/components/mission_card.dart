@@ -1,10 +1,13 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/mission_model.dart';
+import '../providers/mission_provider.dart';
+import '../providers/location_provider.dart';
+
 import '../theme/app_theme.dart';
 import '../screens/volunteer/mission_detail_screen.dart';
-import 'paper_card.dart';
+import '../widgets/eco_pulse_widgets.dart';
 
 class MissionCard extends StatelessWidget {
   final Mission mission;
@@ -13,297 +16,264 @@ class MissionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PaperCard(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MissionDetailScreen(mission: mission),
-          ),
-        );
-      },
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Column(
+    final bool isEmergency =
+        mission.isEmergency ||
+        mission.priority == 'Critical' ||
+        mission.priority == 'High';
+    final double progress = mission.maxVolunteers != null
+        ? mission.currentVolunteers / mission.maxVolunteers!
+        : 0.1;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        EcoPulseCard(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MissionDetailScreen(mission: mission),
+              ),
+            );
+          },
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      mission.title,
-                      style: AppTheme.lightTheme.textTheme.displaySmall
-                          ?.copyWith(fontSize: 20), // Slightly smaller for list
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 2,
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppTheme.clay,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        mission.categories.isNotEmpty
+                            ? mission.categories.first.icon
+                            : '🌱',
+                        style: const TextStyle(fontSize: 24),
+                      ),
                     ),
                   ),
-                  if (mission.isEmergency)
-                    Transform.rotate(
-                      angle: 0.05,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          mission.title,
+                          style: AppTheme.lightTheme.textTheme.headlineMedium,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.terracotta,
-                          borderRadius: BorderRadius.circular(2),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black12,
-                              offset: Offset(1, 1),
-                              blurRadius: 2,
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Consumer<LocationProvider>(
+                              builder: (context, locationProvider, _) {
+                                return _MetaItem(
+                                  icon: Icons.location_on_outlined,
+                                  label: locationProvider.getDistanceLabel(
+                                    mission.locationGps,
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 12),
+                            _MetaItem(
+                              icon: Icons.access_time,
+                              label: _formatTimeLeft(
+                                mission.startTime.toLocal(),
+                              ),
                             ),
                           ],
                         ),
-                        child: Text(
-                          'URGENT',
-                          style: AppTheme.lightTheme.textTheme.labelSmall
-                              ?.copyWith(color: Colors.white),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Progress Section
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'PROGRESS',
+                        style: AppTheme.lightTheme.textTheme.labelLarge,
+                      ),
+                      Text(
+                        '${(progress * 100).toInt()}%',
+                        style: AppTheme.lightTheme.textTheme.displaySmall
+                            ?.copyWith(fontSize: 18, color: AppTheme.forest),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 8,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppTheme.clay,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: progress.clamp(0.0, 1.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AppTheme.forest, Color(0xFF2D6A4F)],
+                          ),
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
                     ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+
+              // Actions
               Row(
                 children: [
-                  const Icon(
-                    Icons.location_on_outlined,
-                    size: 16,
-                    color: AppTheme.ink,
-                  ),
-                  const SizedBox(width: 4),
                   Expanded(
-                    child: Text(
-                      mission.locationName,
-                      style: AppTheme.lightTheme.textTheme.bodyMedium,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
+                    flex: 3,
+                    child: Consumer<MissionProvider>(
+                      builder: (context, provider, _) {
+                        return EcoPulseButton(
+                          label: mission.isRegistered ? 'Continue' : 'Start',
+                          icon: Icons.play_arrow_rounded,
+                          isLoading: provider.isLoading,
+                          onPressed: () async {
+                            if (mission.isRegistered) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      MissionDetailScreen(mission: mission),
+                                ),
+                              );
+                            } else {
+                              try {
+                                await provider.toggleRegistration(
+                                  mission.id,
+                                  false,
+                                );
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Successfully registered!'),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error: $e')),
+                                  );
+                                }
+                              }
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: EcoPulseButton(
+                      label: '',
+                      icon: Icons.map_outlined,
+                      isPrimary: false,
+                      onPressed: () async {
+                        if (mission.locationGps != null &&
+                            mission.locationGps!.contains(',')) {
+                          final coords = mission.locationGps!.split(',');
+                          final lat = coords[0].trim();
+                          final lng = coords[1].trim();
+                          final uri = Uri.parse(
+                            'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+                          );
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri);
+                          } else {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Could not launch map'),
+                                ),
+                              );
+                            }
+                          }
+                        }
+                      },
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.calendar_today_outlined,
-                    size: 16,
-                    color: AppTheme.ink,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    DateFormat('MMM dd, HH:mm').format(mission.startTime),
-                    style: AppTheme.lightTheme.textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-              if (mission.startTime.difference(DateTime.now()).inHours.abs() <
-                      24 &&
-                  mission.startTime.isAfter(DateTime.now()))
-                _CountdownTimer(targetDate: mission.startTime),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  ...mission.categories
-                      .take(2)
-                      .map((cat) => CategoryTag(category: cat)),
-                  const Spacer(),
-                  Text(
-                    '+${mission.pointsValue} PTS',
-                    style:
-                        AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                          color: AppTheme.forest,
-                          fontWeight: FontWeight.w900,
-                          fontFamily: 'JetBrains Mono',
-                        ) ??
-                        const TextStyle(
-                          color: AppTheme.forest,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: LinearProgressIndicator(
-                  value: mission.maxVolunteers != null
-                      ? mission.currentVolunteers / mission.maxVolunteers!
-                      : 0.1, // Show a bit if null
-                  backgroundColor: AppTheme.ink.withValues(alpha: 0.1),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    mission.isEmergency ? AppTheme.terracotta : AppTheme.forest,
-                  ),
-                  minHeight: 6,
-                ),
-              ),
             ],
           ),
-          if (mission.isRegistered)
-            Positioned(
-              top: -8,
-              right: -8,
-              child: _StatusBadge(
-                status: mission.registrationStatus ?? 'Registered',
+        ),
+        if (isEmergency)
+          Positioned(
+            left: 0,
+            top: 24,
+            bottom: 24,
+            width: 4,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: AppTheme.terracotta,
+                borderRadius: BorderRadius.horizontal(
+                  right: Radius.circular(2),
+                ),
               ),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  final String status;
-  const _StatusBadge({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    Color badgeColor = AppTheme.forest;
-    String label = 'REGISTERED';
-
-    if (status == 'CheckedIn') {
-      badgeColor = AppTheme.violet;
-      label = 'CHECKED IN';
-    } else if (status == 'Completed') {
-      badgeColor = Colors.orange;
-      label = 'COMPLETED';
-    }
-
-    return Transform.rotate(
-      angle: -0.1,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: badgeColor,
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black26,
-              offset: Offset(1, 1),
-              blurRadius: 2,
+          ),
+        if (mission.isRegistered)
+          Positioned(
+            top: -6,
+            right: -6,
+            child: EcoPulseTag(
+              label: mission.registrationStatus ?? 'Registered',
+              isRotated: true,
             ),
-          ],
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.2),
-            width: 1,
           ),
-        ),
-        child: Text(
-          label,
-          style: AppTheme.lightTheme.textTheme.labelSmall?.copyWith(
-            color: Colors.white,
-            fontSize: 8,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1,
-            fontFamily: 'JetBrains Mono',
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class CategoryTag extends StatelessWidget {
-  final Category category;
-
-  const CategoryTag({super.key, required this.category});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(right: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppTheme.ink.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AppTheme.ink.withValues(alpha: 0.1)),
-      ),
-      child: Text(
-        category.name.toUpperCase(),
-        style: const TextStyle(
-          color: AppTheme.ink,
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          fontFamily: 'JetBrains Mono',
-        ),
-      ),
-    );
-  }
-}
-
-class _CountdownTimer extends StatefulWidget {
-  final DateTime targetDate;
-  const _CountdownTimer({required this.targetDate});
-
-  @override
-  State<_CountdownTimer> createState() => _CountdownTimerState();
-}
-
-class _CountdownTimerState extends State<_CountdownTimer> {
-  late Timer _timer;
-  late Duration _timeLeft;
-
-  @override
-  void initState() {
-    super.initState();
-    _calculateTime();
-    _timer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) => _calculateTime(),
+      ],
     );
   }
 
-  void _calculateTime() {
+  String _formatTimeLeft(DateTime target) {
     final now = DateTime.now();
-    setState(() {
-      _timeLeft = widget.targetDate.difference(now);
-    });
+    final diff = target.difference(now);
+    if (diff.isNegative) return 'Ended';
+    if (diff.inDays > 0) return '${diff.inDays}d left';
+    if (diff.inHours > 0) return '${diff.inHours}h left';
+    return '${diff.inMinutes}m left';
   }
+}
 
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
-  }
+class _MetaItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _MetaItem({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    if (_timeLeft.isNegative) return const SizedBox.shrink();
-
-    final hours = _timeLeft.inHours;
-    final minutes = _timeLeft.inMinutes % 60;
-    final seconds = _timeLeft.inSeconds % 60;
-
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppTheme.terracotta.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AppTheme.terracotta.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.timer, size: 12, color: AppTheme.terracotta),
-          const SizedBox(width: 6),
-          Text(
-            'STARTS IN ${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.terracotta,
-              fontFamily: 'JetBrains Mono',
-            ),
-          ),
-        ],
-      ),
+    return Row(
+      children: [
+        Icon(icon, size: 12, color: AppTheme.ink.withValues(alpha: 0.6)),
+        const SizedBox(width: 4),
+        Text(label, style: AppTheme.lightTheme.textTheme.bodySmall),
+      ],
     );
   }
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
 import '../providers/mission_provider.dart';
 import '../widgets/eco_pulse_widgets.dart';
-import '../components/mission_card.dart';
+import '../components/mission_list.dart';
+import '../components/hero_card.dart';
+import './volunteer/mission_history_screen.dart';
+import './volunteer/badges_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -20,12 +22,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Future.microtask(() {
       if (!mounted) return;
       Provider.of<MissionProvider>(context, listen: false).fetchMissions();
+      Provider.of<AuthProvider>(context, listen: false).fetchUserStats();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
     return EcoPulseLayout(
       child: Consumer2<AuthProvider, MissionProvider>(
         builder: (context, auth, missionProvider, _) {
@@ -35,11 +37,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
 
           final activeMissions = missionProvider.missions
-              .where((m) => m.isRegistered && m.registrationStatus != 'Completed')
+              .where(
+                (m) => m.isRegistered && m.registrationStatus != 'Completed',
+              )
               .toList();
 
-          final completedMissions = missionProvider.missions
-              .where((m) => m.registrationStatus == 'Completed')
+          final historyMissions = missionProvider.missions
+              .where(
+                (m) =>
+                    m.registrationStatus == 'Completed' ||
+                    m.registrationStatus == 'Cancelled',
+              )
               .toList();
 
           return SingleChildScrollView(
@@ -47,101 +55,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header (Date & Greeting)
-                Text(
-                  DateFormat('MMM dd, yyyy').format(now).toUpperCase(),
-                  style: EcoText.monoSM(context),
-                ),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Hello,\n${user.name.split(' ').first}',
-                        style: EcoText.displayLG(context),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.logout_outlined,
-                        color: EcoColors.ink,
-                      ),
-                      onPressed: () {
-                        Provider.of<AuthProvider>(
-                          context,
-                          listen: false,
-                        ).logout();
-                      },
-                      tooltip: 'Logout',
-                    ),
-                    const SizedBox(width: 12),
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: EcoColors.forest,
-                      child: Text(
-                        user.name[0].toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                // Hero Card (Profile & Role)
+                HeroCard(user: user),
                 const SizedBox(height: 32),
 
-                // Hero Card (Profile & Role)
-                EcoPulseCard(
-                  variant: CardVariant.hero,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              user.role.toUpperCase(),
-                              style: const TextStyle(
-                                fontFamily: 'JetBrains Mono',
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
-                          const Icon(Icons.fingerprint, color: Colors.white54),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        user.email,
-                        style: const TextStyle(color: Colors.white70),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        user.name,
-                        style: const TextStyle(
-                          fontFamily: 'Fraunces',
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
+                // Weekly Impact Chart
+                if (user.role == 'Volunteer') ...[
+                  _buildWeeklyImpact(context),
+                  const SizedBox(height: 32),
+                ],
 
                 // Volunteer Stats & Gamification
                 if (user.role == 'Volunteer') ...[
@@ -189,51 +112,125 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 24),
 
                   // Progress
-                  EcoPulseCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'NEXT MILESTONE',
-                              style: EcoText.monoSM(context),
-                            ),
-                            Text(
-                              '${user.totalPoints} / 1000',
-                              style: EcoText.monoSM(context),
-                            ),
-                          ],
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BadgesScreen(),
                         ),
-                        const SizedBox(height: 12),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(2),
-                          child: LinearProgressIndicator(
-                            value: user.totalPoints / 1000,
-                            minHeight: 8,
-                            backgroundColor: EcoColors.clay,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              EcoColors.forest,
+                      );
+                    },
+                    child: EcoPulseCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'NEXT MILESTONE',
+                                style: EcoText.monoSM(context),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const BadgesScreen(),
+                                    ),
+                                  );
+                                },
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      'SEE ALL',
+                                      style: EcoText.bodyBoldMD(context)
+                                          .copyWith(
+                                            color: EcoColors.violet,
+                                            fontSize: 11,
+                                            letterSpacing: 1,
+                                          ),
+                                    ),
+                                    const Icon(
+                                      Icons.chevron_right,
+                                      size: 16,
+                                      color: EcoColors.violet,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Level Progress',
+                                style: EcoText.bodyMD(
+                                  context,
+                                ).copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              Text(
+                                '${user.totalPoints} / 1000 XP',
+                                style: EcoText.monoSM(context),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(2),
+                            child: LinearProgressIndicator(
+                              value: user.totalPoints / 1000,
+                              minHeight: 8,
+                              backgroundColor: EcoColors.clay,
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                EcoColors.forest,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Earn ${1000 - user.totalPoints} more points to reach Community Hero status.',
-                          style: EcoText.bodyMD(context).copyWith(
-                            color: EcoColors.ink.withValues(alpha: 0.6),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Earn ${1000 - user.totalPoints} more points to reach Community Hero status.',
+                            style: EcoText.bodyMD(context).copyWith(
+                              color: EcoColors.ink.withValues(alpha: 0.6),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 32),
 
                   // Registered Missions Section
-                  Text(
-                    'My Active Missions',
-                    style: EcoText.displayMD(context),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'My Active Missions',
+                        style: EcoText.displayMD(context),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MissionHistoryScreen(
+                                missions: historyMissions,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'See History',
+                          style: EcoText.bodyBoldMD(
+                            context,
+                          ).copyWith(color: EcoColors.forest, fontSize: 13),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   if (missionProvider.isLoading && activeMissions.isEmpty)
@@ -243,22 +240,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       'No active missions.\nStart your journey in the missions tab!',
                     )
                   else
-                    ...activeMissions.map(
-                      (mission) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: MissionCard(mission: mission),
-                      ),
-                    ),
+                    MissionList(missions: activeMissions),
 
-                  if (completedMissions.isNotEmpty) ...[
+                  if (historyMissions.isNotEmpty) ...[
                     const SizedBox(height: 32),
                     Text('Mission History', style: EcoText.displayMD(context)),
                     const SizedBox(height: 16),
-                    ...completedMissions.map(
-                      (mission) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: MissionCard(mission: mission),
-                      ),
+                    MissionList(
+                      missions: historyMissions
+                          .take(3)
+                          .toList(), // Show preview
+                      isHistory: true,
                     ),
                   ],
                 ],
@@ -267,6 +259,110 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildWeeklyImpact(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+    final stats = auth.userStats;
+
+    final actionsCompleted = stats?['actionsCompleted']?.toString() ?? '0';
+    final rank = stats?['rank']?.toString() ?? '-';
+    final totalVolunteers = stats?['totalVolunteers']?.toString() ?? '-';
+    final weeklyActivity = (stats?['weeklyActivity'] as List?) ?? [];
+
+    return EcoPulseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('WEEKLY IMPACT', style: EcoText.monoSM(context)),
+          const SizedBox(height: 8),
+          Text(
+            actionsCompleted,
+            style: EcoText.displayXL(
+              context,
+            ).copyWith(fontSize: 56, color: EcoColors.forest),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Actions Completed · Rank #$rank of $totalVolunteers',
+            style: EcoText.bodyMD(
+              context,
+            ).copyWith(color: EcoColors.ink.withValues(alpha: 0.6)),
+          ),
+          const SizedBox(height: 24),
+          const Divider(height: 1, color: Color.fromRGBO(0, 0, 0, 0.06)),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 64,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: weeklyActivity.isEmpty
+                  ? [
+                      _buildDayBar(context, 'M', 0),
+                      _buildDayBar(context, 'T', 0),
+                      _buildDayBar(context, 'W', 0),
+                      _buildDayBar(context, 'T', 0),
+                      _buildDayBar(context, 'F', 0),
+                      _buildDayBar(context, 'S', 0),
+                      _buildDayBar(context, 'S', 0),
+                    ]
+                  : weeklyActivity.map((dayData) {
+                      return _buildDayBar(
+                        context,
+                        dayData['day'],
+                        (dayData['value'] as num).toDouble(),
+                        isToday: dayData['isToday'] ?? false,
+                        isActive: (dayData['value'] as num) > 0,
+                      );
+                    }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDayBar(
+    BuildContext context,
+    String day,
+    double value, {
+    bool isActive = false,
+    bool isToday = false,
+  }) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Container(
+              height: (value / 100) * 40, // Scale factor
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(4),
+                ),
+                gradient: isToday
+                    ? const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [EcoColors.terracotta, Color(0xFFC25A47)],
+                      )
+                    : LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          isActive ? EcoColors.forest : EcoColors.clay,
+                          isActive ? const Color(0xFF2D6A4F) : EcoColors.clay,
+                        ],
+                      ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(day, style: EcoText.monoSM(context).copyWith(fontSize: 9)),
+          ],
+        ),
       ),
     );
   }

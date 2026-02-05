@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -36,37 +37,36 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
   Widget build(BuildContext context) {
     return EcoPulseLayout(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Mission Basics Section
+              _buildSectionLabel('MISSION BASICS'),
               EcoPulseCard(
-                variant: CardVariant.paper,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('MISSION BASICS', style: EcoText.monoSM(context)),
-                    const SizedBox(height: 16),
+                    _buildFieldLabel('Mission Title'),
                     TextFormField(
                       controller: _titleController,
-                      style: EcoText.displayMD(context),
+                      style: AppTheme.lightTheme.textTheme.displaySmall,
                       decoration: const InputDecoration(
-                        labelText: 'Mission Title',
                         hintText: 'e.g., Riverside Cleanup',
-                        border: UnderlineInputBorder(),
                       ),
                       validator: (v) =>
                           v == null || v.isEmpty ? 'Required' : null,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
+                    _buildFieldLabel('Description'),
                     TextFormField(
                       controller: _descriptionController,
-                      maxLines: 3,
+                      maxLines: 4,
                       decoration: const InputDecoration(
-                        labelText: 'Description',
-                        border: OutlineInputBorder(),
+                        hintText:
+                            'What needs to be done? What should volunteers bring?',
                         alignLabelWithHint: true,
                       ),
                       validator: (v) =>
@@ -75,238 +75,269 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
+              // Location & Time Section
+              _buildSectionLabel('LOCATION & TIME'),
               EcoPulseCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('LOGISTICS', style: EcoText.monoSM(context)),
-                    const SizedBox(height: 16),
+                    _buildFieldLabel('Location'),
                     Row(
                       children: [
                         Expanded(
                           child: TextFormField(
                             controller: _locationNameController,
                             decoration: const InputDecoration(
-                              labelText: 'Location Name',
-                              prefixIcon: Icon(Icons.location_on_outlined),
-                              border: OutlineInputBorder(),
+                              hintText: 'Enter location name',
                             ),
                             validator: (v) =>
                                 v == null || v.isEmpty ? 'Required' : null,
                           ),
                         ),
                         const SizedBox(width: 8),
-                        IconButton.filledTonal(
-                          onPressed: _showLocationPicker,
-                          icon: const Icon(Icons.map_outlined),
-                          tooltip: 'Select on Map',
+                        GestureDetector(
+                          onTap: _showLocationPicker,
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: AppTheme.clay,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color.fromRGBO(0, 0, 0, 0.06),
+                              ),
+                            ),
+                            child: const Icon(Icons.map_outlined, size: 20),
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    if (_selectedLocation != null) ...[
-                      SizedBox(
-                        height: 200,
-                        child: ClipRRect(
+                    const SizedBox(height: 24),
+                    _buildFieldLabel('Date'),
+                    InkWell(
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: _startDate,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 365),
+                          ),
+                        );
+                        if (date != null) setState(() => _startDate = date);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
-                          child: Stack(
+                          border: Border.all(
+                            color: const Color.fromRGBO(0, 0, 0, 0.06),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(DateFormat('yyyy-MM-dd').format(_startDate)),
+                            const Spacer(),
+                            const Icon(
+                              Icons.calendar_today,
+                              size: 16,
+                              color: Colors.black26,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              FlutterMap(
-                                options: MapOptions(
-                                  initialCenter: _selectedLocation!,
-                                  initialZoom: 15.0,
-                                  onTap: (_, _) => _showLocationPicker(),
-                                ),
-                                children: [
-                                  TileLayer(
-                                    urlTemplate:
-                                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                    userAgentPackageName: 'com.example.civic',
-                                  ),
-                                  MarkerLayer(
-                                    markers: [
-                                      Marker(
-                                        point: _selectedLocation!,
-                                        width: 40,
-                                        height: 40,
-                                        child: const Icon(
-                                          Icons.location_on,
-                                          color: EcoColors.terracotta,
-                                          size: 40,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                              _buildFieldLabel('Start Time'),
+                              _buildTimePicker(
+                                _startTime,
+                                (t) => setState(() => _startTime = t),
                               ),
-                              Positioned(
-                                bottom: 8,
-                                right: 8,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.8),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Text(
-                                    'Tap to change',
-                                    style: TextStyle(fontSize: 10),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildFieldLabel('End Time'),
+                              _buildTimePicker(
+                                _endTime,
+                                (t) => setState(() => _endTime = t),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Mission Settings Section
+              _buildSectionLabel('MISSION SETTINGS'),
+              EcoPulseCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildFieldLabel('Impact Points'),
+                              TextFormField(
+                                controller: _pointsController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  prefixIcon: Icon(
+                                    Icons.stars_outlined,
+                                    size: 18,
                                   ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    Row(
-                      children: [
+                        const SizedBox(width: 12),
                         Expanded(
-                          child: InkWell(
-                            onTap: () async {
-                              final date = await showDatePicker(
-                                context: context,
-                                initialDate: _startDate,
-                                firstDate: DateTime.now(),
-                                lastDate: DateTime.now().add(
-                                  const Duration(days: 365),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildFieldLabel('Capacity'),
+                              TextFormField(
+                                controller: _maxVolunteersController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  prefixIcon: Icon(
+                                    Icons.people_outline,
+                                    size: 18,
+                                  ),
                                 ),
-                              );
-                              if (date != null) {
-                                setState(() => _startDate = date);
-                              }
-                            },
-                            child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'Date',
-                                border: OutlineInputBorder(),
                               ),
-                              child: Text(
-                                DateFormat('MMM dd, yyyy').format(_startDate),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () async {
-                              final time = await showTimePicker(
-                                context: context,
-                                initialTime: _startTime,
-                              );
-                              if (time != null) {
-                                setState(() => _startTime = time);
-                              }
-                            },
-                            child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'Start Time',
-                                border: OutlineInputBorder(),
-                              ),
-                              child: Text(_startTime.format(context)),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () async {
-                              final time = await showTimePicker(
-                                context: context,
-                                initialTime: _endTime,
-                              );
-                              if (time != null) {
-                                setState(() => _endTime = time);
-                              }
-                            },
-                            child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'End Time',
-                                border: OutlineInputBorder(),
-                              ),
-                              child: Text(_endTime.format(context)),
-                            ),
+                            ],
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildFieldLabel('Priority Level'),
+                    DropdownButtonFormField<String>(
+                      initialValue: _priority,
+                      decoration: const InputDecoration(),
+                      items: ['Low', 'Normal', 'High', 'Critical']
+                          .map(
+                            (p) => DropdownMenuItem(
+                              value: p,
+                              child: Text('$p Priority'),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) => setState(() => _priority = v!),
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.clay,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color.fromRGBO(0, 0, 0, 0.06),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Emergency Mission',
+                                  style:
+                                      AppTheme.lightTheme.textTheme.bodyLarge,
+                                ),
+                                Text(
+                                  'Mark as urgent and notify volunteers',
+                                  style:
+                                      AppTheme.lightTheme.textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _isEmergency,
+                            onChanged: (v) => setState(() => _isEmergency = v),
+                            activeThumbColor: AppTheme.terracotta,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
 
               const SizedBox(height: 24),
-              EcoPulseCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('SETTINGS & REWARDS', style: EcoText.monoSM(context)),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _pointsController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Points',
-                              prefixIcon: Icon(Icons.stars_outlined),
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _maxVolunteersController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Capacity',
-                              prefixIcon: Icon(Icons.people_outline),
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      initialValue: _priority,
-                      decoration: const InputDecoration(
-                        labelText: 'Priority',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: ['Low', 'Normal', 'High', 'Critical']
-                          .map(
-                            (p) => DropdownMenuItem(value: p, child: Text(p)),
-                          )
-                          .toList(),
-                      onChanged: (v) => setState(() => _priority = v!),
-                    ),
-                    const SizedBox(height: 16),
-                    SwitchListTile(
-                      title: const Text('Emergency Mission'),
-                      subtitle: const Text('Mark as critical urgency'),
-                      value: _isEmergency,
-                      onChanged: (v) => setState(() => _isEmergency = v),
-                      activeThumbColor: EcoColors.terracotta,
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 32),
               EcoPulseButton(label: 'Publish Mission', onPressed: _submit),
               const SizedBox(height: 40),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, left: 4),
+      child: Text(
+        label,
+        style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+          letterSpacing: 1,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFieldLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        label,
+        style: AppTheme.lightTheme.textTheme.labelSmall?.copyWith(fontSize: 13),
+      ),
+    );
+  }
+
+  Widget _buildTimePicker(TimeOfDay time, Function(TimeOfDay) onSelected) {
+    return InkWell(
+      onTap: () async {
+        final t = await showTimePicker(context: context, initialTime: time);
+        if (t != null) onSelected(t);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color.fromRGBO(0, 0, 0, 0.06)),
+        ),
+        child: Text(time.format(context)),
       ),
     );
   }
@@ -376,8 +407,8 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
         'locationGps': _selectedLocation != null
             ? '${_selectedLocation!.latitude},${_selectedLocation!.longitude}'
             : '-6.8222, 107.1394',
-        'startTime': startDateTime.toIso8601String(),
-        'endTime': endDateTime.toIso8601String(),
+        'startTime': startDateTime.toUtc().toIso8601String(),
+        'endTime': endDateTime.toUtc().toIso8601String(),
         'pointsValue': int.parse(_pointsController.text),
         'maxVolunteers': int.parse(_maxVolunteersController.text),
         'priority': _priority,

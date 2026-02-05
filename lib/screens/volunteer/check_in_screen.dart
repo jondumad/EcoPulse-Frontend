@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import '../../providers/attendance_provider.dart';
+import '../../providers/location_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
+import '../../widgets/eco_app_bar.dart';
 
 class CheckInScreen extends StatefulWidget {
   final int missionId;
@@ -28,107 +29,36 @@ class CheckInScreen extends StatefulWidget {
 class _CheckInScreenState extends State<CheckInScreen> {
   final MobileScannerController controller = MobileScannerController();
   bool _isProcessing = false;
-  Position? _currentPosition;
-  StreamSubscription<Position>? _positionStream;
-  StreamSubscription<ServiceStatus>? _serviceStatusStream;
   bool _isInRange = false;
   int _distance = 0;
-  bool _isLoadingLocation = true;
-  String? _locationError;
 
   @override
   void initState() {
     super.initState();
-    _initLocation();
-    try {
-      _serviceStatusStream = Geolocator.getServiceStatusStream().listen((
-        status,
-      ) {
-        if (status == ServiceStatus.enabled) {
-          _initLocation();
-        }
-      });
-    } catch (_) {
-      // Service status stream not supported on this platform
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initLocation();
+    });
   }
 
-  Future<void> _initLocation() async {
-    if (mounted) {
-      setState(() {
-        _locationError = null;
-        _isLoadingLocation = true;
-      });
-    }
-
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      if (mounted) {
-        setState(() {
-          _locationError = 'Location services are disabled.';
-          _isLoadingLocation = false;
-        });
-      }
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        if (mounted) {
-          setState(() {
-            _locationError = 'Location permission denied.';
-            _isLoadingLocation = false;
-          });
-        }
-        return;
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      if (mounted) {
-        setState(() {
-          _locationError = 'Location permissions are permanently denied.';
-          _isLoadingLocation = false;
-        });
-      }
-      return;
-    }
-
-    _positionStream =
-        Geolocator.getPositionStream(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 5,
-          ),
-        ).listen((Position position) {
-          if (mounted) {
-            setState(() {
-              _currentPosition = position;
-              _isLoadingLocation = false;
-              _updateGeofence(position);
-            });
-          }
-        });
+  void _initLocation() {
+    final loc = Provider.of<LocationProvider>(context, listen: false);
+    loc.startListening();
+    _updateGeofence(loc.currentPosition);
   }
 
-  void _updateGeofence(Position position) {
-    if (widget.missionGps.isEmpty) return;
+  void _updateGeofence(ll.LatLng? position) {
+    if (position == null || widget.missionGps.isEmpty) return;
+
     final parts = widget.missionGps.split(',');
     if (parts.length != 2) return;
     final mLat = double.tryParse(parts[0]);
     final mLon = double.tryParse(parts[1]);
     if (mLat == null || mLon == null) return;
 
-    final distance = Geolocator.distanceBetween(
-      position.latitude,
-      position.longitude,
-      mLat,
-      mLon,
+    final distance = const ll.Distance().as(
+      ll.LengthUnit.Meter,
+      position,
+      ll.LatLng(mLat, mLon),
     );
 
     setState(() {
@@ -139,19 +69,21 @@ class _CheckInScreenState extends State<CheckInScreen> {
 
   @override
   void dispose() {
-    _positionStream?.cancel();
-    _serviceStatusStream?.cancel();
+    // We don't necessarily want to stop listening app-wide,
+    // but maybe we should slow down the filter if not in check-in?
+    // For now, let's keep it listening as planned in Provider.
     controller.dispose();
     super.dispose();
   }
 
   Future<void> _handleCheckIn(String qrToken) async {
+    final loc = Provider.of<LocationProvider>(context, listen: false);
     if (!_isInRange || _isProcessing) return;
 
     setState(() => _isProcessing = true);
     try {
       final userGps =
-          '${_currentPosition?.latitude},${_currentPosition?.longitude}';
+          '${loc.currentPosition?.latitude},${loc.currentPosition?.longitude}';
       await Provider.of<AttendanceProvider>(
         context,
         listen: false,
@@ -181,138 +113,182 @@ class _CheckInScreenState extends State<CheckInScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Check-In: ${widget.missionTitle}')),
-      body: Column(
-        children: [
-          SizedBox(
-            height: 250,
-            child: Stack(
-              children: [
-                _isLoadingLocation
-                    ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(),
-                            SizedBox(height: 16),
-                            Text(
-                              'Ascertaining location...',
-                              style: TextStyle(fontFamily: 'JetBrains Mono'),
-                            ),
-                          ],
-                        ),
-                      )
-                    : _locationError != null
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.location_off,
-                                size: 48,
-                                color: EcoColors.terracotta,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _locationError!,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: EcoColors.ink),
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: _initLocation,
-                                child: const Text('Retry'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : _buildMap(),
+    return Consumer<LocationProvider>(
+      builder: (context, loc, _) {
+        // Trigger geofence update when location changes
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _updateGeofence(loc.currentPosition);
+        });
 
-                // Overlay Status Info
-                Positioned(
-                  top: 16,
-                  left: 16,
-                  right: 16,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _isInRange ? Icons.check_circle : Icons.location_on,
-                          color: _isInRange
-                              ? EcoColors.forest
-                              : EcoColors.terracotta,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _isInRange ? 'In Range ✓' : '$_distance meters away',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'JetBrains Mono',
-                          ),
-                        ),
-                      ],
-                    ),
+        return Scaffold(
+          appBar: EcoAppBar(
+            height: 100,
+            titleWidget: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'MISSION VERIFICATION',
+                  style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.ink.withValues(alpha: 0.6),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Check-In: ${widget.missionTitle}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.lightTheme.textTheme.displayLarge?.copyWith(
+                    fontSize: 24,
                   ),
                 ),
               ],
             ),
           ),
-          Expanded(
-            child: !_isInRange
-                ? const Center(child: Text('Scanning disabled until in range.'))
-                : Stack(
-                    children: [
-                      MobileScanner(
-                        controller: controller,
-                        fit: BoxFit.cover,
-                        onDetect: (capture) {
-                          final List<Barcode> barcodes = capture.barcodes;
-                          for (final barcode in barcodes) {
-                            if (barcode.rawValue != null) {
-                              _handleCheckIn(barcode.rawValue!);
-                              break;
-                            }
-                          }
-                        },
-                      ),
-                      Positioned.fill(
-                        child: CustomPaint(
-                          painter: ScannerOverlay(
-                            AppTheme.primaryGreen.withValues(alpha: 0.5),
-                          ),
+          body: Column(
+            children: [
+              SizedBox(
+                height: 250,
+                child: Stack(
+                  children: [
+                    loc.isLoading
+                        ? const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CircularProgressIndicator(),
+                                SizedBox(height: 16),
+                                Text(
+                                  'Ascertaining location...',
+                                  style: TextStyle(
+                                    fontFamily: 'JetBrains Mono',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : loc.error != null
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.location_off,
+                                    size: 48,
+                                    color: EcoColors.terracotta,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    loc.error!,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: EcoColors.ink,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton(
+                                    onPressed: loc.determinePosition,
+                                    child: const Text('Retry'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : _buildMap(loc.currentPosition),
+
+                    // Overlay Status Info
+                    Positioned(
+                      top: 16,
+                      left: 16,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _isInRange
+                                  ? Icons.check_circle
+                                  : Icons.location_on,
+                              color: _isInRange
+                                  ? EcoColors.forest
+                                  : EcoColors.terracotta,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _isInRange
+                                  ? 'In Range ✓'
+                                  : '$_distance meters away',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'JetBrains Mono',
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      if (_isProcessing)
-                        const Center(child: CircularProgressIndicator()),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: !_isInRange
+                    ? const Center(
+                        child: Text('Scanning disabled until in range.'),
+                      )
+                    : Stack(
+                        children: [
+                          MobileScanner(
+                            controller: controller,
+                            fit: BoxFit.cover,
+                            onDetect: (capture) {
+                              final List<Barcode> barcodes = capture.barcodes;
+                              for (final barcode in barcodes) {
+                                if (barcode.rawValue != null) {
+                                  _handleCheckIn(barcode.rawValue!);
+                                  break;
+                                }
+                              }
+                            },
+                          ),
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: ScannerOverlay(
+                                AppTheme.primaryGreen.withValues(alpha: 0.5),
+                              ),
+                            ),
+                          ),
+                          if (_isProcessing)
+                            const Center(child: CircularProgressIndicator()),
+                        ],
+                      ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildMap() {
+  Widget _buildMap(ll.LatLng? currentPosition) {
     final parts = widget.missionGps.split(',');
     final missionLatLng = parts.length == 2
         ? ll.LatLng(
@@ -321,9 +297,7 @@ class _CheckInScreenState extends State<CheckInScreen> {
           )
         : const ll.LatLng(0, 0);
 
-    final userLatLng = _currentPosition != null
-        ? ll.LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
-        : missionLatLng;
+    final userLatLng = currentPosition ?? missionLatLng;
 
     return FlutterMap(
       options: MapOptions(initialCenter: missionLatLng, initialZoom: 16.0),
@@ -354,7 +328,7 @@ class _CheckInScreenState extends State<CheckInScreen> {
               child: const Icon(Icons.flag, color: EcoColors.forest),
             ),
             // User Marker
-            if (_currentPosition != null)
+            if (currentPosition != null)
               Marker(
                 point: userLatLng,
                 width: 20,

@@ -9,7 +9,10 @@ class AuthService {
     if (kReleaseMode) {
       return 'https://chronic-sharia-fonbl-93682891.koyeb.app/api';
     }
-    // Using localhost works for Web and Physical Android devices (via adb reverse tcp:3000 tcp:3000)
+
+    // For local development
+    // If using Android Emulator, run 'adb reverse tcp:3000 tcp:3000' to use localhost.
+    // Alternatively, use 'http://10.0.2.2:3000/api' if adb reverse is not possible.
     return 'http://localhost:3000/api';
   }
 
@@ -109,6 +112,32 @@ class AuthService {
 
   Future<void> logout() async {
     await _storage.delete(key: 'jwt_token');
+  }
+
+  Future<Map<String, dynamic>?> getUserStats() async {
+    try {
+      final token = await _storage.read(key: 'jwt_token');
+      if (token == null) return null;
+
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/users/stats'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      debugPrint('User stats fetch error: $e');
+      return null;
+    }
   }
 
   Future<String?> getToken() async {

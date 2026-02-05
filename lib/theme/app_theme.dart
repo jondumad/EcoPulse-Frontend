@@ -45,52 +45,59 @@ class AppTheme {
       textTheme: TextTheme(
         // Fraunces - Display & Headers
         displayLarge: GoogleFonts.fraunces(
-          fontSize: 48,
+          fontSize: 36,
           fontWeight: FontWeight.w900,
-          letterSpacing: -1,
+          letterSpacing: -1.5,
           color: ink,
+          height: 1.1,
         ),
         displayMedium: GoogleFonts.fraunces(
-          fontSize: 32,
+          fontSize: 26,
           fontWeight: FontWeight.w900,
           letterSpacing: -1,
           color: ink,
         ),
         displaySmall: GoogleFonts.fraunces(
           fontSize: 22,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -0.5,
           color: ink,
         ),
         headlineMedium: GoogleFonts.fraunces(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
+          fontSize: 19,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -0.3,
           color: ink,
         ),
 
         // Inter - Body
         bodyLarge: GoogleFonts.inter(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          height: 1.5,
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
           color: ink,
         ),
         bodyMedium: GoogleFonts.inter(
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: FontWeight.w400,
           color: ink,
         ),
-
-        // JetBrains Mono - Data & Labels
-        labelLarge: GoogleFonts.jetBrainsMono(
-          fontSize: 11,
+        bodySmall: GoogleFonts.inter(
+          fontSize: 12,
           fontWeight: FontWeight.w500,
-          letterSpacing: 1,
-          color: ink,
+          color: ink.withValues(alpha: 0.6),
         ),
-        labelSmall: GoogleFonts.jetBrainsMono(
+
+        // JetBrains Mono - Data & Labels (Section Labels)
+        labelLarge: GoogleFonts.inter(
           fontSize: 10,
           fontWeight: FontWeight.w700,
           letterSpacing: 1,
+          color: ink.withValues(alpha: 0.6),
+        ),
+        labelSmall: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
           color: ink,
         ),
       ),
@@ -99,7 +106,7 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           side: const BorderSide(color: borderSubtle, width: 1),
-          borderRadius: BorderRadius.circular(2),
+          borderRadius: BorderRadius.circular(20),
         ),
         margin: EdgeInsets.zero,
       ),
@@ -107,11 +114,12 @@ class AppTheme {
         backgroundColor: clay,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         titleTextStyle: TextStyle(
           fontFamily: 'Fraunces',
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
+          fontSize: 36,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -1.5,
           color: ink,
         ),
         iconTheme: IconThemeData(color: ink),
@@ -123,13 +131,13 @@ class AppTheme {
           backgroundColor: forest,
           foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(40),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -138,22 +146,29 @@ class AppTheme {
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: 16,
+          vertical: 14,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(2),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: borderSubtle),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(2),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: borderSubtle),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(2),
-          borderSide: const BorderSide(color: forest, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: forest, width: 1),
         ),
-        labelStyle: GoogleFonts.inter(color: ink.withValues(alpha: 0.6)),
-        hintStyle: GoogleFonts.inter(color: ink.withValues(alpha: 0.4)),
+        labelStyle: GoogleFonts.inter(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: ink,
+        ),
+        hintStyle: GoogleFonts.inter(
+          fontSize: 15,
+          color: ink.withValues(alpha: 0.3),
+        ),
       ),
     );
   }

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../providers/nav_provider.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/eco_app_bar.dart';
 import '../widgets/active_mission_tracker.dart';
 import '../components/custom_navigation_bar.dart';
 import '../components/grain_overlay.dart';
@@ -20,56 +23,96 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  int _selectedIndex = 0;
+  bool _isInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      final user = Provider.of<AuthProvider>(context, listen: false).user;
+      if (user != null && user.role == 'Volunteer') {
+        // Schedule the navigation update after the current build frame
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Provider.of<NavProvider>(context, listen: false).setIndex(1);
+        });
+      }
+      _isInitialized = true;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final nav = Provider.of<NavProvider>(context);
+    final _selectedIndex = nav.selectedIndex;
     final user = Provider.of<AuthProvider>(context).user;
     if (user == null) return const SizedBox.shrink();
 
     // Determine content based on role
     Widget content;
-    List<IconData> navItems;
+    List<IconData> navIcons;
+    List<String> navLabels;
 
     if (user.role == 'Volunteer') {
-      content = _buildVolunteerContent();
-      navItems = [
-        Icons.map_outlined, // Map (Mission List)
-        Icons.emoji_events_outlined, // Badges
-        Icons.person_outline, // Profile
+      content = _buildVolunteerContent(_selectedIndex);
+      navIcons = [
+        Icons.map_outlined,
+        Icons.home_outlined,
+        Icons.person_outline,
       ];
+      navLabels = ['Map', 'Home', 'Profile'];
     } else {
-      content = _buildCoordinatorContent();
-      navItems = [
+      content = _buildCoordinatorContent(_selectedIndex);
+      navIcons = [
         Icons.assignment_outlined,
         Icons.verified_user_outlined,
         Icons.groups_outlined,
         Icons.person_outline,
       ];
+      navLabels = ['Create', 'Verify', 'Missions', 'Profile'];
     }
 
     return Scaffold(
       extendBody: true,
       backgroundColor: AppTheme.clay,
-      appBar: AppBar(
-        title: Text(
-          _selectedIndex == navItems.length - 1
-              ? 'My Profile'
-              : (user.role == 'Volunteer'
-                    ? (_selectedIndex == 0 ? 'Field Logs' : 'Badges')
-                    : (_selectedIndex == 0
-                          ? 'Create Mission'
-                          : _selectedIndex == 1
-                          ? 'Verification'
-                          : 'Team')),
-          style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-            fontFamily: 'Fraunces',
-            fontWeight: FontWeight.w900,
-          ),
+      appBar: EcoAppBar(
+        height: 100,
+        showBack: false,
+        titleWidget: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              DateFormat('EEEE, MMM d · HH:mm').format(DateTime.now()),
+              style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.ink.withValues(alpha: 0.6),
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _selectedIndex == navIcons.length - 1
+                  ? 'My Profile'
+                  : (user.role == 'Volunteer'
+                        ? (_selectedIndex == 1 ? 'Home' : 'Active Missions')
+                        : (_selectedIndex == 0
+                              ? 'Create Mission'
+                              : _selectedIndex == 1
+                              ? 'Verification'
+                              : 'Mission Hub')),
+              style: AppTheme.lightTheme.textTheme.displayLarge,
+            ),
+          ],
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         actions: [
+          if (_selectedIndex == navIcons.length - 1)
+            IconButton(
+              icon: const Icon(Icons.logout_outlined, color: AppTheme.ink),
+              onPressed: () {
+                Provider.of<AuthProvider>(context, listen: false).logout();
+              },
+              tooltip: 'Logout',
+            ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined, color: AppTheme.ink),
             onPressed: () {
@@ -87,19 +130,14 @@ class _MainShellState extends State<MainShell> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. Content Wrapper with Padding for Nav
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 100), // Nav clearance
-              child: content,
-            ),
-          ),
+          // 1. Content Wrapper (No bottom padding for true floating effect)
+          Positioned.fill(child: content),
 
           // 2. Grain Overlay
           const Positioned.fill(child: GrainOverlay()),
 
           // 3. Active Mission Tracker (Floating above content, below nav)
-          if (user.role == 'Volunteer')
+          if (user.role == 'Volunteer' && _selectedIndex == 1)
             const Positioned(
               bottom: 90, // Just above nav
               left: 0,
@@ -110,31 +148,56 @@ class _MainShellState extends State<MainShell> {
           // 4. Custom Floating Navigation
           CustomNavigationBar(
             currentIndex: _selectedIndex,
-            onTap: (index) => setState(() => _selectedIndex = index),
-            items: navItems,
+            onTap: (index) => nav.setIndex(index),
+            icons: navIcons,
+            labels: navLabels,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildVolunteerContent() {
-    final screens = [
-      const MissionHub(),
-      const Center(child: Text('Badges & Achievements (Coming Soon)')),
-      const ProfileScreen(),
-    ];
-    return screens[_selectedIndex];
+  Widget _buildVolunteerContent(int index) {
+    return IndexedStack(
+      index: index,
+      children: const [
+        MissionHub(), // Map tab (contains the Map/List toggle)
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.construction_outlined,
+                size: 64,
+                color: AppTheme.violet,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Home Dashboard\nComing Soon',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.ink,
+                ),
+              ),
+            ],
+          ),
+        ), // Home tab placeholder
+        ProfileScreen(),
+      ],
+    );
   }
 
-  Widget _buildCoordinatorContent() {
-    final screens = [
-      const CreateMissionScreen(),
-      const VerificationScreen(),
-      // Current Missions Hub for Coordinators
-      const CoordinatorMissionListScreen(),
-      const ProfileScreen(),
-    ];
-    return screens[_selectedIndex];
+  Widget _buildCoordinatorContent(int index) {
+    return IndexedStack(
+      index: index,
+      children: const [
+        CreateMissionScreen(),
+        VerificationScreen(),
+        CoordinatorMissionListScreen(),
+        ProfileScreen(),
+      ],
+    );
   }
 }

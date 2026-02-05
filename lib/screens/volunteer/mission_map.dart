@@ -3,16 +3,14 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:provider/provider.dart';
-import 'package:geolocator/geolocator.dart'; // Added geolocator
+import '../../providers/location_provider.dart';
 import '../../providers/mission_provider.dart';
 import '../../models/mission_model.dart';
 import '../../widgets/eco_pulse_widgets.dart';
 import 'mission_detail_screen.dart';
-import 'mission_list_screen.dart';
 
 class MissionMap extends StatefulWidget {
-  final VoidCallback? onToggleView;
-  const MissionMap({super.key, this.onToggleView});
+  const MissionMap({super.key});
 
   @override
   State<MissionMap> createState() => _MissionMapState();
@@ -21,50 +19,22 @@ class MissionMap extends StatefulWidget {
 class _MissionMapState extends State<MissionMap> {
   Mission? _selectedMission;
   final MapController _mapController = MapController();
-  ll.LatLng? _currentPosition;
 
   @override
   void initState() {
     super.initState();
-    _determinePosition();
-  }
-
-  Future<void> _determinePosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Test if location services are enabled.
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // Location services are not enabled, don't continue
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        // Permissions are denied, next time you could try
-        // requesting permissions again.
-        return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final loc = Provider.of<LocationProvider>(context, listen: false);
+      if (loc.currentPosition != null) {
+        _mapController.move(loc.currentPosition!, 15.0);
+      } else {
+        loc.determinePosition().then((_) {
+          if (mounted && loc.currentPosition != null) {
+            _mapController.move(loc.currentPosition!, 15.0);
+          }
+        });
       }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
-      return;
-    }
-
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
-    final position = await Geolocator.getCurrentPosition();
-    final latLng = ll.LatLng(position.latitude, position.longitude);
-
-    setState(() {
-      _currentPosition = latLng;
     });
-
-    _mapController.move(latLng, 15.0);
   }
 
   ll.LatLng _parseGps(String? gps) {
@@ -87,6 +57,7 @@ class _MissionMapState extends State<MissionMap> {
         children: [
           Consumer<MissionProvider>(
             builder: (context, provider, _) {
+              final loc = Provider.of<LocationProvider>(context);
               final markers = provider.missions.map((mission) {
                 final point = _parseGps(mission.locationGps);
                 return Marker(
@@ -111,20 +82,20 @@ class _MissionMapState extends State<MissionMap> {
               }).toList();
 
               // Add current location marker
-              if (_currentPosition != null) {
+              if (loc.currentPosition != null) {
                 markers.add(
                   Marker(
-                    point: _currentPosition!,
+                    point: loc.currentPosition!,
                     width: 40,
                     height: 40,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.7),
+                        color: Colors.blue.withValues(alpha: 0.7),
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 6,
                             offset: const Offset(0, 3),
                           ),
@@ -186,7 +157,7 @@ class _MissionMapState extends State<MissionMap> {
                       },
                       onClusterTap: (cluster) {
                         final missionIds = cluster.markers
-                            .map((m) => (m.key as ValueKey<String>?)?.value)
+                            .map((m) => (m.key as ValueKey<int>?)?.value)
                             .where((id) => id != null)
                             .toSet();
 
@@ -227,7 +198,7 @@ class _MissionMapState extends State<MissionMap> {
                                     child: ListView.separated(
                                       shrinkWrap: true,
                                       itemCount: clusterMissions.length,
-                                      separatorBuilder: (_, __) =>
+                                      separatorBuilder: (_, _) =>
                                           const Divider(),
                                       itemBuilder: (context, index) {
                                         final mission = clusterMissions[index];
@@ -347,34 +318,18 @@ class _MissionMapState extends State<MissionMap> {
           Positioned(
             top: 110,
             right: 20,
-            child: FloatingActionButton.small(
-              heroTag: 'my_location_btn',
-              backgroundColor: Colors.white,
-              onPressed: _determinePosition,
-              child: const Icon(Icons.my_location, color: EcoColors.ink),
-            ),
-          ),
-
-          // Floating Action to go back to list if needed
-          Positioned(
-            top: 50,
-            right: 20,
-            child: FloatingActionButton.small(
-              heroTag: 'toggle_view_btn',
-              backgroundColor: Colors.white,
-              onPressed: () {
-                if (widget.onToggleView != null) {
-                  widget.onToggleView!();
-                } else {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const MissionListScreen(),
-                    ),
-                  );
-                }
-              },
-              child: const Icon(Icons.list, color: EcoColors.ink),
+            child: Consumer<LocationProvider>(
+              builder: (context, loc, _) => FloatingActionButton.small(
+                heroTag: 'my_location_btn',
+                backgroundColor: Colors.white,
+                onPressed: () async {
+                  await loc.determinePosition();
+                  if (loc.currentPosition != null) {
+                    _mapController.move(loc.currentPosition!, 15.0);
+                  }
+                },
+                child: const Icon(Icons.my_location, color: EcoColors.ink),
+              ),
             ),
           ),
         ],

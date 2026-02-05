@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../providers/attendance_provider.dart';
 import '../../widgets/eco_pulse_widgets.dart';
+import '../../widgets/eco_app_bar.dart';
+import '../../theme/app_theme.dart';
 
 class QRDisplayScreen extends StatefulWidget {
   final int missionId;
@@ -87,11 +89,27 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
   @override
   Widget build(BuildContext context) {
     return EcoPulseLayout(
-      appBar: AppBar(
-        title: const Text('Mission QR Code'),
-        backgroundColor: Colors.transparent,
-        foregroundColor: EcoColors.ink,
-        elevation: 0,
+      appBar: EcoAppBar(
+        height: 100,
+        titleWidget: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'MISSION AUTHENTICATION',
+              style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.ink.withValues(alpha: 0.6),
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Mission QR Code',
+              style: AppTheme.lightTheme.textTheme.displayLarge,
+            ),
+          ],
+        ),
       ),
       child: Center(
         child: Padding(
@@ -147,10 +165,7 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          Text(
-                            'REFRESH IN',
-                            style: EcoText.monoSM(context),
-                          ),
+                          Text('REFRESH IN', style: EcoText.monoSM(context)),
                           Text(
                             '${_secondsLeft ~/ 60}:${(_secondsLeft % 60).toString().padLeft(2, '0')}',
                             style: EcoText.displayMD(context),
@@ -161,10 +176,7 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
                     const Positioned(
                       top: -10,
                       right: 20,
-                      child: EcoPulseTag(
-                        label: 'LIVE TOKEN',
-                        isRotated: true,
-                      ),
+                      child: EcoPulseTag(label: 'LIVE TOKEN', isRotated: true),
                     ),
                   ],
                 ),

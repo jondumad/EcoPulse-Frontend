@@ -4,6 +4,7 @@ import '../services/notification_service.dart';
 import '../services/mission_service.dart';
 import 'volunteer/mission_detail_screen.dart';
 import '../theme/app_theme.dart';
+import '../widgets/eco_app_bar.dart';
 import 'package:intl/intl.dart';
 
 class NotificationInboxScreen extends StatefulWidget {
@@ -85,20 +86,26 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.clay,
-      appBar: AppBar(
-        title: const Text(
-          'Notifications',
-          style: TextStyle(
-            fontFamily: 'Fraunces',
-            fontWeight: FontWeight.w900,
-            color: AppTheme.ink,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.ink),
-          onPressed: () => Navigator.pop(context),
+      appBar: EcoAppBar(
+        height: 100,
+        titleWidget: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'ALERTS & UPDATES',
+              style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.ink.withValues(alpha: 0.6),
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Notifications',
+              style: AppTheme.lightTheme.textTheme.displayLarge,
+            ),
+          ],
         ),
         actions: [
           IconButton(
@@ -109,6 +116,7 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
             },
             tooltip: 'Mark all as read',
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: FutureBuilder<List<NotificationModel>>(

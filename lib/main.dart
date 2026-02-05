@@ -4,6 +4,8 @@ import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/mission_provider.dart';
 import 'providers/attendance_provider.dart';
+import 'providers/location_provider.dart';
+import 'providers/nav_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_shell.dart';
 
@@ -21,6 +23,8 @@ class EcoPulseApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => MissionProvider()),
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
+        ChangeNotifierProvider(create: (_) => NavProvider()),
       ],
       child: const EcoPulseAppView(),
     );
@@ -42,6 +46,7 @@ class _EcoPulseAppViewState extends State<EcoPulseAppView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AuthProvider>(context, listen: false).initAuth();
       Provider.of<AttendanceProvider>(context, listen: false).refresh();
+      Provider.of<LocationProvider>(context, listen: false).init();
     });
   }
 

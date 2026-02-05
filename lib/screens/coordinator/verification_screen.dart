@@ -56,8 +56,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Attendance $status'),
-              backgroundColor:
-                  status == 'Verified' ? EcoColors.forest : EcoColors.terracotta,
+              backgroundColor: status == 'Verified'
+                  ? EcoColors.forest
+                  : EcoColors.terracotta,
             ),
           );
           Provider.of<AuthProvider>(context, listen: false).refreshProfile();
@@ -82,182 +83,165 @@ class _VerificationScreenState extends State<VerificationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Verifications',
-                  style: EcoText.displayLG(context),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Review and approve completed mission hours.',
-                  style: EcoText.bodyMD(context),
-                ),
-              ],
-            ),
-          ),
           Expanded(
             child: _isLoading
                 ? const Center(
                     child: CircularProgressIndicator(color: EcoColors.forest),
                   )
                 : _pending.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.verified_outlined,
-                              size: 64,
-                              color: EcoColors.forest.withValues(alpha: 0.2),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'All caught up!',
-                              style: EcoText.displayMD(context).copyWith(
-                                color: EcoColors.forest.withValues(alpha: 0.5),
-                              ),
-                            ),
-                            Text(
-                              'No pending verifications found.',
-                              style: EcoText.bodyMD(context),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.verified_outlined,
+                          size: 64,
+                          color: EcoColors.forest.withValues(alpha: 0.2),
                         ),
-                      )
-                    : RefreshIndicator(
-                        color: EcoColors.forest,
-                        onRefresh: _loadPending,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 16,
+                        const SizedBox(height: 16),
+                        Text(
+                          'All caught up!',
+                          style: EcoText.displayMD(context).copyWith(
+                            color: EcoColors.forest.withValues(alpha: 0.5),
                           ),
-                          itemCount: _pending.length,
-                          itemBuilder: (context, index) {
-                            final item = _pending[index];
-                            final user = item['user'];
-                            final mission = item['mission'];
-                            final hours = item['totalHours'] ?? 0.0;
+                        ),
+                        Text(
+                          'No pending verifications found.',
+                          style: EcoText.bodyMD(context),
+                        ),
+                      ],
+                    ),
+                  )
+                : RefreshIndicator(
+                    color: EcoColors.forest,
+                    onRefresh: _loadPending,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      itemCount: _pending.length,
+                      itemBuilder: (context, index) {
+                        final item = _pending[index];
+                        final user = item['user'];
+                        final mission = item['mission'];
+                        final hours = item['totalHours'] ?? 0.0;
 
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 24.0),
-                              child: Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  EcoPulseCard(
-                                    variant: CardVariant.paper,
-                                    child: Column(
+                        return Padding(
+                          key: ValueKey('verification_${item['id']}'),
+                          padding: const EdgeInsets.only(bottom: 24.0),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              EcoPulseCard(
+                                variant: CardVariant.paper,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    user['name'],
-                                                    style: EcoText.displayMD(
-                                                      context,
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    user['email'],
-                                                    style: EcoText.bodyMD(
-                                                      context,
-                                                    ).copyWith(
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                user['name'],
+                                                style: EcoText.displayMD(
+                                                  context,
+                                                ),
+                                              ),
+                                              Text(
+                                                user['email'],
+                                                style: EcoText.bodyMD(context)
+                                                    .copyWith(
                                                       fontSize: 12,
                                                       color: EcoColors.ink
                                                           .withValues(
-                                                              alpha: 0.6),
+                                                            alpha: 0.6,
+                                                          ),
                                                     ),
-                                                  ),
-                                                ],
                                               ),
-                                            ),
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 10,
-                                                vertical: 4,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: EcoColors.clay,
-                                                borderRadius:
-                                                    BorderRadius.circular(4),
-                                              ),
-                                              child: Text(
-                                                '${hours.toStringAsFixed(1)} HRS',
-                                                style: EcoText.monoSM(context),
-                                              ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
-                                        const Divider(height: 32),
-                                        _buildInfoRow(
-                                          Icons.assignment_outlined,
-                                          'Mission',
-                                          mission['title'],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        _buildInfoRow(
-                                          Icons.stars_outlined,
-                                          'Reward',
-                                          '${mission['pointsValue']} Points',
-                                        ),
-                                        const SizedBox(height: 24),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: EcoPulseButton(
-                                                label: 'REJECT',
-                                                isPrimary: false,
-                                                onPressed: () => _handleVerify(
-                                                  item['id'],
-                                                  'Rejected',
-                                                ),
-                                              ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: EcoColors.clay,
+                                            borderRadius: BorderRadius.circular(
+                                              4,
                                             ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: EcoPulseButton(
-                                                label: 'VERIFY',
-                                                icon: Icons.check,
-                                                onPressed: () => _handleVerify(
-                                                  item['id'],
-                                                  'Verified',
-                                                ),
-                                              ),
-                                            ),
-                                          ],
+                                          ),
+                                          child: Text(
+                                            '${hours.toStringAsFixed(1)} HRS',
+                                            style: EcoText.monoSM(context),
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  const Positioned(
-                                    top: -10,
-                                    right: -5,
-                                    child: EcoPulseTag(
-                                      label: 'Pending Review',
-                                      isRotated: true,
+                                    const Divider(height: 32),
+                                    _buildInfoRow(
+                                      Icons.assignment_outlined,
+                                      'Mission',
+                                      mission['title'],
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 12),
+                                    _buildInfoRow(
+                                      Icons.stars_outlined,
+                                      'Reward',
+                                      '${mission['pointsValue']} Points',
+                                    ),
+                                    const SizedBox(height: 24),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: EcoPulseButton(
+                                            label: 'REJECT',
+                                            isPrimary: false,
+                                            onPressed: () => _handleVerify(
+                                              item['id'],
+                                              'Rejected',
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: EcoPulseButton(
+                                            label: 'VERIFY',
+                                            icon: Icons.check,
+                                            onPressed: () => _handleVerify(
+                                              item['id'],
+                                              'Verified',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                            );
-                          },
-                        ),
-                      ),
+                              const Positioned(
+                                top: -10,
+                                right: -5,
+                                child: EcoPulseTag(
+                                  label: 'Pending Review',
+                                  isRotated: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -267,25 +251,20 @@ class _VerificationScreenState extends State<VerificationScreen> {
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: EcoColors.forest.withValues(alpha: 0.6),
-        ),
+        Icon(icon, size: 16, color: EcoColors.forest.withValues(alpha: 0.6)),
         const SizedBox(width: 8),
         Text(
           '$label: ',
-          style: EcoText.monoSM(context).copyWith(
-            fontSize: 10,
-            color: EcoColors.ink.withValues(alpha: 0.5),
-          ),
+          style: EcoText.monoSM(
+            context,
+          ).copyWith(fontSize: 10, color: EcoColors.ink.withValues(alpha: 0.5)),
         ),
         Expanded(
           child: Text(
             value,
-            style: EcoText.bodyMD(context).copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: EcoText.bodyMD(
+              context,
+            ).copyWith(fontWeight: FontWeight.w600),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -293,4 +272,3 @@ class _VerificationScreenState extends State<VerificationScreen> {
     );
   }
 }
-

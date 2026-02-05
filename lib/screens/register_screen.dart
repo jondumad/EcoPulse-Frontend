@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/eco_pulse_widgets.dart';
+import '../widgets/eco_app_bar.dart';
+import '../theme/app_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -58,11 +60,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return EcoPulseLayout(
-      appBar: AppBar(
-        title: const Text('Create Account'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: EcoColors.ink,
+      appBar: EcoAppBar(
+        height: 100,
+        titleWidget: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'RECOVERY & AUTH',
+              style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.ink.withValues(alpha: 0.6),
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Create Account',
+              style: AppTheme.lightTheme.textTheme.displayLarge,
+            ),
+          ],
+        ),
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -90,7 +108,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         final isSelected = _selectedRole == role['name'];
                         return Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4.0,
+                            ),
                             child: GestureDetector(
                               onTap: () =>
                                   setState(() => _selectedRole = role['name']),

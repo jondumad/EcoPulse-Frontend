@@ -2,13 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/mission_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/eco_pulse_widgets.dart';
-import 'mission_map.dart';
 import '../../components/mission_card.dart';
 
 class MissionListScreen extends StatefulWidget {
-  final VoidCallback? onToggleView;
-  const MissionListScreen({super.key, this.onToggleView});
+  const MissionListScreen({super.key});
 
   @override
   State<MissionListScreen> createState() => _MissionListScreenState();
@@ -23,8 +20,16 @@ class _MissionListScreenState extends State<MissionListScreen> {
     super.initState();
     Future.microtask(() {
       if (!mounted) return;
-      Provider.of<MissionProvider>(context, listen: false).fetchMissions();
+      final provider = Provider.of<MissionProvider>(context, listen: false);
+      provider.fetchMissions();
+      provider.fetchCategories();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _onFilterChanged() {
@@ -39,166 +44,172 @@ class _MissionListScreenState extends State<MissionListScreen> {
     return Container(
       color: AppTheme.clay,
       child: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Search Bar
+              _buildSearchBar(),
+
+              const SizedBox(height: 16),
+
+              // Category Filter Chips
+              _buildCategoryFilters(),
+
+              const SizedBox(height: 32),
+
+              // Section Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'FIELD LOGS',
-                        style: AppTheme.lightTheme.textTheme.labelMedium
-                            ?.copyWith(
-                              fontFamily: 'JetBrains Mono',
-                              letterSpacing: 2,
-                            ),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          if (widget.onToggleView != null) {
-                            widget.onToggleView!();
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const MissionMap(),
-                              ),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.map_outlined, size: 18),
-                        label: const Text('VIEW ON MAP'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppTheme.forest,
-                          textStyle: const TextStyle(
-                            fontFamily: 'JetBrains Mono',
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
+                  Text(
+                    'In Progress',
+                    style: AppTheme.lightTheme.textTheme.displaySmall,
+                  ),
+                  Consumer<MissionProvider>(
+                    builder: (context, provider, _) {
+                      final activeCount = provider.missions
+                          .where((m) => m.isRegistered)
+                          .length;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color.fromRGBO(0, 0, 0, 0.06),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // Search Bar
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(
-                        color: AppTheme.ink.withValues(alpha: 0.1),
-                      ),
-                      borderRadius: BorderRadius.circular(2),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          offset: Offset(2, 2),
-                          blurRadius: 0,
+                        child: Text(
+                          '$activeCount active',
+                          style: AppTheme.lightTheme.textTheme.labelSmall,
                         ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search missions...',
-                        hintStyle: TextStyle(
-                          color: AppTheme.ink.withValues(alpha: 0.3),
-                          fontSize: 14,
-                        ),
-                        prefixIcon: const Icon(Icons.search, size: 20),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      onSubmitted: (_) => _onFilterChanged(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Category Filter
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildCategoryChip(null, 'ALL'),
-                        _buildCategoryChip('Environment', 'ECO'),
-                        _buildCategoryChip('Social', 'SOCIAL'),
-                        _buildCategoryChip('Infrastructure', 'INFRA'),
-                        _buildCategoryChip('Education', 'EDU'),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ],
               ),
-            ),
-            Expanded(
-              child: Consumer<MissionProvider>(
+
+              const SizedBox(height: 16),
+
+              // Mission List
+              Consumer<MissionProvider>(
                 builder: (context, provider, _) {
                   if (provider.isLoading) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
                   if (provider.error != null) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              size: 48,
-                              color: AppTheme.terracotta,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Sync Error: ${provider.error}',
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            EcoPulseButton(
-                              label: 'Retry Sync',
-                              onPressed: () => _onFilterChanged(),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
+                    return Center(child: Text('Error: ${provider.error}'));
                   }
 
                   if (provider.missions.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'No active field logs found.',
-                        style: AppTheme.lightTheme.textTheme.bodyLarge
-                            ?.copyWith(
-                              color: AppTheme.ink.withValues(alpha: 0.5),
-                            ),
-                      ),
-                    );
+                    return const Center(child: Text('No missions found.'));
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 8,
-                    ),
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
                     itemCount: provider.missions.length,
                     itemBuilder: (context, index) {
-                      final mission = provider.missions[index];
-                      return MissionCard(mission: mission);
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: MissionCard(mission: provider.missions[index]),
+                      );
                     },
                   );
                 },
               ),
-            ),
-          ],
+
+              const SizedBox(height: 100), // Bottom nav padding
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color.fromRGBO(0, 0, 0, 0.06)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(0, 0, 0, 0.04),
+            offset: Offset(0, 2),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) {
+          setState(() {});
+          _onFilterChanged();
+        },
+        decoration: InputDecoration(
+          hintText: 'Search missions...',
+          hintStyle: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+            color: AppTheme.ink.withValues(alpha: 0.4),
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            color: AppTheme.ink.withValues(alpha: 0.4),
+          ),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    Icons.clear,
+                    color: AppTheme.ink.withValues(alpha: 0.4),
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                    _onFilterChanged();
+                  },
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryFilters() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'FILTER BY CATEGORY',
+          style: AppTheme.lightTheme.textTheme.labelLarge,
+        ),
+        const SizedBox(height: 12),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Consumer<MissionProvider>(
+            builder: (context, provider, _) {
+              return Row(
+                children: [
+                  _buildCategoryChip(null, 'All'),
+                  ...provider.categories.map(
+                    (category) =>
+                        _buildCategoryChip(category.name, category.name),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -213,23 +224,30 @@ class _MissionListScreenState extends State<MissionListScreen> {
       },
       child: Container(
         margin: const EdgeInsets.only(right: 8.0),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.ink : Colors.transparent,
+          color: isSelected ? AppTheme.forest : Colors.white,
           border: Border.all(
             color: isSelected
-                ? AppTheme.ink
-                : AppTheme.ink.withValues(alpha: 0.2),
+                ? AppTheme.forest
+                : const Color.fromRGBO(0, 0, 0, 0.1),
           ),
           borderRadius: BorderRadius.circular(20),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppTheme.forest.withValues(alpha: 0.2),
+                    offset: const Offset(0, 2),
+                    blurRadius: 8,
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
-          style: TextStyle(
+          style: AppTheme.lightTheme.textTheme.labelSmall?.copyWith(
             color: isSelected ? Colors.white : AppTheme.ink,
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-            fontFamily: 'JetBrains Mono',
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),

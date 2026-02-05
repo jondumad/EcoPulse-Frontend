@@ -399,6 +399,24 @@ class _MissionManagementScreenState extends State<MissionManagementScreen> {
             color: AppTheme.violet,
           ),
         _ControlButton(
+          icon: Icons.copy_rounded,
+          label: 'Duplicate',
+          onPressed: () => _handleDuplicate(),
+          color: AppTheme.ink,
+        ),
+        _ControlButton(
+          icon: Icons.share_rounded,
+          label: 'Invite',
+          onPressed: () => _handleInvite(),
+          color: AppTheme.violet,
+        ),
+        _ControlButton(
+          icon: Icons.notifications_active_outlined,
+          label: 'Notify',
+          onPressed: () => _handleNotify(),
+          color: AppTheme.terracotta,
+        ),
+        _ControlButton(
           icon: Icons.edit_note_rounded,
           label: 'Edit Info',
           onPressed: () async {
@@ -428,6 +446,126 @@ class _MissionManagementScreenState extends State<MissionManagementScreen> {
           ),
       ],
     );
+  }
+
+  Future<void> _handleDuplicate() async {
+    final provider = Provider.of<MissionProvider>(context, listen: false);
+    try {
+      await provider.duplicateMission(widget.mission.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Mission duplicated successfully')),
+        );
+        Navigator.pop(context); // Go back to list
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to duplicate: $e')));
+      }
+    }
+  }
+
+  Future<void> _handleInvite() async {
+    final provider = Provider.of<MissionProvider>(context, listen: false);
+    try {
+      final result = await provider.inviteToMission(widget.mission.id);
+      final link = result['link'] ?? '';
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Share Mission'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Share this link with potential volunteers:'),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.clay,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    link,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Close'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  // TODO: Copy to clipboard if needed
+                  Navigator.pop(ctx);
+                },
+                child: const Text('Copy Link'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to generate invite: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleNotify() async {
+    final provider = Provider.of<MissionProvider>(context, listen: false);
+    String message = '';
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Notify Volunteers'),
+        content: TextField(
+          decoration: const InputDecoration(hintText: 'Enter message...'),
+          maxLines: 3,
+          onChanged: (v) => message = v,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, message),
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      try {
+        await provider.contactVolunteers(widget.mission.id, result);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Notification sent successfully')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to send notification: $e')),
+          );
+        }
+      }
+    }
   }
 
   Widget _buildVolunteerList() {

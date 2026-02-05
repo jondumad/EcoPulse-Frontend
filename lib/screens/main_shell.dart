@@ -43,7 +43,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final nav = Provider.of<NavProvider>(context);
-    final _selectedIndex = nav.selectedIndex;
+    final selectedIndex = nav.selectedIndex;
     final user = Provider.of<AuthProvider>(context).user;
     if (user == null) return const SizedBox.shrink();
 
@@ -53,7 +53,7 @@ class _MainShellState extends State<MainShell> {
     List<String> navLabels;
 
     if (user.role == 'Volunteer') {
-      content = _buildVolunteerContent(_selectedIndex);
+      content = _buildVolunteerContent(selectedIndex);
       navIcons = [
         Icons.map_outlined,
         Icons.home_outlined,
@@ -61,7 +61,7 @@ class _MainShellState extends State<MainShell> {
       ];
       navLabels = ['Map', 'Home', 'Profile'];
     } else {
-      content = _buildCoordinatorContent(_selectedIndex);
+      content = _buildCoordinatorContent(selectedIndex);
       navIcons = [
         Icons.assignment_outlined,
         Icons.verified_user_outlined,
@@ -91,13 +91,13 @@ class _MainShellState extends State<MainShell> {
             ),
             const SizedBox(height: 4),
             Text(
-              _selectedIndex == navIcons.length - 1
+              selectedIndex == navIcons.length - 1
                   ? 'My Profile'
                   : (user.role == 'Volunteer'
-                        ? (_selectedIndex == 1 ? 'Home' : 'Active Missions')
-                        : (_selectedIndex == 0
+                        ? (selectedIndex == 1 ? 'Home' : 'Active Missions')
+                        : (selectedIndex == 0
                               ? 'Create Mission'
-                              : _selectedIndex == 1
+                              : selectedIndex == 1
                               ? 'Verification'
                               : 'Mission Hub')),
               style: AppTheme.lightTheme.textTheme.displayLarge,
@@ -105,7 +105,7 @@ class _MainShellState extends State<MainShell> {
           ],
         ),
         actions: [
-          if (_selectedIndex == navIcons.length - 1)
+          if (selectedIndex == navIcons.length - 1)
             IconButton(
               icon: const Icon(Icons.logout_outlined, color: AppTheme.ink),
               onPressed: () {
@@ -137,7 +137,7 @@ class _MainShellState extends State<MainShell> {
           const Positioned.fill(child: GrainOverlay()),
 
           // 3. Active Mission Tracker (Floating above content, below nav)
-          if (user.role == 'Volunteer' && _selectedIndex == 1)
+          if (user.role == 'Volunteer' && selectedIndex == 1)
             const Positioned(
               bottom: 90, // Just above nav
               left: 0,
@@ -147,7 +147,7 @@ class _MainShellState extends State<MainShell> {
 
           // 4. Custom Floating Navigation
           CustomNavigationBar(
-            currentIndex: _selectedIndex,
+            currentIndex: selectedIndex,
             onTap: (index) => nav.setIndex(index),
             icons: navIcons,
             labels: navLabels,

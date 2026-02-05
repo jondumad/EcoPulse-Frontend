@@ -238,4 +238,78 @@ class MissionService {
       throw Exception('Failed to load categories: $e');
     }
   }
+
+  Future<bool> batchAction(List<int> ids, String action) async {
+    final token = await _storage.read(key: 'jwt_token');
+    final response = await http.post(
+      Uri.parse('$baseUrl/missions/batch-action'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'ids': ids, 'action': action}),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Batch action failed');
+    }
+  }
+
+  Future<Mission> duplicateMission(int id) async {
+    final token = await _storage.read(key: 'jwt_token');
+    final response = await http.post(
+      Uri.parse('$baseUrl/missions/$id/duplicate'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 201) {
+      return Mission.fromJson(jsonDecode(response.body));
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Duplication failed');
+    }
+  }
+
+  Future<Map<String, dynamic>> inviteToMission(int id) async {
+    final token = await _storage.read(key: 'jwt_token');
+    final response = await http.post(
+      Uri.parse('$baseUrl/missions/$id/invite'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Invitation failed');
+    }
+  }
+
+  Future<bool> contactVolunteers(int id, String message) async {
+    final token = await _storage.read(key: 'jwt_token');
+    final response = await http.post(
+      Uri.parse('$baseUrl/missions/$id/contact-volunteers'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'message': message}),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Failed to contact volunteers');
+    }
+  }
 }

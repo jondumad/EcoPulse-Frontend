@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart' as ll;
 import 'package:geocoding/geocoding.dart' as geo;
 import 'package:geolocator/geolocator.dart' as geolocator;
 import '../../providers/mission_provider.dart';
+import '../../providers/location_provider.dart';
 import '../../widgets/eco_pulse_widgets.dart';
 
 class CreateMissionScreen extends StatefulWidget {
@@ -390,6 +391,16 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
       return;
     }
 
+    if (_selectedLocation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a mission location on the map'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Publishing mission...'),
@@ -404,9 +415,8 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
         'title': _titleController.text,
         'description': _descriptionController.text,
         'locationName': _locationNameController.text,
-        'locationGps': _selectedLocation != null
-            ? '${_selectedLocation!.latitude},${_selectedLocation!.longitude}'
-            : '-6.8222, 107.1394',
+        'locationGps':
+            '${_selectedLocation!.latitude},${_selectedLocation!.longitude}',
         'startTime': startDateTime.toUtc().toIso8601String(),
         'endTime': endDateTime.toUtc().toIso8601String(),
         'pointsValue': int.parse(_pointsController.text),
@@ -453,8 +463,8 @@ class LocationPickerModal extends StatefulWidget {
 }
 
 class _LocationPickerModalState extends State<LocationPickerModal> {
-  // Default to Monas if permission denied or waiting
-  ll.LatLng _pickedLocation = const ll.LatLng(-6.175392, 106.827153);
+  // Use a default coordinate, but it will be overridden by initState
+  ll.LatLng _pickedLocation = const ll.LatLng(-6.2088, 106.8456);
   final MapController _mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
   String? _selectedAddress;
@@ -463,7 +473,22 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
   @override
   void initState() {
     super.initState();
-    _determinePosition();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initLocation();
+    });
+  }
+
+  Future<void> _initLocation() async {
+    final locProvider = Provider.of<LocationProvider>(context, listen: false);
+    if (locProvider.currentPosition != null) {
+      setState(() {
+        _pickedLocation = locProvider.currentPosition!;
+      });
+      _mapController.move(_pickedLocation, 15.0);
+      _updateAddress(_pickedLocation);
+    } else {
+      await _determinePosition();
+    }
   }
 
   Future<void> _determinePosition() async {

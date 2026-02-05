@@ -114,7 +114,8 @@ class _MissionMapState extends State<MissionMap> {
               return FlutterMap(
                 mapController: _mapController,
                 options: MapOptions(
-                  initialCenter: const ll.LatLng(-6.2088, 106.8456),
+                  initialCenter:
+                      loc.currentPosition ?? const ll.LatLng(-6.2088, 106.8456),
                   initialZoom: 13.0,
                   minZoom: 5.0,
                   maxZoom: 18.0,

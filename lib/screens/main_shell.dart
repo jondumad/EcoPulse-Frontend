@@ -8,6 +8,7 @@ import '../widgets/eco_app_bar.dart';
 import '../widgets/active_mission_tracker.dart';
 import '../components/custom_navigation_bar.dart';
 import '../components/grain_overlay.dart';
+import 'volunteer_home_screen.dart';
 import 'profile_screen.dart';
 import 'volunteer/mission_hub.dart';
 import 'coordinator/create_mission_screen.dart';
@@ -162,28 +163,7 @@ class _MainShellState extends State<MainShell> {
       index: index,
       children: const [
         MissionHub(), // Map tab (contains the Map/List toggle)
-        Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.construction_outlined,
-                size: 64,
-                color: AppTheme.violet,
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Home Dashboard\nComing Soon',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.ink,
-                ),
-              ),
-            ],
-          ),
-        ), // Home tab placeholder
+        VolunteerHomeScreen(), // Home tab implemented
         ProfileScreen(),
       ],
     );

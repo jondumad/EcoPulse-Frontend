@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/mission_model.dart';
 import '../../providers/mission_provider.dart';
@@ -506,7 +507,12 @@ class _MissionManagementScreenState extends State<MissionManagementScreen> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  // TODO: Copy to clipboard if needed
+                  Clipboard.setData(ClipboardData(text: link));
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Link copied to clipboard')),
+                    );
+                  }
                   Navigator.pop(ctx);
                 },
                 child: const Text('Copy Link'),

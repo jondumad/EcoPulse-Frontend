@@ -7,6 +7,7 @@ import '../providers/location_provider.dart';
 
 import '../theme/app_theme.dart';
 import '../screens/volunteer/mission_detail_screen.dart';
+import '../screens/volunteer/check_in_screen.dart';
 import '../widgets/eco_pulse_widgets.dart';
 
 class MissionCard extends StatelessWidget {
@@ -148,33 +149,28 @@ class MissionCard extends StatelessWidget {
                 // Actions
                 Row(
                   children: [
-                    Expanded(
-                      flex: 3,
-                      child: Consumer<MissionProvider>(
-                        builder: (context, provider, _) {
-                          return EcoPulseButton(
-                            label: isEnded
-                                ? 'Ended'
-                                : (mission.isRegistered ? 'Continue' : 'Start'),
-                            icon: isEnded
-                                ? Icons.lock_clock
-                                : Icons.play_arrow_rounded,
-                            isLoading: provider.isLoading,
-                            isPrimary: !isEnded,
-                            onPressed: isEnded
-                                ? () {} // No-op
-                                : () async {
-                                    if (mission.isRegistered) {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              MissionDetailScreen(
-                                                mission: mission,
-                                              ),
-                                        ),
-                                      );
-                                    } else {
+                    if (mission.isRegistered && !isEnded) ...[
+                      // Coordinated Expandable Buttons
+                      Expanded(
+                        flex: 3,
+                        child: _CoordinatedActionButtons(mission: mission),
+                      ),
+                    ] else ...[
+                      // Start/Register Button (when not registered)
+                      Expanded(
+                        flex: 3,
+                        child: Consumer<MissionProvider>(
+                          builder: (context, provider, _) {
+                            return EcoPulseButton(
+                              label: isEnded ? 'Ended' : 'Start',
+                              icon: isEnded
+                                  ? Icons.lock_clock
+                                  : Icons.play_arrow_rounded,
+                              isLoading: provider.isLoading,
+                              isPrimary: !isEnded,
+                              onPressed: isEnded
+                                  ? () {}
+                                  : () async {
                                       try {
                                         await provider.toggleRegistration(
                                           mission.id,
@@ -202,12 +198,12 @@ class MissionCard extends StatelessWidget {
                                           );
                                         }
                                       }
-                                    }
-                                  },
-                          );
-                        },
+                                    },
+                            );
+                          },
+                        ),
                       ),
-                    ),
+                    ],
                     const SizedBox(width: 8),
                     Expanded(
                       child: EcoPulseButton(
@@ -329,6 +325,137 @@ class _MetaItem extends StatelessWidget {
         const SizedBox(width: 4),
         Text(label, style: AppTheme.lightTheme.textTheme.bodySmall),
       ],
+    );
+  }
+}
+
+// Coordinated Action Buttons - Only one can be expanded at a time
+class _CoordinatedActionButtons extends StatefulWidget {
+  final Mission mission;
+
+  const _CoordinatedActionButtons({required this.mission});
+
+  @override
+  State<_CoordinatedActionButtons> createState() =>
+      _CoordinatedActionButtonsState();
+}
+
+class _CoordinatedActionButtonsState extends State<_CoordinatedActionButtons> {
+  String? _expandedButton; // 'checkin' or 'cancel'
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final totalWidth = constraints.maxWidth;
+        const gap = 8.0;
+        final expandedWidth = totalWidth * 0.70; // Optimized for label space
+        final collapsedWidth = totalWidth - expandedWidth - gap;
+        final equalWidth = (totalWidth - gap) / 2;
+
+        final bool isCheckInExpanded = _expandedButton == 'checkin';
+        final bool isCancelExpanded = _expandedButton == 'cancel';
+
+        // Synchronized targets for both buttons
+        double checkInWidth;
+        double cancelWidth;
+
+        if (_expandedButton == null) {
+          checkInWidth = equalWidth;
+          cancelWidth = equalWidth;
+        } else if (isCheckInExpanded) {
+          checkInWidth = expandedWidth;
+          cancelWidth = collapsedWidth;
+        } else {
+          checkInWidth = collapsedWidth;
+          cancelWidth = expandedWidth;
+        }
+
+        return Row(
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            // Check In Button (Explicit Animated Width)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              width: checkInWidth,
+              height: 56, // Constant height prevents vertical jump
+              child: EcoPulseButton(
+                width: double.infinity, // Fill the animated container
+                label: isCheckInExpanded ? 'Check In' : '',
+                icon: Icons.qr_code_scanner,
+                isPrimary: true,
+                onPressed: () {
+                  if (isCheckInExpanded) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CheckInScreen(
+                          missionId: widget.mission.id,
+                          missionTitle: widget.mission.title,
+                          missionGps: widget.mission.locationGps ?? '',
+                        ),
+                      ),
+                    );
+                    setState(() => _expandedButton = null);
+                  } else {
+                    setState(() => _expandedButton = 'checkin');
+                  }
+                },
+              ),
+            ),
+            const SizedBox(width: gap),
+            // Cancel Button (Explicit Animated Width)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              width: cancelWidth,
+              height: 56,
+              child: Consumer<MissionProvider>(
+                builder: (context, provider, _) {
+                  return EcoPulseButton(
+                    width: double.infinity, // Fill the animated container
+                    label: isCancelExpanded ? 'Cancel' : '',
+                    icon: Icons.close,
+                    backgroundColor: EcoColors.terracotta,
+                    foregroundColor: Colors.white,
+                    isLoading: provider.isLoading,
+                    isPrimary: false,
+                    onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      if (isCancelExpanded) {
+                        try {
+                          await provider.toggleRegistration(
+                            widget.mission.id,
+                            true,
+                          );
+                          if (mounted) {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text('Registration cancelled'),
+                              ),
+                            );
+                            setState(() => _expandedButton = null);
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            messenger.showSnackBar(
+                              SnackBar(content: Text('Error: $e')),
+                            );
+                            setState(() => _expandedButton = null);
+                          }
+                        }
+                      } else {
+                        setState(() => _expandedButton = 'cancel');
+                      }
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

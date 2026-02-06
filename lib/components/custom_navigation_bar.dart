@@ -40,7 +40,6 @@ class CustomNavigationBar extends StatelessWidget {
             final itemWidth = constraints.maxWidth / icons.length;
             return Stack(
               children: [
-                // Sliding Active Indicator
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeOutCubic,
@@ -55,7 +54,6 @@ class CustomNavigationBar extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Icons and Text
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: List.generate(icons.length, (index) {

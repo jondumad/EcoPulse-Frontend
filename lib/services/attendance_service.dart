@@ -1,25 +1,28 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'auth_service.dart';
 
 class AttendanceService {
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final AuthService _authService = AuthService();
 
   String get baseUrl => AuthService.baseUrl;
 
-  Future<Map<String, dynamic>> validateLocation(int missionId, String userGps) async {
-    final token = await _storage.read(key: 'jwt_token');
+  Future<Map<String, dynamic>> validateLocation(
+    int missionId,
+    String userGps,
+  ) async {
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.post(
       Uri.parse('$baseUrl/attendance/validate-location'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({
-        'missionId': missionId,
-        'userGps': userGps,
-      }),
+      body: jsonEncode({'missionId': missionId, 'userGps': userGps}),
     );
 
     if (response.statusCode == 200) {
@@ -30,7 +33,11 @@ class AttendanceService {
   }
 
   Future<Map<String, dynamic>> getQRCode(int missionId) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.get(
       Uri.parse('$baseUrl/attendance/missions/$missionId/qr-code'),
       headers: {
@@ -47,8 +54,16 @@ class AttendanceService {
     }
   }
 
-  Future<Map<String, dynamic>> checkIn(int missionId, String qrToken, String userGps) async {
-    final token = await _storage.read(key: 'jwt_token');
+  Future<Map<String, dynamic>> checkIn(
+    int missionId,
+    String qrToken,
+    String userGps,
+  ) async {
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.post(
       Uri.parse('$baseUrl/attendance/check-in'),
       headers: {
@@ -71,16 +86,18 @@ class AttendanceService {
   }
 
   Future<Map<String, dynamic>> checkOut(int missionId) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.post(
       Uri.parse('$baseUrl/attendance/check-out'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({
-        'missionId': missionId,
-      }),
+      body: jsonEncode({'missionId': missionId}),
     );
 
     if (response.statusCode == 200) {
@@ -92,7 +109,11 @@ class AttendanceService {
   }
 
   Future<Map<String, dynamic>?> getCurrentAttendance() async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.get(
       Uri.parse('$baseUrl/attendance/current'),
       headers: {
@@ -110,7 +131,11 @@ class AttendanceService {
   }
 
   Future<List<dynamic>> getPendingVerifications() async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.get(
       Uri.parse('$baseUrl/attendance/pending'),
       headers: {
@@ -127,16 +152,18 @@ class AttendanceService {
   }
 
   Future<bool> verifyAttendance(int attendanceId, String status) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.put(
       Uri.parse('$baseUrl/attendance/$attendanceId/verify'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({
-        'status': status,
-      }),
+      body: jsonEncode({'status': status}),
     );
 
     return response.statusCode == 200;

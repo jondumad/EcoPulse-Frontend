@@ -26,7 +26,7 @@ class HeroCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Gradient Avatar
+          // Avatar
           Container(
             width: 84,
             height: 84,

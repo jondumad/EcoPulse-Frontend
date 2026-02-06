@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -6,7 +7,7 @@ import '../widgets/eco_pulse_widgets.dart';
 import '../components/mission_list.dart';
 import '../components/hero_card.dart';
 import './volunteer/mission_history_screen.dart';
-import './volunteer/badges_screen.dart';
+import 'volunteer/badges_modal.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -113,14 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   // Progress
                   GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BadgesScreen(),
-                        ),
-                      );
-                    },
+                    onTap: () => BadgesModal.show(context),
                     child: EcoPulseCard(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,15 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 style: EcoText.monoSM(context),
                               ),
                               GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const BadgesScreen(),
-                                    ),
-                                  );
-                                },
+                                onTap: () => BadgesModal.show(context),
                                 child: Row(
                                   children: [
                                     Text(
@@ -283,6 +269,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: EcoText.displayXL(
               context,
             ).copyWith(fontSize: 56, color: EcoColors.forest),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
           Text(
@@ -290,33 +278,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: EcoText.bodyMD(
               context,
             ).copyWith(color: EcoColors.ink.withValues(alpha: 0.6)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 24),
           const Divider(height: 1, color: Color.fromRGBO(0, 0, 0, 0.06)),
           const SizedBox(height: 16),
           SizedBox(
             height: 64,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: weeklyActivity.isEmpty
-                  ? [
-                      _buildDayBar(context, 'M', 0),
-                      _buildDayBar(context, 'T', 0),
-                      _buildDayBar(context, 'W', 0),
-                      _buildDayBar(context, 'T', 0),
-                      _buildDayBar(context, 'F', 0),
-                      _buildDayBar(context, 'S', 0),
-                      _buildDayBar(context, 'S', 0),
-                    ]
-                  : weeklyActivity.map((dayData) {
-                      return _buildDayBar(
-                        context,
-                        dayData['day'],
-                        (dayData['value'] as num).toDouble(),
-                        isToday: dayData['isToday'] ?? false,
-                        isActive: (dayData['value'] as num) > 0,
-                      );
-                    }).toList(),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final maxActivity = weeklyActivity.isEmpty
+                    ? 1.0
+                    : weeklyActivity
+                          .map(
+                            (dayData) => (dayData['value'] as num).toDouble(),
+                          )
+                          .fold(0.0, (prev, curr) => math.max(prev, curr));
+
+                final scaleFactor = maxActivity > 0 ? maxActivity : 100.0;
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: weeklyActivity.isEmpty
+                      ? [
+                          _buildDayBar(context, 'M', 0, 100),
+                          _buildDayBar(context, 'T', 0, 100),
+                          _buildDayBar(context, 'W', 0, 100),
+                          _buildDayBar(context, 'T', 0, 100),
+                          _buildDayBar(context, 'F', 0, 100),
+                          _buildDayBar(context, 'S', 0, 100),
+                          _buildDayBar(context, 'S', 0, 100),
+                        ]
+                      : weeklyActivity.map((dayData) {
+                          return _buildDayBar(
+                            context,
+                            dayData['day'],
+                            (dayData['value'] as num).toDouble(),
+                            scaleFactor,
+                            isToday: dayData['isToday'] ?? false,
+                            isActive: (dayData['value'] as num) > 0,
+                          );
+                        }).toList(),
+                );
+              },
             ),
           ),
         ],
@@ -327,7 +332,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildDayBar(
     BuildContext context,
     String day,
-    double value, {
+    double value,
+    double maxValue, {
     bool isActive = false,
     bool isToday = false,
   }) {
@@ -338,7 +344,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Container(
-              height: (value / 100) * 40, // Scale factor
+              height: math.max(
+                4.0,
+                (value / maxValue) * 40,
+              ), // Scale factor with min height
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(4),

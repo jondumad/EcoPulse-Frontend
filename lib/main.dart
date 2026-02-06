@@ -6,6 +6,7 @@ import 'providers/mission_provider.dart';
 import 'providers/attendance_provider.dart';
 import 'providers/location_provider.dart';
 import 'providers/nav_provider.dart';
+import 'providers/badge_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/main_shell.dart';
@@ -22,10 +23,15 @@ class EcoPulseApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => MissionProvider()),
-        ChangeNotifierProvider(create: (_) => AttendanceProvider()),
         ChangeNotifierProvider(create: (_) => LocationProvider()),
+        ChangeNotifierProxyProvider<LocationProvider, MissionProvider>(
+          create: (_) => MissionProvider(),
+          update: (_, location, mission) =>
+              mission!..updateUserLocation(location.currentPosition),
+        ),
+        ChangeNotifierProvider(create: (_) => AttendanceProvider()),
         ChangeNotifierProvider(create: (_) => NavProvider()),
+        ChangeNotifierProvider(create: (_) => BadgeProvider()),
       ],
       child: const EcoPulseAppView(),
     );
@@ -57,7 +63,6 @@ class _EcoPulseAppViewState extends State<EcoPulseAppView> {
       title: 'EcoPulse',
       theme: AppTheme.lightTheme,
       themeMode: ThemeMode.light,
-      // Define central named routes
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import '../models/mission_model.dart';
 import '../services/mission_service.dart';
 
@@ -9,23 +10,59 @@ class MissionProvider with ChangeNotifier {
   List<Category> _categories = [];
   bool _isLoading = false;
   String? _error;
+  LatLng? _userLocation;
 
   List<Mission> get missions => _missions;
   List<Category> get categories => _categories;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  LatLng? get userLocation => _userLocation;
+
+  void updateUserLocation(LatLng? location) {
+    if (_userLocation != location) {
+      _userLocation = location;
+      notifyListeners();
+    }
+  }
 
   // Filter & Sort State
   String _searchQuery = '';
   String _sortOption = 'Date'; // 'Date', 'Fill Rate', 'Status'
-  final Set<String> _activeFilters = {'Open', 'InProgress', 'Emergency'};
+  final Set<String> _activeFilters = {'All'};
   // Default to showing relevant stuff
 
   DateTime? _lastFetchTime;
+  bool _lastFetchMine = false;
   static const Duration _cacheDuration = Duration(minutes: 5);
 
+  List<Mission>? _upcomingMissionsCache;
+  List<Mission>? _recommendedMissionsCache;
+
+  List<Mission> get upcomingMissions {
+    if (_upcomingMissionsCache != null) return _upcomingMissionsCache!;
+    _upcomingMissionsCache =
+        _missions.where((m) => m.isRegistered && m.status == 'Open').toList()
+          ..sort((a, b) => a.startTime.compareTo(b.startTime));
+    return _upcomingMissionsCache!;
+  }
+
+  List<Mission> get recommendedMissions {
+    if (_recommendedMissionsCache != null) return _recommendedMissionsCache!;
+    _recommendedMissionsCache = _missions
+        .where((m) => m.status == 'Open' && !m.isRegistered)
+        .take(10)
+        .toList();
+    return _recommendedMissionsCache!;
+  }
+
+  void _clearCaches() {
+    _upcomingMissionsCache = null;
+    _recommendedMissionsCache = null;
+  }
+
   List<Mission> get filteredMissions {
-    return _missions.where((m) {
+    // ... existing filtering logic (keeping it for the Mission Hub)
+    final filtered = _missions.where((m) {
       // 1. Search Filter
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
@@ -35,9 +72,7 @@ class MissionProvider with ChangeNotifier {
       }
 
       // 2. Status/Type Filter
-      // If we have "Emergency" in filters, we show if it IS emergency OR if its status matches other filters
-      // This logic depends on desired behavior.
-      // User asked: "Show only: Emergency | Active | Completed"
+      if (_activeFilters.contains('All') || _activeFilters.isEmpty) return true;
 
       bool matchesStatus = false;
       if (_activeFilters.contains('Emergency') && m.isEmergency) {
@@ -51,13 +86,13 @@ class MissionProvider with ChangeNotifier {
       } else if (_activeFilters.contains('Cancelled') &&
           m.status == 'Cancelled') {
         matchesStatus = true;
-      } else if (_activeFilters.isEmpty) {
-        return true; // Show all if no filters? Or show none? Usually all.
       }
 
       return matchesStatus;
-    }).toList()..sort((a, b) {
-      // 3. Sorting
+    }).toList();
+
+    // 3. Sorting
+    filtered.sort((a, b) {
       switch (_sortOption) {
         case 'Volunteer fill rate':
           final aRate = (a.maxVolunteers != null && a.maxVolunteers! > 0)
@@ -69,8 +104,28 @@ class MissionProvider with ChangeNotifier {
           return bRate.compareTo(aRate); // Higher rate first
 
         case 'Distance':
-          // TODO: Implement actual distance sort when LocationProvider is ready
-          return 0;
+          if (_userLocation == null) return 0;
+
+          double getDistance(Mission m) {
+            if (m.locationGps == null || m.locationGps!.isEmpty) {
+              return double.infinity;
+            }
+            try {
+              final parts = m.locationGps!.split(',');
+              if (parts.length != 2) return double.infinity;
+              final lat = double.parse(parts[0].trim());
+              final lng = double.parse(parts[1].trim());
+              return const Distance().as(
+                LengthUnit.Meter,
+                _userLocation!,
+                LatLng(lat, lng),
+              );
+            } catch (_) {
+              return double.infinity;
+            }
+          }
+
+          return getDistance(a).compareTo(getDistance(b));
 
         case 'Status':
           // Custom order: Emergency -> Open -> InProgress -> Completed -> Cancelled
@@ -91,6 +146,8 @@ class MissionProvider with ChangeNotifier {
           return a.startTime.compareTo(b.startTime);
       }
     });
+
+    return filtered;
   }
 
   void setSearchQuery(String query) {
@@ -104,20 +161,44 @@ class MissionProvider with ChangeNotifier {
   }
 
   void toggleFilter(String filter) {
-    if (_activeFilters.contains(filter)) {
-      _activeFilters.remove(filter);
+    if (filter == 'All') {
+      _activeFilters.clear();
+      _activeFilters.add('All');
     } else {
-      _activeFilters.add(filter);
+      _activeFilters.remove('All');
+      if (_activeFilters.contains(filter)) {
+        _activeFilters.remove(filter);
+      } else {
+        _activeFilters.add(filter);
+      }
+
+      if (_activeFilters.isEmpty) {
+        _activeFilters.add('All');
+      }
     }
     notifyListeners();
   }
 
-  bool isFilterActive(String filter) => _activeFilters.contains(filter);
+  void clearFilters() {
+    _searchQuery = '';
+    _activeFilters.clear();
+    _activeFilters.add('All');
+    notifyListeners();
+  }
+
+  bool isFilterActive(String filter) {
+    if (filter == 'All') {
+      return _activeFilters.contains('All') || _activeFilters.isEmpty;
+    }
+    return _activeFilters.contains(filter);
+  }
+
   String get currentSort => _sortOption;
 
   Future<void> fetchMissions({
     String? category,
     String? search,
+    bool mine = false,
     bool forceRefresh = false,
   }) async {
     // Cache check
@@ -126,7 +207,8 @@ class MissionProvider with ChangeNotifier {
         DateTime.now().difference(_lastFetchTime!) < _cacheDuration &&
         _missions.isNotEmpty &&
         category == null &&
-        search == null) {
+        search == null &&
+        _lastFetchMine == mine) {
       return; // Return cached data
     }
 
@@ -138,8 +220,11 @@ class MissionProvider with ChangeNotifier {
       _missions = await _missionService.getMissions(
         category: category,
         search: search,
+        mine: mine,
       );
+      _clearCaches();
       _lastFetchTime = DateTime.now();
+      _lastFetchMine = mine;
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -223,6 +308,7 @@ class MissionProvider with ChangeNotifier {
 
     try {
       await _missionService.updateMission(missionId, updateData);
+      _clearCaches();
       await fetchMissions(forceRefresh: true); // Refresh the list
     } catch (e) {
       _error = e.toString();

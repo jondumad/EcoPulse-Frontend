@@ -114,8 +114,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           }
         }
       } catch (e) {
-        if (mounted)
+        if (mounted) {
           setState(() => _errorMessage = 'An unexpected error occurred.');
+        }
       }
     }
   }

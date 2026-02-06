@@ -9,7 +9,7 @@ import '../models/mission_model.dart';
 import '../widgets/eco_pulse_widgets.dart';
 import '../components/mission_card.dart';
 import 'volunteer/mission_detail_screen.dart';
-import 'level_details_screen.dart';
+import 'volunteer/badges_modal.dart';
 
 class VolunteerHomeScreen extends StatelessWidget {
   const VolunteerHomeScreen({super.key});
@@ -41,6 +41,7 @@ class VolunteerHomeScreen extends StatelessWidget {
               _buildUpcomingMission(context),
               const SizedBox(height: 32),
               _buildRecommendedMissions(context),
+              const SizedBox(height: 120), // Support floating nav bar
             ],
           ),
         ),
@@ -49,242 +50,288 @@ class VolunteerHomeScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-    final user = authProvider.user;
+    return Selector<
+      AuthProvider,
+      ({String name, int totalPoints, bool hasUser})
+    >(
+      selector: (context, provider) => (
+        name: provider.user?.name ?? '',
+        totalPoints: provider.user?.totalPoints ?? 0,
+        hasUser: provider.user != null,
+      ),
+      builder: (context, data, child) {
+        if (!data.hasUser) return const SizedBox.shrink();
 
-    if (user == null) return const SizedBox.shrink();
+        final firstName = data.name.split(' ').first;
+        final now = DateTime.now();
+        String greeting = "Good Morning";
+        if (now.hour >= 12 && now.hour < 17) {
+          greeting = "Good Afternoon";
+        } else if (now.hour >= 17) {
+          greeting = "Good Evening";
+        }
 
-    final firstName = user.name.split(' ').first;
-    final now = DateTime.now();
-    String greeting = "Good Morning";
-    if (now.hour >= 12 && now.hour < 17) {
-      greeting = "Good Afternoon";
-    } else if (now.hour >= 17) {
-      greeting = "Good Evening";
-    }
+        final totalPoints = data.totalPoints;
+        final currentLevel = (totalPoints / 500).floor() + 1;
+        final pointsInCurrentLevel = totalPoints % 500;
+        final progressToNextLevel = pointsInCurrentLevel / 500;
 
-    final totalPoints = user.totalPoints;
-    final currentLevel = (totalPoints / 500).floor() + 1;
-    final pointsInCurrentLevel = totalPoints % 500;
-    final progressToNextLevel = pointsInCurrentLevel / 500;
-
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$greeting,',
-                style: AppTheme.lightTheme.textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.ink.withValues(alpha: 0.6),
-                ),
-              ),
-              Text(
-                firstName,
-                style: AppTheme.lightTheme.textTheme.displayLarge?.copyWith(
-                  fontSize: 28,
-                ),
-              ),
-            ],
-          ),
-        ),
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const LevelDetailsScreen(),
-              ),
-            );
-          },
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              SizedBox(
-                width: 60,
-                height: 60,
-                child: CircularProgressIndicator(
-                  value: progressToNextLevel,
-                  backgroundColor: AppTheme.clay,
-                  color: AppTheme.violet,
-                  strokeWidth: 4,
-                ),
-              ),
-              Container(
-                width: 48,
-                height: 48,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                ),
-                child: Center(
-                  child: Text(
-                    'Lvl\n$currentLevel',
-                    textAlign: TextAlign.center,
-                    style: AppTheme.lightTheme.textTheme.labelSmall?.copyWith(
-                      fontSize: 10,
-                      height: 1.1,
-                      color: AppTheme.violet,
+        return Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$greeting,',
+                    style: AppTheme.lightTheme.textTheme.bodyLarge?.copyWith(
+                      color: AppTheme.ink.withValues(alpha: 0.6),
                     ),
                   ),
-                ),
+                  Text(
+                    firstName,
+                    style: AppTheme.lightTheme.textTheme.displayLarge?.copyWith(
+                      fontSize: 28,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ],
+            ),
+            GestureDetector(
+              onTap: () => BadgesModal.show(context),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 60,
+                    height: 60,
+                    child: CircularProgressIndicator(
+                      value: progressToNextLevel,
+                      backgroundColor: AppTheme.clay,
+                      color: AppTheme.violet,
+                      strokeWidth: 4,
+                    ),
+                  ),
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Lvl\n$currentLevel',
+                        textAlign: TextAlign.center,
+                        style: AppTheme.lightTheme.textTheme.labelSmall
+                            ?.copyWith(
+                              fontSize: 10,
+                              height: 1.1,
+                              color: AppTheme.violet,
+                            ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildStatCards(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-    final stats = authProvider.userStats;
-    final user = authProvider.user;
+    return Selector<
+      AuthProvider,
+      ({Map<String, dynamic>? stats, int totalPoints})
+    >(
+      selector: (context, provider) => (
+        stats: provider.userStats,
+        totalPoints: provider.user?.totalPoints ?? 0,
+      ),
+      builder: (context, data, child) {
+        final hours = 24;
+        final completed = data.stats?['actionsCompleted'] ?? 12;
+        final impact = (data.totalPoints * 1.5).toInt();
 
-    // Real values or mock as requested
-    final hours = 24; // Mock until backend ready
-    final completed = stats?['actionsCompleted'] ?? 12; // Real or Mock
-    final impact =
-        (user?.totalPoints ?? 0) * 1.5.round(); // Formula based impact
-
-    return Row(
-      children: [
-        Expanded(
-          child: _StatCard(
-            label: "Hours",
-            value: "$hours",
-            semanticLabel: "$hours hours volunteered",
+        return EcoPulseCard(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Expanded(
+                child: EcoStatItem(
+                  label: "Hours",
+                  value: "$hours",
+                  color: AppTheme.forest,
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: AppTheme.borderSubtle.withValues(alpha: 0.5),
+              ),
+              Expanded(
+                child: EcoStatItem(
+                  label: "Missions",
+                  value: "$completed",
+                  color: AppTheme.violet,
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: AppTheme.borderSubtle.withValues(alpha: 0.5),
+              ),
+              Expanded(
+                child: EcoStatItem(
+                  label: "Impact",
+                  value: "$impact",
+                  color: AppTheme.forest,
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatCard(
-            label: "Missions",
-            value: "$completed",
-            semanticLabel: "$completed missions completed",
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatCard(
-            label: "Impact",
-            value: "${impact.toInt()}",
-            semanticLabel: "Impact score ${impact.toInt()}",
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 
   Widget _buildUpcomingMission(BuildContext context) {
-    final missionProvider = context.watch<MissionProvider>();
-    final upcomingMissions =
-        missionProvider.missions
-            .where((m) => m.isRegistered && m.status == 'Open')
-            .toList()
-          ..sort((a, b) => a.startTime.compareTo(b.startTime));
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "UPCOMING MISSION",
-          style: AppTheme.lightTheme.textTheme.labelLarge,
-        ),
+        const EcoSectionHeader(title: "UPCOMING MISSION"),
         const SizedBox(height: 12),
-        if (upcomingMissions.isNotEmpty)
-          MissionCard(mission: upcomingMissions.first)
-        else
-          EcoPulseCard(
-            onTap: () {
-              context.read<NavProvider>().setIndex(0); // Mission Hub
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Center(
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.event_note_outlined,
-                      size: 48,
-                      color: AppTheme.ink.withValues(alpha: 0.2),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      "No upcoming missions",
-                      style: AppTheme.lightTheme.textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.ink.withValues(alpha: 0.6),
+        Selector<MissionProvider, ({bool isLoading, List<Mission> missions})>(
+          selector: (context, provider) => (
+            isLoading: provider.isLoading,
+            missions: provider.upcomingMissions,
+          ),
+          builder: (context, data, child) {
+            if (data.isLoading && data.missions.isEmpty) {
+              return const EcoPulseSkeleton(height: 160, radius: 20);
+            }
+
+            if (data.missions.isNotEmpty) {
+              return MissionCard(mission: data.missions.first);
+            }
+
+            return EcoPulseCard(
+              onTap: () {
+                context.read<NavProvider>().setIndex(0); // Mission Hub
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.event_note_outlined,
+                        size: 48,
+                        color: AppTheme.ink.withValues(alpha: 0.2),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      "Find Your First Mission",
-                      style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                        color: AppTheme.forest,
-                        decoration: TextDecoration.underline,
+                      const SizedBox(height: 12),
+                      Text(
+                        "No upcoming missions",
+                        style: AppTheme.lightTheme.textTheme.bodyLarge
+                            ?.copyWith(
+                              color: AppTheme.ink.withValues(alpha: 0.6),
+                            ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        "Find Your First Mission",
+                        style: AppTheme.lightTheme.textTheme.labelLarge
+                            ?.copyWith(
+                              color: AppTheme.forest,
+                              decoration: TextDecoration.underline,
+                            ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
+        ),
       ],
     );
   }
 
   Widget _buildRecommendedMissions(BuildContext context) {
-    final missionProvider = context.watch<MissionProvider>();
-    final openMissions = missionProvider.missions
-        .where((m) => m.status == 'Open' && !m.isRegistered)
-        .take(10)
-        .toList();
-
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              "RECOMMENDED FOR YOU",
-              style: AppTheme.lightTheme.textTheme.labelLarge,
-            ),
-            TextButton(
-              onPressed: () {
-                context.read<NavProvider>().setIndex(0);
-              },
-              child: Text(
-                "See All",
-                style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                  color: AppTheme.forest,
-                ),
+        EcoSectionHeader(
+          title: "RECOMMENDED FOR YOU",
+          trailing: TextButton(
+            onPressed: () {
+              context.read<NavProvider>().setIndex(0);
+            },
+            child: Text(
+              "See All",
+              style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                color: AppTheme.forest,
               ),
             ),
-          ],
+          ),
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 200,
-          child: openMissions.isEmpty
-              ? Center(
-                  child: Text(
-                    "No missions available nearby",
-                    style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.ink.withValues(alpha: 0.4),
-                    ),
-                  ),
-                )
-              : ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: openMissions.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index == openMissions.length) {
-                      return _buildSeeAllCard(context);
-                    }
-                    return _CompactMissionCard(mission: openMissions[index]);
-                  },
+          height: 220,
+          child:
+              Selector<
+                MissionProvider,
+                ({bool isLoading, List<Mission> missions})
+              >(
+                selector: (context, provider) => (
+                  isLoading: provider.isLoading,
+                  missions: provider.recommendedMissions,
                 ),
+                builder: (context, data, child) {
+                  if (data.isLoading && data.missions.isEmpty) {
+                    return ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: 3,
+                      itemBuilder: (context, index) => const Padding(
+                        padding: EdgeInsets.only(right: 16),
+                        child: EcoPulseSkeleton(
+                          width: 180,
+                          height: 220,
+                          radius: 20,
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (data.missions.isEmpty) {
+                    return Center(
+                      child: Text(
+                        "No missions available nearby",
+                        style: AppTheme.lightTheme.textTheme.bodyMedium
+                            ?.copyWith(
+                              color: AppTheme.ink.withValues(alpha: 0.4),
+                            ),
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.only(
+                      bottom: 16,
+                    ), // Room for shadow
+                    itemCount: data.missions.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == data.missions.length) {
+                        return _buildSeeAllCard(context);
+                      }
+                      return _CompactMissionCard(mission: data.missions[index]);
+                    },
+                  );
+                },
+              ),
         ),
       ],
     );
@@ -321,49 +368,6 @@ class VolunteerHomeScreen extends StatelessWidget {
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final String semanticLabel;
-
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.semanticLabel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: semanticLabel,
-      child: EcoPulseCard(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label.toUpperCase(),
-                style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                  fontSize: 8,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: AppTheme.lightTheme.textTheme.displayMedium?.copyWith(
-                  fontSize: 20,
-                  color: AppTheme.forest,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _CompactMissionCard extends StatelessWidget {
   final Mission mission;
 
@@ -375,6 +379,7 @@ class _CompactMissionCard extends StatelessWidget {
       width: 180,
       margin: const EdgeInsets.only(right: 16),
       child: EcoPulseCard(
+        padding: EdgeInsets.zero,
         onTap: () {
           Navigator.push(
             context,
@@ -407,26 +412,29 @@ class _CompactMissionCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     mission.title,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppTheme.ink,
+                      fontSize: 13,
+                      height: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
                     mission.locationName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                       fontSize: 10,
+                      color: AppTheme.ink.withValues(alpha: 0.5),
                     ),
                   ),
                 ],

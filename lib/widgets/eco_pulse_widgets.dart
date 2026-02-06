@@ -108,6 +108,7 @@ class EcoPulseButton extends StatelessWidget {
 
   final Color? backgroundColor;
   final Color? foregroundColor;
+  final double? width;
 
   const EcoPulseButton({
     super.key,
@@ -119,6 +120,7 @@ class EcoPulseButton extends StatelessWidget {
     this.backgroundColor,
     this.foregroundColor,
     this.isSmall = false,
+    this.width,
   });
 
   @override
@@ -136,6 +138,7 @@ class EcoPulseButton extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
+        width: width,
         decoration: BoxDecoration(
           color:
               backgroundColor ??
@@ -181,51 +184,59 @@ class EcoPulseButton extends StatelessWidget {
                           color: Colors.white,
                           strokeWidth: 2,
                         ),
-                      ): Row(
-                        key: ValueKey('content_$label'),
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (icon != null)
-                            Icon(
-                              icon,
-                              size: 20,
-                              color:
-                                  foregroundColor ??
-                                  (isPrimary ? Colors.white : EcoColors.ink),
-                            ),
-                          // Internal animation for the label expansion
-                          ClipRect(
-                            child: AnimatedSize(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeOutCubic,
-                              alignment: Alignment.centerLeft,
-                              child: label.isNotEmpty
-                                  ? Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          label,
-                                          style: TextStyle(
-                                            fontFamily: 'Inter',
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: isPrimary
-                                                ? (isSmall ? 14 : 16)
-                                                : (isSmall ? 12 : 14),
-                                            color:
-                                                foregroundColor ??
-                                                (isPrimary
-                                                    ? Colors.white
-                                                    : EcoColors.ink),
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
+                      )
+                    : ClipRect(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            key: ValueKey('content_$label'),
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (icon != null)
+                                Icon(
+                                  icon,
+                                  size: 20,
+                                  color:
+                                      foregroundColor ??
+                                      (isPrimary
+                                          ? Colors.white
+                                          : EcoColors.ink),
+                                ),
+                              // Internal animation for the label expansion
+                              ClipRect(
+                                child: AnimatedSize(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeOutCubic,
+                                  alignment: Alignment.centerLeft,
+                                  child: label.isNotEmpty
+                                      ? Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              label,
+                                              style: TextStyle(
+                                                fontFamily: 'Inter',
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: isPrimary
+                                                    ? (isSmall ? 14 : 16)
+                                                    : (isSmall ? 12 : 14),
+                                                color:
+                                                    foregroundColor ??
+                                                    (isPrimary
+                                                        ? Colors.white
+                                                        : EcoColors.ink),
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
               ),
             ),
@@ -362,35 +373,44 @@ class EcoPulseCard extends StatelessWidget {
 class EcoPulseTag extends StatelessWidget {
   final String label;
   final bool isRotated;
+  final Color? color;
 
-  const EcoPulseTag({super.key, required this.label, this.isRotated = true});
+  const EcoPulseTag({
+    super.key,
+    required this.label,
+    this.isRotated = false, // Default to flat for better map alignment
+    this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: isRotated ? 0.035 : 0, // ~2 degrees
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        decoration: BoxDecoration(
-          color: EcoColors.terracotta,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              offset: const Offset(2, 2),
-              blurRadius: 5,
-            ),
-          ],
+    final bgColor = color ?? EcoColors.forest;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(30), // Pill shape for softness
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.9),
+          width: 1.5,
         ),
-        child: Text(
-          label.toUpperCase(),
-          style: const TextStyle(
-            fontFamily: 'JetBrains Mono',
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1,
-            height: 1.2,
-            color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            offset: const Offset(0, 4),
+            blurRadius: 12,
           ),
+        ],
+      ),
+      child: Text(
+        label.toUpperCase(),
+        style: GoogleFonts.inter(
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.8,
+          height: 1.1,
+          color: Colors.white,
         ),
       ),
     );
@@ -426,6 +446,76 @@ class EcoPulseStamp extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class EcoSectionHeader extends StatelessWidget {
+  final String title;
+  final Widget? trailing;
+
+  const EcoSectionHeader({super.key, required this.title, this.trailing});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title.toUpperCase(),
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
+              color: EcoColors.ink.withValues(alpha: 0.4),
+            ),
+          ),
+          if (trailing != null) trailing!,
+        ],
+      ),
+    );
+  }
+}
+
+class EcoStatItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const EcoStatItem({
+    super.key,
+    required this.label,
+    required this.value,
+    this.color = EcoColors.forest,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.fraunces(
+            fontSize: 32,
+            fontWeight: FontWeight.w900,
+            color: color,
+            height: 1,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label.toUpperCase(),
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
+            color: EcoColors.ink.withValues(alpha: 0.5),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -505,6 +595,73 @@ class EcoTextField extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class EcoPulseSkeleton extends StatefulWidget {
+  final double? width;
+  final double? height;
+  final double radius;
+
+  const EcoPulseSkeleton({
+    super.key,
+    this.width,
+    this.height,
+    this.radius = 12,
+  });
+
+  @override
+  State<EcoPulseSkeleton> createState() => _EcoPulseSkeletonState();
+}
+
+class _EcoPulseSkeletonState extends State<EcoPulseSkeleton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+
+    _animation = Tween<double>(begin: -2, end: 2).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(widget.radius),
+            gradient: LinearGradient(
+              begin: Alignment(_animation.value - 1, -1),
+              end: Alignment(_animation.value + 1, 1),
+              colors: [
+                EcoColors.clay,
+                EcoColors.clay.withValues(alpha: 0.5),
+                EcoColors.clay,
+              ],
+              stops: const [0.0, 0.5, 1.0],
+            ),
+          ),
+        );
+      },
     );
   }
 }

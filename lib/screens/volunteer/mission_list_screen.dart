@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../providers/mission_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../components/mission_card.dart';
+import '../../widgets/mission_filter_widgets.dart';
+import '../../widgets/eco_pulse_widgets.dart'; // For EcoColors if needed, though used via AppTheme mostly
 
 class MissionListScreen extends StatefulWidget {
   const MissionListScreen({super.key});
@@ -50,12 +52,62 @@ class _MissionListScreenState extends State<MissionListScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Search Bar
-              _buildSearchBar(),
+              MissionSearchBar(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {});
+                  _onFilterChanged();
+                },
+                onClear: () {
+                  _searchController.clear();
+                  setState(() {});
+                  _onFilterChanged();
+                },
+              ),
 
               const SizedBox(height: 16),
 
               // Category Filter Chips
-              _buildCategoryFilters(),
+              const EcoSectionHeader(title: 'FILTER BY CATEGORY'),
+              const SizedBox(height: 12),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Consumer<MissionProvider>(
+                  builder: (context, provider, _) {
+                    return Row(
+                      children: [
+                        EcoFilterChip(
+                          label: 'All',
+                          isSelected: _selectedCategory == null,
+                          onTap: () {
+                            setState(() {
+                              _selectedCategory = null;
+                            });
+                            _onFilterChanged();
+                          },
+                          color: AppTheme.forest,
+                        ),
+                        ...provider.categories.map(
+                          (category) => EcoFilterChip(
+                            label: category.name,
+                            isSelected: _selectedCategory == category.name,
+                            onTap: () {
+                              setState(() {
+                                _selectedCategory =
+                                    _selectedCategory == category.name
+                                    ? null
+                                    : category.name;
+                              });
+                              _onFilterChanged();
+                            },
+                            color: AppTheme.forest,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
 
               const SizedBox(height: 32),
 
@@ -124,130 +176,8 @@ class _MissionListScreenState extends State<MissionListScreen> {
                   );
                 },
               ),
-
               const SizedBox(height: 100), // Bottom nav padding
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color.fromRGBO(0, 0, 0, 0.06)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.04),
-            offset: Offset(0, 2),
-            blurRadius: 8,
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: _searchController,
-        onChanged: (value) {
-          setState(() {});
-          _onFilterChanged();
-        },
-        decoration: InputDecoration(
-          hintText: 'Search missions...',
-          hintStyle: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-            color: AppTheme.ink.withValues(alpha: 0.4),
-          ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: AppTheme.ink.withValues(alpha: 0.4),
-          ),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: Icon(
-                    Icons.clear,
-                    color: AppTheme.ink.withValues(alpha: 0.4),
-                  ),
-                  onPressed: () {
-                    _searchController.clear();
-                    _onFilterChanged();
-                  },
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryFilters() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'FILTER BY CATEGORY',
-          style: AppTheme.lightTheme.textTheme.labelLarge,
-        ),
-        const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Consumer<MissionProvider>(
-            builder: (context, provider, _) {
-              return Row(
-                children: [
-                  _buildCategoryChip(null, 'All'),
-                  ...provider.categories.map(
-                    (category) =>
-                        _buildCategoryChip(category.name, category.name),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCategoryChip(String? category, String label) {
-    final isSelected = _selectedCategory == category;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedCategory = isSelected ? null : category;
-        });
-        _onFilterChanged();
-      },
-      child: Container(
-        margin: const EdgeInsets.only(right: 8.0),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.forest : Colors.white,
-          border: Border.all(
-            color: isSelected
-                ? AppTheme.forest
-                : const Color.fromRGBO(0, 0, 0, 0.1),
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppTheme.forest.withValues(alpha: 0.2),
-                    offset: const Offset(0, 2),
-                    blurRadius: 8,
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: AppTheme.lightTheme.textTheme.labelSmall?.copyWith(
-            color: isSelected ? Colors.white : AppTheme.ink,
-            fontWeight: FontWeight.w600,
           ),
         ),
       ),

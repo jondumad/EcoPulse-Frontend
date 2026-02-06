@@ -55,7 +55,10 @@ class LocationProvider with ChangeNotifier {
           accuracy: LocationAccuracy.high,
         ),
       );
-      _currentPosition = LatLng(position.latitude, position.longitude);
+      _currentPosition = LatLng(
+        (position.latitude as num).toDouble(),
+        (position.longitude as num).toDouble(),
+      );
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -73,7 +76,10 @@ class LocationProvider with ChangeNotifier {
             distanceFilter: 10,
           ),
         ).listen((Position position) {
-          _currentPosition = LatLng(position.latitude, position.longitude);
+          _currentPosition = LatLng(
+            (position.latitude as num).toDouble(),
+            (position.longitude as num).toDouble(),
+          );
           notifyListeners();
         });
   }

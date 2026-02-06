@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'dart:ui'; // Needed for PointMode
+import 'dart:ui'; 
 import 'package:flutter/material.dart';
 
 class GrainOverlay extends StatelessWidget {
@@ -9,7 +9,7 @@ class GrainOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return IgnorePointer(
       child: Opacity(
-        opacity: 0.06, // Slight visibility
+        opacity: 0.06, 
         child: CustomPaint(painter: _GrainPainter(), size: Size.infinite),
       ),
     );
@@ -29,7 +29,7 @@ class _GrainPainter extends CustomPainter {
     final pointCount = (area * 0.005).toInt().clamp(
       0,
       10000,
-    ); // 0.5% coverage, capped
+    );
 
     final points = List.generate(pointCount, (index) {
       return Offset(

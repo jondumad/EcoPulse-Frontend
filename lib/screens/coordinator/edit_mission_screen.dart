@@ -181,8 +181,8 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
-                child: EcoButton(
-                  text: _isSaving ? 'SAVING...' : 'SAVE CHANGES',
+                child: EcoPulseButton(
+                  label: _isSaving ? 'SAVING...' : 'SAVE CHANGES',
                   onPressed: _isSaving ? null : _saveChanges,
                 ),
               ),

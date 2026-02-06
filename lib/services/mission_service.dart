@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart' hide Category;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'auth_service.dart';
 import '../models/mission_model.dart';
 
 class MissionService {
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final AuthService _authService = AuthService();
 
   String get baseUrl => AuthService.baseUrl;
 
@@ -15,7 +14,7 @@ class MissionService {
     String? search,
     bool? mine,
   }) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
 
     final queryParams = <String, String>{};
     if (category != null) queryParams['category'] = category;
@@ -43,7 +42,11 @@ class MissionService {
   }
 
   Future<Mission> getMissionById(int id) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.get(
       Uri.parse('$baseUrl/missions/$id'),
       headers: {
@@ -60,7 +63,11 @@ class MissionService {
   }
 
   Future<bool> registerForMission(int missionId) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.post(
       Uri.parse('$baseUrl/missions/$missionId/register'),
       headers: {
@@ -78,7 +85,11 @@ class MissionService {
   }
 
   Future<bool> cancelRegistration(int missionId) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.delete(
       Uri.parse('$baseUrl/missions/$missionId/register'),
       headers: {
@@ -96,7 +107,11 @@ class MissionService {
   }
 
   Future<Mission> createMission(Map<String, dynamic> missionData) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.post(
       Uri.parse('$baseUrl/missions'),
       headers: {
@@ -116,7 +131,11 @@ class MissionService {
   Future<List<Map<String, dynamic>>> getMissionRegistrations(
     int missionId,
   ) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.get(
       Uri.parse('$baseUrl/missions/$missionId/registrations'),
       headers: {
@@ -133,7 +152,11 @@ class MissionService {
   }
 
   Future<Mission> updateMissionStatus(int missionId, String status) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.put(
       Uri.parse('$baseUrl/missions/$missionId'),
       headers: {
@@ -152,7 +175,11 @@ class MissionService {
   }
 
   Future<void> manualCheckIn(int missionId, int userId) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.post(
       Uri.parse(
         '$baseUrl/attendance/missions/$missionId/participants/$userId/check-in',
@@ -170,7 +197,11 @@ class MissionService {
   }
 
   Future<void> manualComplete(int missionId, int userId) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.post(
       Uri.parse(
         '$baseUrl/attendance/missions/$missionId/participants/$userId/complete',
@@ -193,7 +224,11 @@ class MissionService {
     int missionId,
     Map<String, dynamic> updateData,
   ) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.put(
       Uri.parse('$baseUrl/missions/$missionId'),
       headers: {
@@ -212,7 +247,11 @@ class MissionService {
   }
 
   Future<List<Category>> getCategories() async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final url = '$baseUrl/missions/categories';
     debugPrint('Fetching categories from: $url');
 
@@ -226,10 +265,6 @@ class MissionService {
             },
           )
           .timeout(const Duration(seconds: 10));
-
-      debugPrint('Categories response status: ${response.statusCode}');
-      debugPrint('Categories response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((json) => Category.fromJson(json)).toList();
@@ -245,7 +280,11 @@ class MissionService {
   }
 
   Future<bool> batchAction(List<int> ids, String action) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.post(
       Uri.parse('$baseUrl/missions/batch-action'),
       headers: {
@@ -264,7 +303,11 @@ class MissionService {
   }
 
   Future<Mission> duplicateMission(int id) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.post(
       Uri.parse('$baseUrl/missions/$id/duplicate'),
       headers: {
@@ -282,7 +325,11 @@ class MissionService {
   }
 
   Future<Map<String, dynamic>> inviteToMission(int id) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.post(
       Uri.parse('$baseUrl/missions/$id/invite'),
       headers: {
@@ -300,7 +347,11 @@ class MissionService {
   }
 
   Future<bool> contactVolunteers(int id, String message) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _authService.getToken();
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
     final response = await http.post(
       Uri.parse('$baseUrl/missions/$id/contact-volunteers'),
       headers: {

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/coordinator_mission_card.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 import '../../models/mission_model.dart';
 import '../../providers/mission_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
-import '../../widgets/volunteer_bottom_sheet.dart';
+import '../../widgets/mission_filter_widgets.dart';
+import '../../widgets/volunteer_list_modal.dart';
 import 'qr_display.dart';
 import 'mission_management_screen.dart';
 
@@ -27,7 +30,10 @@ class _CoordinatorMissionListScreenState
     super.initState();
     Future.microtask(() {
       if (!mounted) return;
-      Provider.of<MissionProvider>(context, listen: false).fetchMissions();
+      Provider.of<MissionProvider>(
+        context,
+        listen: false,
+      ).fetchMissions(mine: true);
     });
   }
 
@@ -93,18 +99,35 @@ class _CoordinatorMissionListScreenState
       );
 
       if (message != null && message.isNotEmpty) {
-        try {
-          for (final id in ids) {
+        int successCount = 0;
+        int failCount = 0;
+
+        // Show loading indicator?
+        // For now just process.
+
+        for (final id in ids) {
+          try {
             await provider.contactVolunteers(id, message);
+            successCount++;
+          } catch (e) {
+            failCount++;
+            debugPrint('Failed to notify mission $id: $e');
           }
-          if (!mounted) return;
+        }
+
+        if (!mounted) return;
+
+        if (failCount == 0) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Notifications sent successfully')),
           );
-        } catch (e) {
-          if (!mounted) return;
+        } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to send notifications: $e')),
+            SnackBar(
+              content: Text(
+                'Sent $successCount notifications. Failed: $failCount',
+              ),
+            ),
           );
         }
         _clearSelection();
@@ -140,27 +163,42 @@ class _CoordinatorMissionListScreenState
         false;
 
     if (confirm) {
-      try {
-        if (action == 'Cancel') {
-          await provider.batchAction(ids, 'cancel');
-        } else if (action == 'Mark as Emergency') {
-          await provider.batchAction(ids, 'emergency');
-        } else if (action == 'Duplicate') {
-          for (final id in ids) {
+      if (action == 'Duplicate') {
+        int successCount = 0;
+        for (final id in ids) {
+          try {
             await provider.duplicateMission(id);
+            successCount++;
+          } catch (e) {
+            debugPrint('Failed to duplicate $id: $e');
           }
         }
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Successfully processed $action')),
+          SnackBar(content: Text('Duplicated $successCount missions')),
         );
         _clearSelection();
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      } else {
+        // Batch status updates usually supported by backend as single call
+        try {
+          if (action == 'Cancel') {
+            await provider.batchAction(ids, 'cancel');
+          } else if (action == 'Mark as Emergency') {
+            await provider.batchAction(ids, 'emergency');
+          }
+
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Successfully processed $action')),
+          );
+          _clearSelection();
+        } catch (e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        }
       }
     }
   }
@@ -190,8 +228,10 @@ class _CoordinatorMissionListScreenState
                   ),
                   Expanded(
                     child: RefreshIndicator(
-                      onRefresh: () =>
-                          provider.fetchMissions(forceRefresh: true),
+                      onRefresh: () => provider.fetchMissions(
+                        mine: true,
+                        forceRefresh: true,
+                      ),
                       child: CustomScrollView(
                         slivers: [
                           if (!_isSelectionMode)
@@ -217,60 +257,7 @@ class _CoordinatorMissionListScreenState
                               child: _buildEmptyState(provider),
                             )
                           else
-                            SliverPadding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              sliver: SliverList(
-                                delegate: SliverChildBuilderDelegate((
-                                  context,
-                                  index,
-                                ) {
-                                  final mission = missions[index];
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
-                                    child: _CoordinatorMissionCard(
-                                      mission: mission,
-                                      isSelected: _selectedMissions.contains(
-                                        mission.id,
-                                      ),
-                                      isSelectionMode: _isSelectionMode,
-                                      onTap: () {
-                                        if (_isSelectionMode) {
-                                          _toggleSelection(mission.id);
-                                        } else {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  MissionManagementScreen(
-                                                    mission: mission,
-                                                  ),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      onLongPress: () =>
-                                          _enterSelectionMode(mission.id),
-                                      onVolunteerTap: () {
-                                        showModalBottomSheet(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          backgroundColor: Colors.transparent,
-                                          builder: (ctx) =>
-                                              VolunteerBottomSheet(
-                                                missionId: mission.id,
-                                                missionTitle: mission.title,
-                                                maxVolunteers:
-                                                    mission.maxVolunteers,
-                                              ),
-                                        );
-                                      },
-                                    ),
-                                  );
-                                }, childCount: missions.length),
-                              ),
-                            ),
+                            ..._buildGroupedMissionSlivers(missions, provider),
                           const SliverToBoxAdapter(
                             child: SizedBox(height: 120),
                           ),
@@ -415,6 +402,138 @@ class _CoordinatorMissionListScreenState
     );
   }
 
+  List<Widget> _buildGroupedMissionSlivers(
+    List<Mission> missions,
+    MissionProvider provider,
+  ) {
+    final now = DateTime.now();
+    final upcomingMissions = missions
+        .where((m) => m.endTime.isAfter(now))
+        .toList();
+    final pastMissions = missions
+        .where((m) => m.endTime.isBefore(now))
+        .toList();
+
+    List<Widget> slivers = [];
+
+    // UPCOMING MISSIONS SECTION
+    if (upcomingMissions.isNotEmpty) {
+      slivers.add(_buildSectionHeader('UPCOMING MISSIONS', marginTop: 0));
+      slivers.add(_buildMissionSliver(upcomingMissions, provider));
+    }
+
+    // PAST MISSIONS SECTION
+    if (pastMissions.isNotEmpty) {
+      slivers.add(_buildSectionHeader('PAST MISSIONS', marginTop: 32));
+
+      // Only group by date if sorting by Date
+      if (provider.currentSort == 'Date') {
+        // Force sort past missions by endTime descending for chronological view
+        pastMissions.sort((a, b) => b.endTime.compareTo(a.endTime));
+
+        final Map<String, List<Mission>> groupedPastMissions = {};
+        for (var m in pastMissions) {
+          final dateStr = DateFormat('EEEE, MMM d, yyyy').format(m.endTime);
+          groupedPastMissions.putIfAbsent(dateStr, () => []).add(m);
+        }
+
+        final sortedDates = groupedPastMissions.keys.toList();
+        for (var date in sortedDates) {
+          slivers.add(_buildDateHeader(date));
+          slivers.add(
+            _buildMissionSliver(groupedPastMissions[date]!, provider),
+          );
+        }
+      } else {
+        // For other sort orders (Distance, Status, etc.), show flat list
+        // Note: provider.filteredMissions is already sorted by the selected criteria
+        // We just trust that order within the 'Past' subset.
+        slivers.add(_buildMissionSliver(pastMissions, provider));
+      }
+    }
+
+    return slivers;
+  }
+
+  Widget _buildSectionHeader(String title, {double marginTop = 24}) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16, marginTop, 16, 12),
+        child: EcoSectionHeader(title: title),
+      ),
+    );
+  }
+
+  Widget _buildDateHeader(String date) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.calendar_today_rounded,
+              size: 14,
+              color: AppTheme.forest,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              date.toUpperCase(),
+              style: AppTheme.lightTheme.textTheme.labelSmall?.copyWith(
+                color: AppTheme.forest,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Divider(color: AppTheme.forest, thickness: 0.5),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMissionSliver(List<Mission> missions, MissionProvider provider) {
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final mission = missions[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: CoordinatorMissionCard(
+              mission: mission,
+              isSelected: _selectedMissions.contains(mission.id),
+              isSelectionMode: _isSelectionMode,
+              onTap: () {
+                if (_isSelectionMode) {
+                  _toggleSelection(mission.id);
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          MissionManagementScreen(mission: mission),
+                    ),
+                  );
+                }
+              },
+              onLongPress: () => _enterSelectionMode(mission.id),
+              onVolunteerTap: () {
+                VolunteerListModal.show(
+                  context,
+                  missionId: mission.id,
+                  missionTitle: mission.title,
+                  maxVolunteers: mission.maxVolunteers,
+                );
+              },
+            ),
+          );
+        }, childCount: missions.length),
+      ),
+    );
+  }
+
   Widget _buildSearchAndFilter(MissionProvider provider) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -425,38 +544,22 @@ class _CoordinatorMissionListScreenState
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search missions...',
-                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
+                child: MissionSearchBar(
                   onChanged: provider.setSearchQuery,
+                  // Pass a dummy controller or handle clearer internally inside the widget if needed
+                  // For the provider version, we might just be setting state directly.
+                  // But MissionSearchBar supports controller if we passed one.
+                  // Since we didn't use a controller here before, we rely on onChanged.
+                  // To support 'clear', the widget handles suffix icon logic based on controller text.
+                  // If we want the suffix icon to clear the provider search, we might need a controller
+                  // or just rely on the user clearing the text manually.
+                  // For now, let's keep it simple and just use the onChanged.
                 ),
               ),
               const SizedBox(width: 12),
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.sort),
-                tooltip: 'Sort by',
+              MissionSortButton(
                 onSelected: provider.setSortOption,
-                itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'Date', child: Text('Date')),
-                  const PopupMenuItem(
-                    value: 'Volunteer fill rate',
-                    child: Text('Volunteer fill rate'),
-                  ),
-                  const PopupMenuItem(value: 'Status', child: Text('Status')),
-                  const PopupMenuItem(
-                    value: 'Distance',
-                    child: Text('Distance'),
-                  ),
-                ],
+                currentSort: provider.currentSort,
               ),
             ],
           ),
@@ -466,25 +569,31 @@ class _CoordinatorMissionListScreenState
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _FilterChip(
+                EcoFilterChip(
+                  label: 'All',
+                  isSelected: provider.isFilterActive('All'),
+                  onTap: () => provider.toggleFilter('All'),
+                  color: AppTheme.forest,
+                ),
+                EcoFilterChip(
                   label: 'Emergency',
                   isSelected: provider.isFilterActive('Emergency'),
                   onTap: () => provider.toggleFilter('Emergency'),
                   color: AppTheme.terracotta,
                 ),
-                _FilterChip(
+                EcoFilterChip(
                   label: 'Active',
                   isSelected: provider.isFilterActive('Active'),
                   onTap: () => provider.toggleFilter('Active'),
                   color: AppTheme.forest,
                 ),
-                _FilterChip(
+                EcoFilterChip(
                   label: 'Completed',
                   isSelected: provider.isFilterActive('Completed'),
                   onTap: () => provider.toggleFilter('Completed'),
                   color: Colors.grey,
                 ),
-                _FilterChip(
+                EcoFilterChip(
                   label: 'Cancelled',
                   isSelected: provider.isFilterActive('Cancelled'),
                   onTap: () => provider.toggleFilter('Cancelled'),
@@ -504,45 +613,25 @@ class _CoordinatorMissionListScreenState
         .length;
     final criticalCount = missions.where((m) => m.isEmergency).length;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color.fromRGBO(0, 0, 0, 0.06)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.04),
-            offset: Offset(0, 4),
-            blurRadius: 16,
-          ),
-        ],
-      ),
+    return EcoPulseCard(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            'COORDINATOR OVERVIEW',
-            style: AppTheme.lightTheme.textTheme.labelLarge,
-          ),
-          const SizedBox(height: 16),
+          const EcoSectionHeader(title: 'COORDINATOR OVERVIEW'),
+          const SizedBox(height: 24),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _OverviewStat(
+              EcoStatItem(
                 label: 'ACTIVE',
                 value: activeCount.toString(),
                 color: AppTheme.forest,
               ),
-              const SizedBox(width: 40),
-              _OverviewStat(
+              EcoStatItem(
                 label: 'CRITICAL',
                 value: criticalCount.toString(),
                 color: AppTheme.terracotta,
               ),
-              const SizedBox(width: 40),
-              _OverviewStat(
+              EcoStatItem(
                 label: 'TOTAL',
                 value: missions.length.toString(),
                 color: AppTheme.ink,
@@ -585,9 +674,7 @@ class _CoordinatorMissionListScreenState
             EcoPulseButton(
               label: 'Clear Filters',
               onPressed: () {
-                provider.setSearchQuery('');
-                // Ideally also clear active filters, need a method for that
-                // provider.clearFilters();
+                provider.clearFilters();
               },
               isSmall: true,
               backgroundColor: Colors.white,
@@ -641,388 +728,6 @@ class _SelectionAction extends StatelessWidget {
       icon: Icon(icon, color: Colors.white),
       onPressed: onTap,
       tooltip: label,
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final Color color;
-
-  const _FilterChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: (_) => onTap(),
-        selectedColor: color.withValues(alpha: 0.1),
-        labelStyle: TextStyle(
-          color: isSelected ? color : AppTheme.ink.withValues(alpha: 0.6),
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-        checkmarkColor: color,
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: isSelected ? color : Colors.transparent),
-        ),
-      ),
-    );
-  }
-}
-
-class _OverviewStat extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _OverviewStat({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          value,
-          style: AppTheme.lightTheme.textTheme.displayMedium?.copyWith(
-            color: color,
-            height: 1,
-            fontSize: 32,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: AppTheme.lightTheme.textTheme.labelSmall?.copyWith(
-            fontSize: 10,
-            color: AppTheme.ink.withValues(alpha: 0.5),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CoordinatorMissionCard extends StatelessWidget {
-  final Mission mission;
-  final bool isSelected;
-  final bool isSelectionMode;
-  final VoidCallback onTap;
-  final VoidCallback onLongPress;
-  final VoidCallback onVolunteerTap;
-
-  const _CoordinatorMissionCard({
-    required this.mission,
-    required this.isSelected,
-    required this.isSelectionMode,
-    required this.onTap,
-    required this.onLongPress,
-    required this.onVolunteerTap,
-  });
-
-  Color _getStatusColor() {
-    if (mission.isEmergency) return AppTheme.terracotta;
-    if (mission.status == 'Completed') return Colors.grey;
-    if (mission.status == 'Cancelled') return Colors.red[900]!;
-    if (mission.status == 'InProgress') return AppTheme.forest;
-    return AppTheme.ink; // Open
-  }
-
-  String _getRelativeTime(DateTime time) {
-    final now = DateTime.now();
-    final diff = time.difference(now);
-
-    if (diff.inDays > 1) return '${diff.inDays} days left';
-    if (diff.inDays == 1) return 'Tomorrow';
-    if (diff.inDays == 0) {
-      if (diff.inHours > 0) return 'In ${diff.inHours}h';
-      if (diff.inMinutes > 0) return 'In ${diff.inMinutes}m';
-      return 'Starting now';
-    }
-    // Past
-    final past = now.difference(time);
-    if (past.inDays > 0) return '${past.inDays}d ago';
-    if (past.inHours > 0) return '${past.inHours}h ago';
-    return 'Just now';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final statusColor = _getStatusColor();
-    final volunteerProgress =
-        (mission.maxVolunteers != null && mission.maxVolunteers! > 0)
-        ? mission.currentVolunteers / mission.maxVolunteers!
-        : 0.0;
-
-    return GestureDetector(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: Stack(
-        children: [
-          EcoPulseCard(
-            padding: EdgeInsets.zero,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                border: isSelected
-                    ? Border.all(color: AppTheme.forest, width: 2)
-                    : Border.all(
-                        color: statusColor.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-
-                color: isSelected
-                    ? AppTheme.forest.withValues(alpha: 0.05)
-                    : Colors.white,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: AppTheme.clay,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Center(
-                            child: Text(
-                              mission.categories.isNotEmpty
-                                  ? mission.categories.first.icon
-                                  : '📋',
-                              style: const TextStyle(fontSize: 24),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                mission.title,
-                                style: AppTheme
-                                    .lightTheme
-                                    .textTheme
-                                    .headlineMedium,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _MetaItem(
-                                      icon: Icons.location_on_outlined,
-                                      label: mission.locationName,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _MetaItem(
-                                      icon: Icons.access_time,
-                                      label: _getRelativeTime(
-                                        mission.startTime,
-                                      ),
-                                      color: mission.isEmergency
-                                          ? AppTheme.terracotta
-                                          : null,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    InkWell(
-                      onTap: onVolunteerTap,
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      'VOLUNTEERS',
-                                      style: AppTheme
-                                          .lightTheme
-                                          .textTheme
-                                          .labelLarge,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    const Icon(Icons.arrow_drop_down, size: 16),
-                                  ],
-                                ),
-                                Text(
-                                  '${mission.currentVolunteers}/${mission.maxVolunteers ?? "∞"}',
-                                  style: AppTheme
-                                      .lightTheme
-                                      .textTheme
-                                      .labelSmall
-                                      ?.copyWith(color: AppTheme.forest),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Container(
-                              height: 6,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: AppTheme.clay,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: FractionallySizedBox(
-                                alignment: Alignment.centerLeft,
-                                widthFactor: volunteerProgress.clamp(0.0, 1.0),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.forest,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: EcoPulseButton(
-                            label: 'Manage',
-                            onPressed: onTap, // Go to management
-                            isSmall: true,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          flex: 1,
-                          child: IconButton(
-                            onPressed:
-                                _getStatusColor() == Colors.grey ||
-                                    _getStatusColor() == Colors.red[900]! ||
-                                    mission.endTime.isBefore(DateTime.now())
-                                ? null
-                                : () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => QRDisplayScreen(
-                                          missionId: mission.id,
-                                          missionTitle: mission.title,
-                                          activeUntil: mission.endTime,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                            icon: const Icon(Icons.qr_code_2_rounded),
-                            style: IconButton.styleFrom(
-                              backgroundColor: AppTheme.clay,
-                              foregroundColor: AppTheme.ink,
-                              disabledBackgroundColor: AppTheme.clay
-                                  .withValues(alpha: 0.5),
-                              disabledForegroundColor: AppTheme.ink.withValues(
-                                alpha: 0.2,
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 10,
-                              ), // Smaller padding
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: const BorderSide(
-                                  color: Color.fromRGBO(0, 0, 0, 0.06),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          if (isSelected)
-            Positioned(
-              top: 10,
-              right: 10,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppTheme.forest,
-                ),
-                child: const Icon(Icons.check, color: Colors.white, size: 16),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetaItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color? color;
-
-  const _MetaItem({required this.icon, required this.label, this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 12,
-          color: color ?? AppTheme.ink.withValues(alpha: 0.6),
-        ),
-        const SizedBox(width: 4),
-        Flexible(
-          child: Text(
-            label,
-            style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-              color: color,
-              fontWeight: color != null ? FontWeight.bold : FontWeight.normal,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
     );
   }
 }

@@ -6,6 +6,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user_model.dart';
 
 class AuthService {
+  static final AuthService _instance = AuthService._internal();
+  factory AuthService() => _instance;
+  AuthService._internal();
+
   static String get baseUrl {
     if (kReleaseMode) {
       return 'https://chronic-sharia-fonbl-93682891.koyeb.app/api';

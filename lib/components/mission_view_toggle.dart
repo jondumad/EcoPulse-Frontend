@@ -18,31 +18,32 @@ class MissionViewToggle extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
           color: EcoColors.forest,
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
               color: EcoColors.forest.withValues(alpha: 0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: IntrinsicWidth(
-          child: Row(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               _ToggleItem(
                 icon: Icons.map_outlined,
-                label: 'Map',
                 isSelected: showMap,
+                isVertical: true,
               ),
+              const SizedBox(height: 4),
               _ToggleItem(
                 icon: Icons.list_alt_rounded,
-                label: 'List',
                 isSelected: !showMap,
+                isVertical: true,
               ),
             ],
           ),
@@ -54,13 +55,13 @@ class MissionViewToggle extends StatelessWidget {
 
 class _ToggleItem extends StatelessWidget {
   final IconData icon;
-  final String label;
   final bool isSelected;
+  final bool isVertical;
 
   const _ToggleItem({
     required this.icon,
-    required this.label,
     required this.isSelected,
+    this.isVertical = false,
   });
 
   @override
@@ -68,35 +69,20 @@ class _ToggleItem extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
-      padding: EdgeInsets.symmetric(
-        horizontal: isSelected ? 20 : 12,
-        vertical: 10,
-      ),
+      width: 44,
+      height: 44,
       decoration: BoxDecoration(
         color: isSelected ? Colors.white : Colors.transparent,
         borderRadius: BorderRadius.circular(22),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 18,
-            color: isSelected ? EcoColors.forest : Colors.white60,
-          ),
-          if (isSelected) ...[
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-                color: EcoColors.forest,
-              ),
-            ),
-          ],
-        ],
+      child: Center(
+        child: Icon(
+          icon,
+          size: 20,
+          color: isSelected
+              ? EcoColors.forest
+              : Colors.white.withValues(alpha: 0.7),
+        ),
       ),
     );
   }

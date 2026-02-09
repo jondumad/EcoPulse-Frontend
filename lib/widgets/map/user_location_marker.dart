@@ -24,7 +24,9 @@ class UserLocationMarker extends StatelessWidget {
 
   // 3. Helper Methods
   CalibrationStatus _getCalibrationStatus(double? accuracy) {
-    if (accuracy == null || accuracy == -1 || accuracy > 45) return CalibrationStatus.unreliable;
+    if (accuracy == null || accuracy == -1 || accuracy > 45) {
+      return CalibrationStatus.unreliable;
+    }
     if (accuracy <= 10) return CalibrationStatus.excellent;
     if (accuracy <= 20) return CalibrationStatus.good;
     if (accuracy <= 35) return CalibrationStatus.fair;
@@ -37,11 +39,16 @@ class UserLocationMarker extends StatelessWidget {
 
   double _getConeOpacity(CalibrationStatus status) {
     switch (status) {
-      case CalibrationStatus.excellent: return 0.6;
-      case CalibrationStatus.good: return 0.4;
-      case CalibrationStatus.fair: return 0.25;
-      case CalibrationStatus.poor: return 0.15;
-      case CalibrationStatus.unreliable: return 0.0;
+      case CalibrationStatus.excellent:
+        return 0.6;
+      case CalibrationStatus.good:
+        return 0.4;
+      case CalibrationStatus.fair:
+        return 0.25;
+      case CalibrationStatus.poor:
+        return 0.15;
+      case CalibrationStatus.unreliable:
+        return 0.0;
     }
   }
 
@@ -55,7 +62,11 @@ class UserLocationMarker extends StatelessWidget {
     return ValueListenableBuilder<double>(
       valueListenable: zoomNotifier,
       builder: (context, currentZoom, _) {
-        final double size = 80 * (currentZoom / 15).clamp(0.5, 1.5);
+        // More robust scaling:
+        // At zoom 15: size = 80
+        // At zoom 5: size = 45 (minimum clamp)
+        // At zoom 18: size = 92
+        final double size = (currentZoom * 4 + 20).clamp(45.0, 100.0);
 
         return SizedBox(
           width: size,
@@ -116,21 +127,25 @@ class UserLocationMarker extends StatelessWidget {
 
   Widget _buildCore(double size) {
     return Container(
-      width: size * 0.3,
-      height: size * 0.3,
+      width: size * 0.35,
+      height: size * 0.35,
       decoration: const BoxDecoration(
         color: AppTheme.violet,
         shape: BoxShape.circle,
       ),
-      child: const Icon(Icons.person, color: Colors.white, size: 16),
+      child: Icon(
+        Icons.person,
+        color: Colors.white,
+        size: (size * 0.2).clamp(14.0, 24.0),
+      ),
     );
   }
 }
 
 class _ConePainter extends CustomPainter {
   final Color color;
-  final double opacity; 
-  
+  final double opacity;
+
   _ConePainter({required this.color, required this.opacity});
 
   @override
@@ -151,7 +166,7 @@ class _ConePainter extends CustomPainter {
         width: size.width,
         height: size.height,
       ),
-      -math.pi / 2 - 0.7, 
+      -math.pi / 2 - 0.7,
       1.4,
       true,
       paint,
@@ -159,7 +174,7 @@ class _ConePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ConePainter oldDelegate) => 
+  bool shouldRepaint(covariant _ConePainter oldDelegate) =>
       oldDelegate.opacity != opacity || oldDelegate.color != color;
 }
 
@@ -171,7 +186,8 @@ class UserLocationPulseWrapper extends StatefulWidget {
   State<UserLocationPulseWrapper> createState() => _PulseState();
 }
 
-class _PulseState extends State<UserLocationPulseWrapper> with SingleTickerProviderStateMixin {
+class _PulseState extends State<UserLocationPulseWrapper>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -183,8 +199,7 @@ class _PulseState extends State<UserLocationPulseWrapper> with SingleTickerProvi
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut)
-    );
+        CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override

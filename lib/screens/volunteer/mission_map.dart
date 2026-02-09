@@ -42,8 +42,27 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
     _mapAnimationHelper.stop();
   }
 
-  void animatedMapMove(ll.LatLng destLocation, double destZoom) {
-    _mapAnimationHelper.move(destLocation, destZoom);
+  void animatedMapMove(ll.LatLng destLocation, [double? destZoom]) {
+    // Dynamic Zoom Logic:
+    // If too close (>17), zoom out to 16.0.
+    // If too far (<14), zoom in to 15.5.
+    // Otherwise maintain current zoom.
+    
+    double targetZoom;
+    if (destZoom != null) {
+      targetZoom = destZoom;
+    } else {
+      final currentZoom = _mapController.camera.zoom;
+      if (currentZoom > 17.0) {
+        targetZoom = 16.0;
+      } else if (currentZoom < 14.0) {
+        targetZoom = 15.5;
+      } else {
+        targetZoom = currentZoom;
+      }
+    }
+
+    _mapAnimationHelper.move(destLocation, targetZoom);
   }
 
   @override
@@ -96,19 +115,16 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
     ll.LatLng? userLatLng,
   ) {
     if (!_mapReady) return const SizedBox.shrink();
-    // Use the notifier value
     if (_zoomNotifier.value < 4) return const SizedBox.shrink();
 
     final camera = _mapController.camera;
-    // Calculate dynamic bottom padding to avoid the floating card or buttons
     double bottomPadding = 150.0;
     if (widget.selectedMission != null) {
-      bottomPadding = 230.0; // Card is open (mini-pill)
+      bottomPadding = 230.0;
     }
 
     List<Widget> indicators = [];
 
-    // User Indicator
     if (userLatLng != null) {
       indicators.add(
         MapOffScreenIndicator(
@@ -123,15 +139,11 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
       );
     }
 
-    // Mission Indicators (Only when filter is ON)
     if (widget.showRegisteredOnly) {
-      int missionIdx = 1; // Start from 1 as user is index 0
+      int missionIdx = 1;
       for (final mission in missions) {
-        // only show for filtered missions
         if (!mission.isRegistered) continue;
-
         final missionLatLng = _parseGps(mission.locationGps);
-
         indicators.add(
           MapOffScreenIndicator(
             position: missionLatLng,
@@ -161,7 +173,6 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
             children: [
               Consumer2<MissionProvider, LocationProvider>(
                 builder: (context, missionProvider, loc, child) {
-                  // Filter missions based on toggle
                   final displayMissions = widget.showRegisteredOnly
                       ? missionProvider.missions
                             .where((m) => m.isRegistered)
@@ -170,32 +181,16 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
 
                   final markers = displayMissions.map((mission) {
                     final point = _parseGps(mission.locationGps);
-                    // Use a slightly larger fixed size for the container, content scales inside
-                    // Actually, Flutter Map markers need a size.
-                    // If we change size, we rebuild list.
-                    // For perf, let's keep size responsive but maybe optimize?
-                    // We can listen to zoomNotifier to rebuild markers?
-                    // No, that rebuilds the whole list.
-                    // Let's use a "Max Size" approach and scale down inside.
-                    // Max width ~150, Max height ~65.
                     return Marker(
                       key: ValueKey(mission.id),
                       point: point,
-                      width: 160, // Max potential width
-                      height: 80, // Max potential height
+                      width: 160,
+                      height: 80,
                       alignment: Alignment.center,
                       rotate: true,
-                      child: GestureDetector(
-                        onTap: () {
-                          if (widget.onMissionSelected != null) {
-                            widget.onMissionSelected!(mission);
-                          }
-                          animatedMapMove(point, 16.0);
-                        },
-                        child: SemanticMarker(
-                          mission: mission,
-                          zoomNotifier: _zoomNotifier,
-                        ),
+                      child: SemanticMarker(
+                        mission: mission,
+                        zoomNotifier: _zoomNotifier,
                       ),
                     );
                   }).toList();
@@ -209,10 +204,17 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                               loc.currentPosition ??
                               const ll.LatLng(-6.2088, 106.8456),
                           initialZoom: 13.0,
-                          minZoom: 3.0, // Loosened max zoom out
+                          minZoom: 3.0,
                           maxZoom: 18.0,
+                          // Restrict panning to prevent scrolling beyond poles
+                          cameraConstraint: CameraConstraint.contain(
+                            bounds: LatLngBounds(
+                              const ll.LatLng(-85.05, -180.0),
+                              const ll.LatLng(85.05, 180.0),
+                            ),
+                          ),
                           interactionOptions: const InteractionOptions(
-                            flags: InteractiveFlag.all, // Allow rotation
+                            flags: InteractiveFlag.all,
                           ),
                           onTap: (_, _) {
                             if (widget.onMissionSelected != null) {
@@ -228,7 +230,6 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                             if (hasGesture) {
                               stopAnimation();
                             }
-                            // Update notifiers cheaply
                             _zoomNotifier.value = pos.zoom;
                             _rotationNotifier.value = pos.rotation;
                           },
@@ -238,26 +239,35 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                             urlTemplate:
                                 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                             userAgentPackageName: 'com.example.civic',
+                            tileDisplay: const TileDisplay.fadeIn(),
+                            panBuffer: 1,
+                            keepBuffer: 2,
                           ),
                           if (loc.currentPosition != null)
-                            MarkerLayer(
-                              markers: [
-                                Marker(
-                                  point: loc.currentPosition!,
-                                  width: 120, // Max size
-                                  height: 120,
-                                  rotate: false,
-                                  child: UserLocationMarker(
-                                    position: loc.currentPosition!,
-                                    zoomNotifier: _zoomNotifier,
-                                    rotationNotifier: _rotationNotifier,
-                                    showCone: true,
-                                  ),
-                                ),
-                              ],
+                            TweenAnimationBuilder<ll.LatLng>(
+                              tween: LatLngTween(end: loc.currentPosition!, begin: ll.LatLng(-6.2088, 106.8456)),
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeInOut,
+                              builder: (context, animatedPos, _) {
+                                return MarkerLayer(
+                                  markers: [
+                                    Marker(
+                                      point: animatedPos,
+                                      width: 120,
+                                      height: 120,
+                                      rotate: false,
+                                      child: UserLocationMarker(
+                                        position: animatedPos,
+                                        zoomNotifier: _zoomNotifier,
+                                        rotationNotifier: _rotationNotifier,
+                                        showCone: true,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
 
-                          // Missions Clustering Layer
                           MarkerClusterLayerWidget(
                             options: MarkerClusterLayerOptions(
                               maxClusterRadius: 45,
@@ -266,6 +276,17 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                               padding: const EdgeInsets.all(50),
                               maxZoom: 15,
                               markers: markers,
+                              onMarkerTap: (marker) {
+                                final key = marker.key;
+                                if (key is ValueKey<int>) {
+                                  final mission = missionProvider.missions
+                                      .firstWhere((m) => m.id == key.value);
+                                  if (widget.onMissionSelected != null) {
+                                    widget.onMissionSelected!(mission);
+                                  }
+                                  animatedMapMove(marker.point);
+                                }
+                              },
                               builder: (context, markers) {
                                 return Container(
                                   decoration: BoxDecoration(
@@ -289,108 +310,26 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                               },
                               onClusterTap: (cluster) {
                                 final missionIds = cluster.markers
-                                    .map(
-                                      (m) => (m.key as ValueKey<int>?)?.value,
-                                    )
-                                    .where((id) => id != null)
+                                    .map((m) {
+                                      final key = m.key;
+                                      if (key is ValueKey<int>) return key.value;
+                                      return null;
+                                    })
+                                    .whereType<int>()
                                     .toSet();
 
                                 if (missionIds.isEmpty) return;
 
-                                final allMissions =
-                                    Provider.of<MissionProvider>(
-                                      context,
-                                      listen: false,
-                                    ).missions;
-                                final clusterMissions = allMissions
+                                final clusterMissions = missionProvider.missions
                                     .where((m) => missionIds.contains(m.id))
                                     .toList();
 
-                                showModalBottomSheet(
-                                  context: context,
-                                  shape: const RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.vertical(
-                                      top: Radius.circular(20),
-                                    ),
-                                  ),
-                                  builder: (context) {
-                                    return Container(
-                                      padding: const EdgeInsets.all(16),
-                                      constraints: BoxConstraints(
-                                        maxHeight:
-                                            MediaQuery.of(context).size.height *
-                                            0.5,
-                                      ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '${clusterMissions.length} Missions Here',
-                                            style: EcoText.headerMD(context),
-                                          ),
-                                          const SizedBox(height: 16),
-                                          Flexible(
-                                            child: ListView.separated(
-                                              shrinkWrap: true,
-                                              itemCount: clusterMissions.length,
-                                              separatorBuilder: (_, _) =>
-                                                  const Divider(),
-                                              itemBuilder: (context, index) {
-                                                final mission =
-                                                    clusterMissions[index];
-                                                return ListTile(
-                                                  title: Text(
-                                                    mission.title,
-                                                    style: EcoText.bodyBoldMD(
-                                                      context,
-                                                    ),
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                  subtitle: Text(
-                                                    mission.locationName,
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                  trailing: Text(
-                                                    '+${mission.pointsValue} pts',
-                                                    style: const TextStyle(
-                                                      color: EcoColors.forest,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                  onTap: () {
-                                                    Navigator.pop(context);
-                                                    if (widget
-                                                            .onMissionSelected !=
-                                                        null) {
-                                                      widget.onMissionSelected!(
-                                                        mission,
-                                                      );
-                                                    }
-                                                    // Optional: slightly move map to center marker if needed
-                                                    // _mapController.move(_parseGps(mission.locationGps), 15.0);
-                                                  },
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                );
+                                _showClusterSummary(context, clusterMissions);
                               },
                             ),
                           ),
                         ],
                       ),
-                      // Off-Screen Indicators (Using Stream for smooth performance without full builds)
                       StreamBuilder<MapEvent>(
                         stream: _mapController.mapEventStream,
                         builder: (context, _) {
@@ -412,20 +351,192 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
     );
   }
 
-  // Helper to manual trigger map move from Hub
+  void _showClusterSummary(BuildContext context, List<Mission> missions) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: AppTheme.clay,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.ink.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Text(
+                '${missions.length} Missions in this area',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: AppTheme.ink,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: missions.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    return _buildClusterMissionItem(context, missions[index]);
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildClusterMissionItem(BuildContext context, Mission mission) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context);
+        if (widget.onMissionSelected != null) {
+          widget.onMissionSelected!(mission);
+        }
+        animatedMapMove(_parseGps(mission.locationGps));
+      },
+      child: EcoPulseCard(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: EcoColors.forest.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Text(
+                  mission.categories.firstOrNull?.icon ?? '📍',
+                  style: const TextStyle(fontSize: 18),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    mission.title,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.ink,
+                      height: 1.1,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.location_on_outlined,
+                          size: 10, color: AppTheme.ink.withValues(alpha: 0.4)),
+                      const SizedBox(width: 2),
+                      Expanded(
+                        child: Text(
+                          mission.locationName,
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.ink.withValues(alpha: 0.5),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: EcoColors.forest,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '+${mission.pointsValue} PTS',
+                          style: GoogleFonts.jetBrainsMono(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(Icons.people_outline_rounded,
+                          size: 11, color: AppTheme.ink.withValues(alpha: 0.4)),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${mission.currentVolunteers}/${mission.maxVolunteers ?? "∞"}',
+                        style: GoogleFonts.inter(
+                            fontSize: 10, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(Icons.calendar_today_outlined,
+                          size: 10, color: AppTheme.ink.withValues(alpha: 0.4)),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${mission.startTime.day}/${mission.startTime.month}',
+                        style: GoogleFonts.inter(
+                            fontSize: 10, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.arrow_forward_ios_rounded,
+                size: 12, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> triggerMyLocation() async {
     final loc = Provider.of<LocationProvider>(context, listen: false);
-    // Immediately halt any active glide/fling or program migration
     stopAnimation();
-    _mapController.move(
-      _mapController.camera.center,
-      _mapController.camera.zoom,
-    );
+
+    if (loc.currentPosition != null) {
+      animatedMapMove(loc.currentPosition!);
+      loc.determinePosition();
+      return;
+    }
 
     try {
       await loc.determinePosition();
       if (loc.currentPosition != null && mounted) {
-        animatedMapMove(loc.currentPosition!, 15.0);
+        animatedMapMove(loc.currentPosition!);
       }
     } catch (_) {}
   }

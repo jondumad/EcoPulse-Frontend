@@ -556,44 +556,20 @@ class _ActionButtons extends StatelessWidget {
                     context,
                     listen: false,
                   );
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Cancel registration?'),
-                      content: const Text(
-                        'You can always register again if spots are still available.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Keep'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text(
-                            'Cancel Registration',
-                            style: TextStyle(color: AppTheme.terracotta),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (confirm == true && context.mounted) {
-                    try {
-                      await missionProvider.toggleRegistration(
-                        mission.id,
-                        true,
-                      );
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-                      }
+                  
+                  try {
+                    await missionProvider.toggleRegistration(
+                      mission.id,
+                      true,
+                    );
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('Error: $e')));
                     }
                   }
                 },

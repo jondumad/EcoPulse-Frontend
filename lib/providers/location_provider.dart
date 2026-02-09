@@ -30,6 +30,17 @@ class LocationProvider with ChangeNotifier {
   void startCompassListening() {
     _compassSubscription?.cancel();
     _compassSubscription = FlutterCompass.events?.listen((event) {
+      // Detailed logging to pinpoint unreliability
+      if (_headingAccuracy != event.accuracy) {
+        debugPrint('Compass Accuracy Update: ${event.accuracy} (Heading: ${event.heading})');
+        
+        if (event.accuracy == -1) {
+          debugPrint('Compass Alert: Sensor reported -1 (Hardware/Permission issue)');
+        } else if (event.accuracy != null && event.accuracy! > 45) {
+          debugPrint('Compass Alert: Accuracy dropped below threshold (> 45)');
+        }
+      }
+
       _heading = event.heading;
       _headingAccuracy = event.accuracy;
       notifyListeners();

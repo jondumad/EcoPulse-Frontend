@@ -56,6 +56,7 @@ class MapAnimationHelper {
   bool get isAnimating => _animationController?.isAnimating ?? false;
 
   void move(ll.LatLng destLocation, double destZoom) {
+    // Gracefully stop previous animation if any
     _animationController?.stop();
     _animationController?.dispose();
     _animationController = null;
@@ -68,7 +69,7 @@ class MapAnimationHelper {
     final startZoom = camera.zoom;
 
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1400), // Slightly longer for the sequence
       vsync: vsync,
     );
 
@@ -79,22 +80,36 @@ class MapAnimationHelper {
     );
     final zoomTween = Tween<double>(begin: startZoom, end: destZoom);
 
-    final animation = CurvedAnimation(
+    // Staggered intervals to avoid the "neurotic" simultaneous jump.
+    // Movement starts immediately and reaches 95% completion at 80% of the time.
+    final moveAnimation = CurvedAnimation(
       parent: _animationController!,
-      curve: Curves.easeInOutQuart,
+      curve: const Interval(0.0, 0.8, curve: Curves.fastOutSlowIn),
+    );
+
+    // Zoom starts later (at 20% progress) and finishes at 100%.
+    // This creates the "Pan -> Zoom" feeling the user wants.
+    final zoomAnimation = CurvedAnimation(
+      parent: _animationController!,
+      curve: const Interval(0.2, 1.0, curve: Curves.fastOutSlowIn),
     );
 
     void updateMap() {
       if (_animationController == null) return;
+      
+      final currentLat = latTween.evaluate(moveAnimation);
+      final currentLng = lngTween.evaluate(moveAnimation);
+      final currentZoom = zoomTween.evaluate(zoomAnimation);
+
       mapController.move(
-        ll.LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
-        zoomTween.evaluate(animation),
+        ll.LatLng(currentLat, currentLng),
+        currentZoom,
       );
     }
 
     _animationController!.addListener(updateMap);
 
-    // Instant takeover: Clear momentum and set initial state
+    // Ensure we start exactly at the beginning
     updateMap();
 
     _animationController!.forward();

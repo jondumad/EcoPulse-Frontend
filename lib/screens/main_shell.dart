@@ -14,7 +14,9 @@ import 'volunteer/mission_hub.dart';
 import 'coordinator/create_mission_screen.dart';
 import 'coordinator/verification_screen.dart';
 import 'coordinator/coordinator_mission_list.dart';
+import 'coordinator/analytics_screen.dart';
 import 'notification_inbox_screen.dart';
+import '../components/coordinator_speed_dial.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -64,17 +66,18 @@ class _MainShellState extends State<MainShell> {
     } else {
       content = _buildCoordinatorContent(selectedIndex);
       navIcons = [
-        Icons.assignment_outlined,
-        Icons.verified_user_outlined,
         Icons.groups_outlined,
+        Icons.verified_user_outlined,
+        Icons.analytics_outlined,
         Icons.person_outline,
       ];
-      navLabels = ['Create', 'Verify', 'Missions', 'Profile'];
+      navLabels = ['Hub', 'Verify', 'Analytics', 'Profile'];
     }
 
     return Scaffold(
       extendBody: true,
       backgroundColor: AppTheme.clay,
+      floatingActionButton: null,
       appBar: EcoAppBar(
         height: 100,
         showBack: false,
@@ -97,10 +100,10 @@ class _MainShellState extends State<MainShell> {
                   : (user.role == 'Volunteer'
                         ? (selectedIndex == 1 ? 'Home' : 'Active Missions')
                         : (selectedIndex == 0
-                              ? 'Create Mission'
+                              ? 'Mission Hub'
                               : selectedIndex == 1
                               ? 'Verification'
-                              : 'Mission Hub')),
+                              : 'Impact Analytics')),
               style: AppTheme.lightTheme.textTheme.displayLarge,
             ),
           ],
@@ -153,6 +156,26 @@ class _MainShellState extends State<MainShell> {
             icons: navIcons,
             labels: navLabels,
           ),
+
+          // 5. Coordinator Speed Dial (Positioned above nav)
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeOutCubic,
+            bottom: 110,
+            right: (user.role == 'Coordinator' && selectedIndex == 0)
+                ? 24
+                : -400,
+            child: CoordinatorSpeedDial(
+              onNewMission: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateMissionScreen(),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -173,9 +196,9 @@ class _MainShellState extends State<MainShell> {
     return IndexedStack(
       index: index,
       children: const [
-        CreateMissionScreen(),
-        VerificationScreen(),
         CoordinatorMissionListScreen(),
+        VerificationScreen(),
+        CoordinatorAnalyticsScreen(),
         ProfileScreen(),
       ],
     );

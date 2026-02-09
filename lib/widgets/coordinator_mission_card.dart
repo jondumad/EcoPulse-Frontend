@@ -7,6 +7,7 @@ class CoordinatorMissionCard extends StatefulWidget {
   final Mission mission;
   final bool isSelected;
   final bool isSelectionMode;
+  final int pendingVerificationsCount;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
   final VoidCallback onVolunteerTap;
@@ -16,6 +17,7 @@ class CoordinatorMissionCard extends StatefulWidget {
     required this.mission,
     required this.isSelected,
     required this.isSelectionMode,
+    this.pendingVerificationsCount = 0,
     required this.onTap,
     required this.onLongPress,
     required this.onVolunteerTap,
@@ -125,6 +127,27 @@ class _CoordinatorMissionCardState extends State<CoordinatorMissionCard> {
                         const Padding(
                           padding: EdgeInsets.only(left: 8),
                           child: EcoPulseTag(label: 'URGENT', isRotated: false),
+                        ),
+                      if (widget.pendingVerificationsCount > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: EcoColors.violet,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.verified_user, color: Colors.white, size: 10),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${widget.pendingVerificationsCount}',
+                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                     ],
                   ),

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../models/mission_model.dart';
 import '../../providers/mission_provider.dart';
+import '../../providers/attendance_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
 import '../../widgets/mission_filter_widgets.dart';
@@ -24,6 +25,12 @@ class _CoordinatorMissionListScreenState
     extends State<CoordinatorMissionListScreen> {
   final Set<int> _selectedMissions = {};
   bool _isSelectionMode = false;
+  Map<int, int> _pendingCounts = {};
+
+  // Archive / History View State
+  bool _showAllPast = false;
+  int? _activeYear;
+  int? _activeMonth;
 
   @override
   void initState() {
@@ -34,7 +41,28 @@ class _CoordinatorMissionListScreenState
         context,
         listen: false,
       ).fetchMissions(mine: true);
+      _fetchPendingCounts();
     });
+  }
+
+  Future<void> _fetchPendingCounts() async {
+    try {
+      final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+      final pending = await attendanceProvider.getPendingVerifications();
+      if (!mounted) return;
+      
+      final Map<int, int> counts = {};
+      for (var v in pending) {
+        final missionId = v['missionId'] as int;
+        counts[missionId] = (counts[missionId] ?? 0) + 1;
+      }
+      
+      setState(() {
+        _pendingCounts = counts;
+      });
+    } catch (e) {
+      debugPrint('Error fetching pending counts: $e');
+    }
   }
 
   void _toggleSelection(int missionId) {
@@ -69,123 +97,42 @@ class _CoordinatorMissionListScreenState
     String action,
     MissionProvider provider,
   ) async {
-    final count = _selectedMissions.length;
     final ids = _selectedMissions.toList();
+    final missions = provider.missions
+        .where((m) => _selectedMissions.contains(m.id))
+        .toList();
 
     if (action == 'Notify') {
-      final message = await showDialog<String>(
-        context: context,
-        builder: (ctx) {
-          String val = '';
-          return AlertDialog(
-            title: Text('Notify Volunteers ($count Missions)'),
-            content: TextField(
-              decoration: const InputDecoration(hintText: 'Enter message...'),
-              onChanged: (v) => val = v,
-              maxLines: 3,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, val),
-                child: const Text('Send'),
-              ),
-            ],
-          );
-        },
-      );
-
-      if (message != null && message.isNotEmpty) {
-        int successCount = 0;
-        int failCount = 0;
-
-        // Show loading indicator?
-        // For now just process.
-
-        for (final id in ids) {
-          try {
-            await provider.contactVolunteers(id, message);
-            successCount++;
-          } catch (e) {
-            failCount++;
-            debugPrint('Failed to notify mission $id: $e');
-          }
-        }
-
-        if (!mounted) return;
-
-        if (failCount == 0) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Notifications sent successfully')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Sent $successCount notifications. Failed: $failCount',
-              ),
-            ),
-          );
-        }
-        _clearSelection();
-      }
+      _showNotifyDialog(provider, ids);
       return;
     }
 
-    bool confirm =
-        await showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: Text('$action $count Missions?'),
-            content: Text(
-              action == 'Duplicate'
-                  ? 'This will create copies of the selected missions.'
-                  : 'This action will update the status of selected missions.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                style: TextButton.styleFrom(
-                  foregroundColor: action == 'Cancel' ? Colors.red : null,
-                ),
-                child: Text(action),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+    if (action == 'Export Data') {
+      _handleExport(missions);
+      return;
+    }
 
-    if (confirm) {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (ctx) =>
+          _BatchConfirmationDialog(action: action, missions: missions),
+    );
+
+    if (result != null && result['confirm'] == true) {
+      final justification = result['justification'] as String?;
+
       if (action == 'Duplicate') {
-        int successCount = 0;
-        for (final id in ids) {
-          try {
-            await provider.duplicateMission(id);
-            successCount++;
-          } catch (e) {
-            debugPrint('Failed to duplicate $id: $e');
-          }
-        }
-
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Duplicated $successCount missions')),
-        );
-        _clearSelection();
+        _handleBatchDuplicate(provider, ids);
       } else {
-        // Batch status updates usually supported by backend as single call
         try {
           if (action == 'Cancel') {
             await provider.batchAction(ids, 'cancel');
           } else if (action == 'Mark as Emergency') {
-            await provider.batchAction(ids, 'emergency');
+            await provider.batchAction(
+              ids,
+              'emergency',
+              justification: justification,
+            );
           }
 
           if (!mounted) return;
@@ -201,6 +148,88 @@ class _CoordinatorMissionListScreenState
         }
       }
     }
+  }
+
+  Future<void> _showNotifyDialog(
+    MissionProvider provider,
+    List<int> ids,
+  ) async {
+    final count = ids.length;
+    final message = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        String val = '';
+        return AlertDialog(
+          title: Text('Notify Volunteers ($count Missions)'),
+          content: TextField(
+            decoration: const InputDecoration(hintText: 'Enter message...'),
+            onChanged: (v) => val = v,
+            maxLines: 3,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, val),
+              child: const Text('Send'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (message != null && message.isNotEmpty) {
+      int successCount = 0;
+      int failCount = 0;
+
+      for (final id in ids) {
+        try {
+          await provider.contactVolunteers(id, message);
+          successCount++;
+        } catch (e) {
+          failCount++;
+        }
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sent $successCount notifications. Failed: $failCount'),
+        ),
+      );
+      _clearSelection();
+    }
+  }
+
+  Future<void> _handleBatchDuplicate(
+    MissionProvider provider,
+    List<int> ids,
+  ) async {
+    int successCount = 0;
+    for (final id in ids) {
+      try {
+        await provider.duplicateMission(id);
+        successCount++;
+      } catch (e) {
+        debugPrint('Failed to duplicate $id: $e');
+      }
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Duplicated $successCount missions')),
+    );
+    _clearSelection();
+  }
+
+  void _handleExport(List<Mission> missions) {
+    // Placeholder for CSV export logic
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Exporting mission data...')));
+    _clearSelection();
   }
 
   @override
@@ -228,10 +257,13 @@ class _CoordinatorMissionListScreenState
                   ),
                   Expanded(
                     child: RefreshIndicator(
-                      onRefresh: () => provider.fetchMissions(
-                        mine: true,
-                        forceRefresh: true,
-                      ),
+                      onRefresh: () async {
+                        await provider.fetchMissions(
+                          mine: true,
+                          forceRefresh: true,
+                        );
+                        await _fetchPendingCounts();
+                      },
                       child: CustomScrollView(
                         slivers: [
                           if (!_isSelectionMode)
@@ -410,56 +442,189 @@ class _CoordinatorMissionListScreenState
     final upcomingMissions = missions
         .where((m) => m.endTime.isAfter(now))
         .toList();
-    final pastMissions = missions
+    final allPastMissions = missions
         .where((m) => m.endTime.isBefore(now))
         .toList();
 
     List<Widget> slivers = [];
 
-    // UPCOMING MISSIONS SECTION
+    // 1. UPCOMING MISSIONS SECTION
     if (upcomingMissions.isNotEmpty) {
       slivers.add(_buildSectionHeader('UPCOMING MISSIONS', marginTop: 0));
       slivers.add(_buildMissionSliver(upcomingMissions, provider));
     }
 
-    // PAST MISSIONS SECTION
-    if (pastMissions.isNotEmpty) {
-      slivers.add(_buildSectionHeader('PAST MISSIONS', marginTop: 32));
+    if (allPastMissions.isEmpty) return slivers;
 
-      // Only group by date if sorting by Date
-      if (provider.currentSort == 'Date') {
-        // Force sort past missions by endTime descending for chronological view
-        pastMissions.sort((a, b) => b.endTime.compareTo(a.endTime));
+    // 2. PAST MISSIONS / ARCHIVE SECTION
+    final sevenDaysAgo = now.subtract(const Duration(days: 7));
+    
+    slivers.add(_buildSectionHeader(
+      _showAllPast ? 'MISSION ARCHIVE' : 'RECENT PAST MISSIONS',
+      marginTop: 32,
+      trailing: _showAllPast
+          ? TextButton(
+              onPressed: () => setState(() => _showAllPast = false),
+              child: const Text(
+                'BACK TO RECENT',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            )
+          : null,
+    ));
 
-        final Map<String, List<Mission>> groupedPastMissions = {};
-        for (var m in pastMissions) {
-          final dateStr = DateFormat('EEEE, MMM d, yyyy').format(m.endTime);
-          groupedPastMissions.putIfAbsent(dateStr, () => []).add(m);
-        }
+    if (!_showAllPast) {
+      // Show missions from the last 7 days
+      final recentPastMissions = allPastMissions
+          .where((m) => m.endTime.isAfter(sevenDaysAgo))
+          .toList();
 
-        final sortedDates = groupedPastMissions.keys.toList();
-        for (var date in sortedDates) {
-          slivers.add(_buildDateHeader(date));
-          slivers.add(
-            _buildMissionSliver(groupedPastMissions[date]!, provider),
-          );
-        }
+      if (recentPastMissions.isEmpty) {
+        slivers.add(SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+            child: Center(
+              child: Text(
+                'No activity in the past 7 days.',
+                style: TextStyle(
+                  color: AppTheme.ink.withValues(alpha: 0.4),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ));
       } else {
-        // For other sort orders (Distance, Status, etc.), show flat list
-        // Note: provider.filteredMissions is already sorted by the selected criteria
-        // We just trust that order within the 'Past' subset.
-        slivers.add(_buildMissionSliver(pastMissions, provider));
+        _addDateGroupedSlivers(slivers, recentPastMissions, provider);
+      }
+
+      // Show "View All" button if there are older missions
+      if (allPastMissions.length > recentPastMissions.length) {
+        slivers.add(SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            child: EcoPulseButton(
+              label: 'VIEW ALL HISTORY',
+              icon: Icons.history_rounded,
+              isPrimary: false,
+              isSmall: true,
+              backgroundColor: Colors.white,
+              foregroundColor: AppTheme.violet,
+              onPressed: () => setState(() => _showAllPast = true),
+            ),
+          ),
+        ));
+      }
+    } else {
+      // ARCHIVE VIEW: Grouped by Year -> Month
+      final Map<int, Map<int, List<Mission>>> grouped = {};
+      for (var m in allPastMissions) {
+        grouped.putIfAbsent(m.endTime.year, () => {});
+        grouped[m.endTime.year]!.putIfAbsent(m.endTime.month, () => []).add(m);
+      }
+
+      final years = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+      if (_activeYear == null || !years.contains(_activeYear)) {
+        _activeYear = years.isNotEmpty ? years.first : null;
+      }
+
+      if (_activeYear != null) {
+        final months = grouped[_activeYear]!.keys.toList()..sort((a, b) => b.compareTo(a));
+        if (_activeMonth == null || !months.contains(_activeMonth)) {
+          _activeMonth = months.isNotEmpty ? months.first : null;
+        }
+
+        // Selection Tabs
+        slivers.add(SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Year Selector
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: years.map((y) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: EcoFilterChip(
+                      label: '$y',
+                      isSelected: _activeYear == y,
+                      onTap: () => setState(() {
+                        _activeYear = y;
+                        _activeMonth = null; 
+                      }),
+                      color: AppTheme.forest,
+                    ),
+                  )).toList(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Month Selector
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: months.map((m) {
+                    final monthName = DateFormat.MMMM().format(DateTime(2024, m));
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: EcoFilterChip(
+                        label: monthName.toUpperCase(),
+                        isSelected: _activeMonth == m,
+                        onTap: () => setState(() => _activeMonth = m),
+                        color: AppTheme.violet,
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ));
+
+        // Missions for selected month
+        if (_activeMonth != null) {
+          final historyMissions = grouped[_activeYear]![_activeMonth]!;
+          _addDateGroupedSlivers(slivers, historyMissions, provider);
+        }
       }
     }
 
     return slivers;
   }
 
-  Widget _buildSectionHeader(String title, {double marginTop = 24}) {
+  void _addDateGroupedSlivers(
+    List<Widget> slivers,
+    List<Mission> missions,
+    MissionProvider provider,
+  ) {
+    // Note: Always sort by date for consistency in past views
+    missions.sort((a, b) => b.endTime.compareTo(a.endTime));
+
+    final Map<String, List<Mission>> groupedByDate = {};
+    for (var m in missions) {
+      final dateStr = DateFormat('EEEE, MMM d, yyyy').format(m.endTime);
+      groupedByDate.putIfAbsent(dateStr, () => []).add(m);
+    }
+
+    final sortedDates = groupedByDate.keys.toList();
+    for (var date in sortedDates) {
+      slivers.add(_buildDateHeader(date));
+      slivers.add(_buildMissionSliver(groupedByDate[date]!, provider));
+    }
+  }
+
+  Widget _buildSectionHeader(String title, {double marginTop = 24, Widget? trailing}) {
     return SliverToBoxAdapter(
       child: Padding(
         padding: EdgeInsets.fromLTRB(16, marginTop, 16, 12),
-        child: EcoSectionHeader(title: title),
+        child: EcoSectionHeader(title: title, trailing: trailing),
       ),
     );
   }
@@ -505,6 +670,7 @@ class _CoordinatorMissionListScreenState
               mission: mission,
               isSelected: _selectedMissions.contains(mission.id),
               isSelectionMode: _isSelectionMode,
+              pendingVerificationsCount: _pendingCounts[mission.id] ?? 0,
               onTap: () {
                 if (_isSelectionMode) {
                   _toggleSelection(mission.id);
@@ -728,6 +894,120 @@ class _SelectionAction extends StatelessWidget {
       icon: Icon(icon, color: Colors.white),
       onPressed: onTap,
       tooltip: label,
+    );
+  }
+}
+
+class _BatchConfirmationDialog extends StatefulWidget {
+  final String action;
+  final List<Mission> missions;
+
+  const _BatchConfirmationDialog({
+    required this.action,
+    required this.missions,
+  });
+
+  @override
+  State<_BatchConfirmationDialog> createState() =>
+      _BatchConfirmationDialogState();
+}
+
+class _BatchConfirmationDialogState extends State<_BatchConfirmationDialog> {
+  final _justificationController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  Widget build(BuildContext context) {
+    final isEmergency = widget.action == 'Mark as Emergency';
+    final count = widget.missions.length;
+
+    return AlertDialog(
+      title: Text('${widget.action} $count Missions?'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.action == 'Duplicate'
+                    ? 'This will create copies of the following missions:'
+                    : 'This will update the following missions:',
+                style: const TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                constraints: const BoxConstraints(maxHeight: 150),
+                decoration: BoxDecoration(
+                  color: AppTheme.clay,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.all(8),
+                  itemCount: widget.missions.length,
+                  separatorBuilder: (ctx, idx) => const Divider(height: 8),
+                  itemBuilder: (ctx, idx) => Text(
+                    '• ${widget.missions[idx].title}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              if (isEmergency) ...[
+                const SizedBox(height: 24),
+                const Text(
+                  'JUSTIFICATION REQUIRED',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _justificationController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    hintText: 'Explain the emergency (min 20 chars)',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Required';
+                    if (v.length < 20) return 'More detail needed';
+                    return null;
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (isEmergency && !_formKey.currentState!.validate()) return;
+            Navigator.pop(context, {
+              'confirm': true,
+              'justification': _justificationController.text,
+            });
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isEmergency
+                ? AppTheme.terracotta
+                : (widget.action == 'Cancel' ? Colors.red : AppTheme.forest),
+            foregroundColor: Colors.white,
+          ),
+          child: Text(widget.action),
+        ),
+      ],
     );
   }
 }

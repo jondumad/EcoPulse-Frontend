@@ -7,6 +7,8 @@ import 'providers/attendance_provider.dart';
 import 'providers/location_provider.dart';
 import 'providers/nav_provider.dart';
 import 'providers/badge_provider.dart';
+import 'providers/collaboration_provider.dart';
+import 'services/auth_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/main_shell.dart';
@@ -32,6 +34,13 @@ class EcoPulseApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
         ChangeNotifierProvider(create: (_) => NavProvider()),
         ChangeNotifierProvider(create: (_) => BadgeProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, CollaborationProvider>(
+          create: (context) => CollaborationProvider(
+            authProvider: Provider.of<AuthProvider>(context, listen: false),
+            baseUrl: AuthService.baseUrl.replaceAll('/api', ''),
+          ),
+          update: (context, auth, collab) => collab!..updateAuth(auth),
+        ),
       ],
       child: const EcoPulseAppView(),
     );

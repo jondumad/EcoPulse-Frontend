@@ -12,6 +12,7 @@ class AuthProvider with ChangeNotifier {
   Map<String, dynamic>? get userStats => _userStats;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _user != null;
+  String? get token => _authService.getTokenSync();
 
   // Check token on app start
   Future<void> initAuth() async {

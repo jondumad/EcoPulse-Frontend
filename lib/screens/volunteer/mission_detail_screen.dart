@@ -368,7 +368,10 @@ class _StatusStamp extends StatelessWidget {
     Color stampColor = AppTheme.forest;
     String displayStatus = 'REGIS-\nTERED';
 
-    if (status == 'CheckedIn') {
+    if (status == 'Waitlisted') {
+      stampColor = AppTheme.violet;
+      displayStatus = 'WAIT-\nLISTED';
+    } else if (status == 'CheckedIn') {
       stampColor = AppTheme.violet;
       displayStatus = 'CHECKED\nIN';
     } else if (status == 'Completed') {
@@ -622,27 +625,39 @@ class _ActionButtons extends StatelessWidget {
           ],
         );
       } else {
+        // Not registered - show register or join waitlist button
         return Consumer<MissionProvider>(
           builder: (context, provider, _) {
-            return _ExpandableActionButton(
-              label: isFull ? 'Mission Full' : 'Confirm Register',
-              icon: isFull ? Icons.block : Icons.add_task,
-              isLoading: provider.isLoading,
-              onConfirm: isFull
-                  ? null
-                  : () async {
+            final bool isWaitlisted =
+                mission.registrationStatus == 'Waitlisted';
+
+            if (isWaitlisted) {
+              // User is on waitlist
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _ExpandableActionButton(
+                    label: 'On Waitlist',
+                    icon: Icons.hourglass_empty,
+                    isPrimary: false,
+                    backgroundColor: AppTheme.violet,
+                    foregroundColor: Colors.white,
+                    onConfirm: null, // Just shows status
+                  ),
+                  const SizedBox(height: 12),
+                  _ExpandableActionButton(
+                    label: 'Confirm Leave Waitlist',
+                    icon: Icons.close_rounded,
+                    isPrimary: false,
+                    backgroundColor: AppTheme.terracotta,
+                    foregroundColor: Colors.white,
+                    onConfirm: () async {
                       try {
-                        await provider.toggleRegistration(mission.id, false);
+                        await provider.toggleRegistration(mission.id, true);
                         if (context.mounted) {
-                          // Refresh missions to get updated data
                           await provider.fetchMissions();
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Successfully registered!'),
-                              ),
-                            );
-                            // Pop back to refresh the screen with updated data
                             Navigator.pop(context);
                           }
                         }
@@ -654,6 +669,44 @@ class _ActionButtons extends StatelessWidget {
                         }
                       }
                     },
+                  ),
+                ],
+              );
+            }
+
+            return _ExpandableActionButton(
+              label: isFull ? 'Join Waitlist' : 'Confirm Register',
+              icon: isFull ? Icons.queue : Icons.add_task,
+              isLoading: provider.isLoading,
+              backgroundColor: isFull ? AppTheme.violet : null,
+              onConfirm: () async {
+                try {
+                  await provider.toggleRegistration(mission.id, false);
+                  if (context.mounted) {
+                    // Refresh missions to get updated data
+                    await provider.fetchMissions();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            isFull
+                                ? 'Added to waitlist!'
+                                : 'Successfully registered!',
+                          ),
+                        ),
+                      );
+                      // Pop back to refresh the screen with updated data
+                      Navigator.pop(context);
+                    }
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                }
+              },
             );
           },
         );

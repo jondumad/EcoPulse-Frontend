@@ -80,8 +80,17 @@ class _MissionHistoryScreenState extends State<MissionHistoryScreen> {
           else
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              sliver: SliverToBoxAdapter(
-                child: MissionList(missions: filteredHistory, isHistory: true),
+              sliver: SliverList.builder(
+                itemCount: filteredHistory.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: MissionListItem(
+                      mission: filteredHistory[index],
+                      isHistory: true,
+                    ),
+                  );
+                },
               ),
             ),
 

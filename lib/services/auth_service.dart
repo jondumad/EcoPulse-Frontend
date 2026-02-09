@@ -16,8 +16,7 @@ class AuthService {
     }
 
     // For local development
-    // If using Android Emulator, run 'adb reverse tcp:3000 tcp:3000' to use localhost.
-    // Alternatively, use 'http://10.0.2.2:3000/api' if adb reverse is not possible.
+
     return 'http://localhost:3000/api';
   }
 
@@ -194,4 +193,6 @@ class AuthService {
     _inMemoryToken = await _storage.read(key: 'jwt_token');
     return _inMemoryToken;
   }
+
+  String? getTokenSync() => _inMemoryToken;
 }

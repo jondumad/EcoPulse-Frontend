@@ -28,10 +28,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
         context,
         listen: false,
       ).getPendingVerifications();
-      setState(() {
-        _pending = pending;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _pending = pending;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -77,12 +79,74 @@ class _VerificationScreenState extends State<VerificationScreen> {
     }
   }
 
+  Future<void> _handleVerifyAll() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Verify All?'),
+        content: Text('This will mark all ${_pending.length} items as Verified. This action cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Verify All')),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _isLoading = true);
+      int successCount = 0;
+      final provider = Provider.of<AttendanceProvider>(context, listen: false);
+      
+      for (var item in _pending) {
+        try {
+          final success = await provider.verifyAttendance(item['id'], 'Verified');
+          if (success) successCount++;
+        } catch (e) {
+          debugPrint('Error verifying item ${item['id']}: $e');
+        }
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Successfully verified $successCount items')),
+        );
+        _loadPending();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return EcoPulseLayout(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (_pending.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${_pending.length} PENDING ITEMS',
+                    style: EcoText.monoSM(context),
+                  ),
+                  TextButton.icon(
+                    onPressed: _handleVerifyAll,
+                    icon: const Icon(Icons.done_all, size: 18),
+                    label: const Text('VERIFY ALL'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: EcoColors.forest,
+                      textStyle: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Expanded(
             child: _isLoading
                 ? const Center(

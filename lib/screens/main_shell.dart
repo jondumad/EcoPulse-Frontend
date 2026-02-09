@@ -17,6 +17,7 @@ import 'coordinator/coordinator_mission_list.dart';
 import 'coordinator/analytics_screen.dart';
 import 'notification_inbox_screen.dart';
 import '../components/coordinator_speed_dial.dart';
+import '../widgets/compass_calibration_overlay.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -176,6 +177,9 @@ class _MainShellState extends State<MainShell> {
               },
             ),
           ),
+
+          // 6. Global Compass Calibration Overlay
+          const CompassCalibrationOverlay(),
         ],
       ),
     );

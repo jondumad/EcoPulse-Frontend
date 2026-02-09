@@ -2,20 +2,43 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:flutter_compass/flutter_compass.dart';
 
 class LocationProvider with ChangeNotifier {
   LatLng? _currentPosition;
   bool _isLoading = false;
   String? _error;
   StreamSubscription<Position>? _positionSubscription;
+  
+  // Compass state
+  double? _heading;
+  double? _headingAccuracy;
+  StreamSubscription<CompassEvent>? _compassSubscription;
 
   LatLng? get currentPosition => _currentPosition;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  double? get heading => _heading;
+  double? get headingAccuracy => _headingAccuracy;
 
   Future<void> init() async {
     await determinePosition();
     startListening();
+    startCompassListening();
+  }
+
+  void startCompassListening() {
+    _compassSubscription?.cancel();
+    _compassSubscription = FlutterCompass.events?.listen((event) {
+      _heading = event.heading;
+      _headingAccuracy = event.accuracy;
+      notifyListeners();
+    });
+  }
+
+  void stopCompassListening() {
+    _compassSubscription?.cancel();
+    _compassSubscription = null;
   }
 
   Future<void> determinePosition() async {

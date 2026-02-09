@@ -11,12 +11,15 @@ class Mission {
   final int currentVolunteers;
   final String priority; // 'Low', 'Normal', 'High', 'Critical'
   final bool isEmergency;
+  final String? emergencyJustification;
+  final bool isTemplate;
   final String status; // 'Open', 'InProgress', 'Completed', 'Cancelled'
   final List<Category> categories;
   final bool isRegistered; // Helper for UI state
   final String?
   registrationStatus; // 'Registered', 'CheckedIn', 'Completed', 'Cancelled'
   final String? creatorName;
+  final int createdBy;
 
   Mission({
     required this.id,
@@ -31,11 +34,14 @@ class Mission {
     required this.currentVolunteers,
     required this.priority,
     required this.isEmergency,
+    this.emergencyJustification,
+    this.isTemplate = false,
     required this.status,
     required this.categories,
     this.isRegistered = false,
     this.registrationStatus,
     this.creatorName,
+    required this.createdBy,
   });
 
   factory Mission.fromJson(Map<String, dynamic> json) {
@@ -58,6 +64,8 @@ class Mission {
       currentVolunteers: json['currentVolunteers'] ?? 0,
       priority: json['priority'] ?? 'Normal',
       isEmergency: json['isEmergency'] ?? false,
+      emergencyJustification: json['emergencyJustification'],
+      isTemplate: json['isTemplate'] ?? false,
       status: json['status'] ?? 'Open',
       categories:
           (json['missionCategories'] as List?)
@@ -67,6 +75,7 @@ class Mission {
       isRegistered: regStatus != null && regStatus != 'Cancelled',
       registrationStatus: regStatus,
       creatorName: json['creator'] != null ? json['creator']['name'] : null,
+      createdBy: json['createdBy'] ?? 0,
     );
   }
 }

@@ -10,6 +10,9 @@ import '../../providers/location_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
 import '../../widgets/eco_app_bar.dart';
+import '../../utils/map_utils.dart';
+import '../../widgets/map/user_location_marker.dart';
+import '../../widgets/map/off_screen_indicator.dart';
 
 class CheckInScreen extends StatefulWidget {
   final int missionId;
@@ -30,6 +33,7 @@ class CheckInScreen extends StatefulWidget {
 class _CheckInScreenState extends State<CheckInScreen>
     with TickerProviderStateMixin {
   final MapController _mapController = MapController();
+  late MapAnimationHelper _mapAnimationHelper;
   final MobileScannerController controller = MobileScannerController();
   bool _isProcessing = false;
   bool _isInRange = false;
@@ -38,60 +42,33 @@ class _CheckInScreenState extends State<CheckInScreen>
   bool _isScanning = false;
   bool _isNavExpanded = false;
   double _currentZoom = 16.0;
+  final ValueNotifier<double> _zoomNotifier = ValueNotifier(16.0);
+  final ValueNotifier<double> _rotationNotifier = ValueNotifier(0.0);
   double _currentRotation = 0.0;
 
-  AnimationController? _animationController;
-
   void _animatedMapMove(ll.LatLng destLocation, double destZoom) {
-    if (_animationController?.isAnimating ?? false) {
-      _animationController!.stop();
-    }
-
-    final camera = _mapController.camera;
-    final latTween = Tween<double>(
-      begin: camera.center.latitude,
-      end: destLocation.latitude,
-    );
-    final lngTween = Tween<double>(
-      begin: camera.center.longitude,
-      end: destLocation.longitude,
-    );
-    final zoomTween = Tween<double>(begin: camera.zoom, end: destZoom);
-
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-
-    final Animation<double> animation = CurvedAnimation(
-      parent: _animationController!,
-      curve: Curves.easeInOutCubic,
-    );
-
-    _animationController!.addListener(() {
-      _mapController.move(
-        ll.LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
-        zoomTween.evaluate(animation),
-      );
-    });
-
-    _animationController!.addStatusListener((status) {
-      if (status == AnimationStatus.completed ||
-          status == AnimationStatus.dismissed) {
-        _animationController!.dispose();
-        _animationController = null;
-      }
-    });
-
-    _animationController!.forward();
+    _mapAnimationHelper.move(destLocation, destZoom);
   }
 
   @override
   void initState() {
     super.initState();
+    _mapAnimationHelper = MapAnimationHelper(
+      mapController: _mapController,
+      vsync: this,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initLocation();
     });
+  }
+
+  @override
+  void dispose() {
+    _mapAnimationHelper.dispose();
+    _zoomNotifier.dispose();
+    _rotationNotifier.dispose();
+    controller.dispose();
+    super.dispose();
   }
 
   void _initLocation() {
@@ -151,12 +128,6 @@ class _CheckInScreenState extends State<CheckInScreen>
         margin: const EdgeInsets.all(20),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
   }
 
   Future<void> _handleCheckIn(String qrToken) async {
@@ -768,6 +739,11 @@ class _CheckInScreenState extends State<CheckInScreen>
                   if (mounted) setState(() => _mapReady = true);
                 },
                 onPositionChanged: (pos, hasGesture) {
+                  if (hasGesture) {
+                    _mapAnimationHelper.stop();
+                  }
+                  _zoomNotifier.value = pos.zoom;
+                  _rotationNotifier.value = pos.rotation;
                   if (pos.zoom != _currentZoom ||
                       pos.rotation != _currentRotation) {
                     setState(() {
@@ -835,49 +811,15 @@ class _CheckInScreenState extends State<CheckInScreen>
                     if (currentPosition != null)
                       Marker(
                         point: currentPosition,
-                        width: _currentZoom >= 14 ? 30 : 15,
-                        height: _currentZoom >= 14 ? 30 : 15,
-                        rotate: true,
-                        child: _currentZoom >= 14
-                            ? Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  Container(
-                                    width: 20,
-                                    height: 20,
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.violet.withValues(
-                                        alpha: 0.2,
-                                      ),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  Container(
-                                    width: 12,
-                                    height: 12,
-                                    decoration: BoxDecoration(
-                                      color: EcoColors.violet,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 2,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: EcoColors.violet,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
+                        width: 120, // max size for scaling
+                        height: 120, // max size for scaling
+                        rotate: false,
+                        child: UserLocationMarker(
+                          position: currentPosition,
+                          zoomNotifier: _zoomNotifier,
+                          rotationNotifier: _rotationNotifier,
+                          showCone: true,
+                        ),
                       ),
                   ],
                 ),
@@ -906,9 +848,9 @@ class _CheckInScreenState extends State<CheckInScreen>
     // Calculate dynamic bottom padding to avoid the floating card
     double bottomPadding = 180.0; // Collapsed Nav
     if (_isScanning) {
-      bottomPadding = 460.0;
+      bottomPadding = 510.0;
     } else if (_isInRange) {
-      bottomPadding = 320.0;
+      bottomPadding = 390.0;
     } else if (_isNavExpanded) {
       bottomPadding = 560.0;
     }
@@ -916,183 +858,37 @@ class _CheckInScreenState extends State<CheckInScreen>
     List<Widget> indicators = [];
 
     // Mission Indicator
-    final missionIndicator = _getIndicatorWidget(
-      missionLatLng,
-      camera,
-      constraints,
-      EcoColors.forest,
-      Icons.flag,
-      bottomPadding,
+    indicators.add(
+      MapOffScreenIndicator(
+        position: missionLatLng,
+        color: EcoColors.forest,
+        icon: Icons.flag,
+        camera: camera,
+        constraints: constraints,
+        bottomPadding: bottomPadding,
+        index: 0,
+        onTap: () => _animatedMapMove(missionLatLng, 16.0),
+      ),
     );
-    if (missionIndicator != null) indicators.add(missionIndicator);
 
     // User Indicator
     if (userLatLng != null) {
-      final userIndicator = _getIndicatorWidget(
-        userLatLng,
-        camera,
-        constraints,
-        EcoColors.violet,
-        Icons.person,
-        bottomPadding,
-        offsetIfOverlapping:
-            missionIndicator != null, // Simple boolean flag for now
+      final userIndicator = MapOffScreenIndicator(
+        position: userLatLng,
+        color: EcoColors.violet,
+        icon: Icons.person,
+        camera: camera,
+        constraints: constraints,
+        bottomPadding: bottomPadding,
+        index: 1,
+        offsetIfOverlapping: true,
+        onTap: () => _animatedMapMove(userLatLng, 16.0),
       );
-      if (userIndicator != null) indicators.add(userIndicator);
+      indicators.add(userIndicator);
     }
 
     return Stack(children: indicators);
   }
-
-  Widget? _getIndicatorWidget(
-    ll.LatLng point,
-    MapCamera camera,
-    BoxConstraints constraints,
-    Color color,
-    IconData icon,
-    double bottomPadding, {
-    bool offsetIfOverlapping = false,
-  }) {
-    final screenPoint = camera.latLngToScreenOffset(point);
-
-    const horizontalPadding = 45.0;
-    const topPadding = 120.0; // Below App Bar
-
-    final safeZone = Rect.fromLTRB(
-      0,
-      topPadding - 20, // Slight buffer
-      constraints.maxWidth,
-      constraints.maxHeight - bottomPadding + 20, // Buffer near card
-    );
-
-    // Indicator logic: Show if outside visible safe zone (not just strictly off-screen)
-    if (safeZone.contains(screenPoint)) return null;
-
-    final center = Offset(constraints.maxWidth / 2, constraints.maxHeight / 2);
-
-    final rect = Rect.fromLTRB(
-      horizontalPadding,
-      topPadding,
-      constraints.maxWidth - horizontalPadding,
-      constraints.maxHeight - bottomPadding,
-    );
-
-    final edgePoint = _calculateIntersection(center, screenPoint, rect);
-    final angle = math.atan2(
-      screenPoint.dy - center.dy,
-      screenPoint.dx - center.dx,
-    );
-
-    // Apply basic offset if requested to avoid overlapping
-    // In a real scenario, we'd check distance between indicators.
-    // Here we assume if 'overlapping' flag is true, we shift it slightly.
-    Offset finalPos = edgePoint;
-    if (offsetIfOverlapping) {
-      // Shift slightly to the right/down to "stack" it visually
-      // A simple offset avoids perfect coverage
-      finalPos = Offset(edgePoint.dx + 12, edgePoint.dy + 12);
-    }
-
-    final bool isZoomedOut = camera.zoom < 14;
-
-    return Positioned(
-      left: finalPos.dx - 22,
-      top: finalPos.dy - 22,
-      child: GestureDetector(
-        onTap: () => _animatedMapMove(point, 16.0),
-        child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Stack(
-            alignment: Alignment.center,
-            clipBehavior: Clip.none,
-            children: [
-              // Arrow Indicator (Behind the circle visually if desired, or just positioned)
-              Transform.translate(
-                offset: Offset(
-                  math.cos(angle) * 26, // Distance from center
-                  math.sin(angle) * 26,
-                ),
-                child: Transform.rotate(
-                  angle: angle + (math.pi / 2),
-                  child: CustomPaint(
-                    size: const Size(12, 8),
-                    painter: _PointerPainter(color),
-                  ),
-                ),
-              ),
-              // Main Circle - changes when zoomed out
-              Container(
-                width: isZoomedOut ? 24 : 40,
-                height: isZoomedOut ? 24 : 40,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: isZoomedOut
-                    ? null
-                    : Icon(icon, color: Colors.white, size: 20),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Offset _calculateIntersection(Offset center, Offset point, Rect rect) {
-    final dx = point.dx - center.dx;
-    final dy = point.dy - center.dy;
-
-    if (dx == 0 && dy == 0) return center;
-
-    double tMin = double.infinity;
-
-    if (dx > 0) {
-      tMin = math.min(tMin, (rect.right - center.dx) / dx);
-    } else if (dx < 0) {
-      tMin = math.min(tMin, (rect.left - center.dx) / dx);
-    }
-
-    if (dy > 0) {
-      tMin = math.min(tMin, (rect.bottom - center.dy) / dy);
-    } else if (dy < 0) {
-      tMin = math.min(tMin, (rect.top - center.dy) / dy);
-    }
-
-    return Offset(center.dx + tMin * dx, center.dy + tMin * dy);
-  }
-}
-
-class _PointerPainter extends CustomPainter {
-  final Color color;
-  _PointerPainter(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final path = Path()
-      ..moveTo(0, size.height)
-      ..lineTo(size.width / 2, 0)
-      ..lineTo(size.width, size.height)
-      ..close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _LoadingOverlay extends StatelessWidget {

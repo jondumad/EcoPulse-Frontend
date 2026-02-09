@@ -3,34 +3,196 @@ import '../models/mission_model.dart';
 import '../screens/volunteer/mission_detail_screen.dart';
 import '../widgets/eco_pulse_widgets.dart';
 
-class MissionList extends StatelessWidget {
+class MissionList extends StatefulWidget {
   final List<Mission> missions;
   final bool isHistory;
+  final bool shrinkWrap;
+  final ScrollPhysics? physics;
+  final bool showSearch;
+  final String? emptyMessage;
 
   const MissionList({
     super.key,
     required this.missions,
     this.isHistory = false,
+    this.shrinkWrap = true,
+    this.physics = const NeverScrollableScrollPhysics(),
+    this.showSearch = false,
+    this.emptyMessage,
   });
 
   @override
+  State<MissionList> createState() => _MissionListState();
+}
+
+class _MissionListState extends State<MissionList> {
+  String _searchQuery = '';
+  late TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Mission> get _filteredMissions {
+    if (_searchQuery.isEmpty) return widget.missions;
+    final query = _searchQuery.toLowerCase();
+    return widget.missions.where((m) {
+      return m.title.toLowerCase().contains(query) ||
+          m.locationName.toLowerCase().contains(query) ||
+          m.categories.any((c) => c.name.toLowerCase().contains(query));
+    }).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final filtered = _filteredMissions;
+
     return Column(
-      children: missions.map((mission) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _MissionListItem(mission: mission, isHistory: isHistory),
-        );
-      }).toList(),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (widget.showSearch) ...[
+          _buildSearchBar(),
+          const SizedBox(height: 16),
+          _buildResultsCount(filtered.length),
+          const SizedBox(height: 12),
+        ],
+        if (filtered.isEmpty)
+          _buildEmptyState()
+        else
+          ListView.builder(
+            shrinkWrap: widget.shrinkWrap,
+            physics: widget.physics,
+            itemCount: filtered.length,
+            padding: EdgeInsets.zero,
+            itemBuilder: (context, index) {
+              final mission = filtered[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: MissionListItem(
+                  mission: mission,
+                  isHistory: widget.isHistory,
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: EcoColors.ink.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (val) => setState(() => _searchQuery = val),
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        decoration: InputDecoration(
+          hintText: 'Search missions, locations, or categories...',
+          hintStyle: TextStyle(
+            color: EcoColors.ink.withValues(alpha: 0.3),
+            fontSize: 14,
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: EcoColors.ink.withValues(alpha: 0.4),
+            size: 20,
+          ),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResultsCount(int count) {
+    if (_searchQuery.isEmpty) return const SizedBox.shrink();
+    return Text(
+      'Found $count ${count == 1 ? 'mission' : 'missions'}',
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: EcoColors.ink.withValues(alpha: 0.5),
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: EcoColors.ink.withValues(alpha: 0.02),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: EcoColors.ink.withValues(alpha: 0.05),
+          style: BorderStyle.solid,
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _searchQuery.isNotEmpty
+                ? Icons.search_off_rounded
+                : Icons.assignment_outlined,
+            size: 48,
+            color: EcoColors.ink.withValues(alpha: 0.1),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _searchQuery.isNotEmpty
+                ? 'No missions match "$_searchQuery"'
+                : widget.emptyMessage ?? 'No missions available',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: EcoColors.ink.withValues(alpha: 0.4),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _MissionListItem extends StatelessWidget {
+class MissionListItem extends StatelessWidget {
   final Mission mission;
   final bool isHistory;
 
-  const _MissionListItem({required this.mission, required this.isHistory});
+  const MissionListItem({super.key, required this.mission, required this.isHistory});
 
   @override
   Widget build(BuildContext context) {
@@ -61,20 +223,20 @@ class _MissionListItem extends StatelessWidget {
           children: [
             // Category Icon
             Container(
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: isHistory
                     ? EcoColors.ink.withValues(alpha: 0.05)
                     : EcoColors.forest.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
                 child: Text(
                   mission.categories.isNotEmpty
                       ? mission.categories.first.icon
                       : '🌱',
-                  style: const TextStyle(fontSize: 18),
+                  style: const TextStyle(fontSize: 20),
                 ),
               ),
             ),
@@ -91,8 +253,8 @@ class _MissionListItem extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontFamily: 'Inter',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
                       color: isHistory
                           ? EcoColors.ink.withValues(alpha: 0.7)
                           : EcoColors.ink,
@@ -103,7 +265,7 @@ class _MissionListItem extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.calendar_today_outlined,
-                        size: 10,
+                        size: 11,
                         color: EcoColors.ink.withValues(alpha: 0.4),
                       ),
                       const SizedBox(width: 4),
@@ -111,10 +273,32 @@ class _MissionListItem extends StatelessWidget {
                         _formatDate(mission.startTime),
                         style: TextStyle(
                           fontFamily: 'Inter',
-                          fontSize: 11,
-                          height: 1.1,
+                          fontSize: 12,
                           color: EcoColors.ink.withValues(alpha: 0.4),
                           fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 3,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: EcoColors.ink.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          mission.locationName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            color: EcoColors.ink.withValues(alpha: 0.4),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],
@@ -146,17 +330,18 @@ class _MissionListItem extends StatelessWidget {
                 ),
               ),
             ] else ...[
+              const SizedBox(width: 12),
               if (mission.registrationStatus == 'Cancelled')
                 const Icon(
                   Icons.cancel_outlined,
                   color: EcoColors.terracotta,
-                  size: 18,
+                  size: 20,
                 )
               else
                 const Icon(
-                  Icons.check_circle,
+                  Icons.check_circle_rounded,
                   color: EcoColors.forest,
-                  size: 18,
+                  size: 20,
                 ),
             ],
           ],
@@ -166,7 +351,6 @@ class _MissionListItem extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    // Simple formatter, can use intl but basic is fine to avoid deps if not avail
     return '${date.day}/${date.month} • ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 }

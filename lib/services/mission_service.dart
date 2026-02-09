@@ -106,6 +106,24 @@ class MissionService {
     }
   }
 
+  Future<List<Mission>> getTemplates() async {
+    final token = await _authService.getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/missions/templates'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => Mission.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load templates');
+    }
+  }
+
   Future<Mission> createMission(Map<String, dynamic> missionData) async {
     final token = await _authService.getToken();
     final headers = {'Content-Type': 'application/json'};
@@ -174,20 +192,18 @@ class MissionService {
     }
   }
 
-  Future<void> manualCheckIn(int missionId, int userId) async {
+  Future<void> manualCheckIn(int missionId, int userId, String reason) async {
     final token = await _authService.getToken();
-    final headers = {'Content-Type': 'application/json'};
-    if (token != null) {
-      headers['Authorization'] = 'Bearer $token';
-    }
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
     final response = await http.post(
       Uri.parse(
         '$baseUrl/attendance/missions/$missionId/participants/$userId/check-in',
       ),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: headers,
+      body: jsonEncode({'reason': reason}),
     );
 
     if (response.statusCode != 200) {
@@ -196,20 +212,18 @@ class MissionService {
     }
   }
 
-  Future<void> manualComplete(int missionId, int userId) async {
+  Future<void> manualComplete(int missionId, int userId, String reason) async {
     final token = await _authService.getToken();
-    final headers = {'Content-Type': 'application/json'};
-    if (token != null) {
-      headers['Authorization'] = 'Bearer $token';
-    }
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
     final response = await http.post(
       Uri.parse(
         '$baseUrl/attendance/missions/$missionId/participants/$userId/complete',
       ),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: headers,
+      body: jsonEncode({'reason': reason}),
     );
 
     if (response.statusCode != 200) {
@@ -279,19 +293,26 @@ class MissionService {
     }
   }
 
-  Future<bool> batchAction(List<int> ids, String action) async {
+  Future<bool> batchAction(
+    List<int> ids,
+    String action, {
+    String? justification,
+  }) async {
     final token = await _authService.getToken();
-    final headers = {'Content-Type': 'application/json'};
-    if (token != null) {
-      headers['Authorization'] = 'Bearer $token';
-    }
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+    final body = {
+      'ids': ids,
+      'action': action,
+      if (justification != null) 'justification': justification,
+    };
+
     final response = await http.post(
       Uri.parse('$baseUrl/missions/batch-action'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode({'ids': ids, 'action': action}),
+      headers: headers,
+      body: jsonEncode(body),
     );
 
     if (response.statusCode == 200) {
@@ -366,6 +387,43 @@ class MissionService {
     } else {
       final errorData = jsonDecode(response.body);
       throw Exception(errorData['error'] ?? 'Failed to contact volunteers');
+    }
+  }
+
+  Future<bool> promoteFromWaitlist(int registrationId) async {
+    final token = await _authService.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/missions/registrations/$registrationId/promote'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Failed to promote user');
+    }
+  }
+
+  Future<bool> setPriority(int registrationId, bool isPriority) async {
+    final token = await _authService.getToken();
+    final response = await http.patch(
+      Uri.parse('$baseUrl/missions/registrations/$registrationId/priority'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'isPriority': isPriority}),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Failed to set priority');
     }
   }
 }

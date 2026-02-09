@@ -11,6 +11,7 @@ class EcoAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool centerTitle;
   final double height;
   final VoidCallback? onBackPressed;
+  final PreferredSizeWidget? bottom;
 
   const EcoAppBar({
     super.key,
@@ -22,6 +23,7 @@ class EcoAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.centerTitle = false,
     this.height = kToolbarHeight,
     this.onBackPressed,
+    this.bottom,
   }) : assert(
          title == null || titleWidget == null,
          'Cannot provide both title and titleWidget',
@@ -71,6 +73,7 @@ class EcoAppBar extends StatelessWidget implements PreferredSizeWidget {
                 )
               : null),
       actions: actions,
+      bottom: bottom,
     );
   }
 }

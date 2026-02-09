@@ -76,122 +76,148 @@ class _MissionHubState extends State<MissionHub> {
               ),
             ),
 
-            // 2. Floating Toolbar (Vertical Sidebar on Right)
+            // 2a. Map-Specific Floating Buttons (Slide in/out)
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOutCubic,
+              right: _showMap ? 20 : -80, // Slide in/out from right
+              bottom: hasActiveMission ? 280 : 200, // Above the toggle
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // My Location Button
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOutCubic,
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: _isLocating
+                            ? EcoColors.forest
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: _isLocating
+                              ? null
+                              : () async {
+                                  setState(() => _isLocating = true);
+                                  try {
+                                    await _mapKey.currentState
+                                        ?.triggerMyLocation();
+                                  } finally {
+                                    if (mounted) {
+                                      setState(() => _isLocating = false);
+                                    }
+                                  }
+                                },
+                          child: Center(
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              switchInCurve: Curves.easeOut,
+                              switchOutCurve: Curves.easeIn,
+                              child: _isLocating
+                                  ? const SizedBox(
+                                      key: ValueKey('loading'),
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Icon(
+                                      key: const ValueKey('icon'),
+                                      Icons.my_location,
+                                      size: 20,
+                                      color: EcoColors.forest.withValues(
+                                        alpha: 0.7,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Registered Filter Button
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOutCubic,
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: _showRegisteredOnly
+                            ? EcoColors.forest
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () {
+                            setState(() {
+                              _showRegisteredOnly = !_showRegisteredOnly;
+                              _selectedMission = null;
+                            });
+                          },
+                          child: Center(
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              switchInCurve: Curves.easeOut,
+                              switchOutCurve: Curves.easeIn,
+                              transitionBuilder: (child, animation) {
+                                return ScaleTransition(
+                                  scale: animation,
+                                  child: child,
+                                );
+                              },
+                              child: Icon(
+                                key: ValueKey(_showRegisteredOnly),
+                                _showRegisteredOnly
+                                    ? Icons.bookmark
+                                    : Icons.bookmark_border,
+                                size: 20,
+                                color: _showRegisteredOnly
+                                    ? Colors.white
+                                    : EcoColors.forest.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // 2b. View Toggle (Always visible)
             AnimatedPositioned(
               duration: const Duration(milliseconds: 400),
               curve: Curves.easeOutCubic,
               right: 20,
-              bottom: hasActiveMission ? 180 : 100, // Anchored to the side
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Map-Specific Buttons (Grouped Capsule)
-                  AnimatedScale(
-                    scale: _showMap ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 300),
-                    child: AnimatedOpacity(
-                      opacity: _showMap ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 300),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: EcoColors.forest,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: EcoColors.forest.withValues(alpha: 0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            // My Location Button
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: _isLocating
-                                    ? Colors.white
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: IconButton(
-                                padding: EdgeInsets.zero,
-                                icon: _isLocating
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: EcoColors.forest,
-                                        ),
-                                      )
-                                    : Icon(
-                                        Icons.my_location,
-                                        size: 20,
-                                        color: _isLocating
-                                            ? EcoColors.forest
-                                            : Colors.white.withValues(
-                                                alpha: 0.7,
-                                              ),
-                                      ),
-                                onPressed: _isLocating
-                                    ? null
-                                    : () async {
-                                        setState(() => _isLocating = true);
-                                        try {
-                                          await _mapKey.currentState
-                                              ?.triggerMyLocation();
-                                        } finally {
-                                          if (mounted) {
-                                            setState(() => _isLocating = false);
-                                          }
-                                        }
-                                      },
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            // Registered Filter Button
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: _showRegisteredOnly
-                                    ? Colors.white
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: IconButton(
-                                padding: EdgeInsets.zero,
-                                icon: Icon(
-                                  _showRegisteredOnly
-                                      ? Icons.bookmark
-                                      : Icons.bookmark_border,
-                                  size: 20,
-                                  color: _showRegisteredOnly
-                                      ? EcoColors.forest
-                                      : Colors.white.withValues(alpha: 0.7),
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _showRegisteredOnly = !_showRegisteredOnly;
-                                    _selectedMission = null;
-                                  });
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // View Toggle
-                  MissionViewToggle(showMap: _showMap, onToggle: _toggleView),
-                ],
+              bottom: hasActiveMission ? 180 : 100,
+              child: MissionViewToggle(
+                showMap: _showMap,
+                onToggle: _toggleView,
               ),
             ),
 

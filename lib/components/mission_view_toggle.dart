@@ -13,37 +13,59 @@ class MissionViewToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onToggle,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: EcoColors.forest,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: EcoColors.forest.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: IntrinsicWidth(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+    const itemHeight = 44.0;
+    const spacing = 4.0;
+    final selectedIndex = showMap ? 0 : 1;
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: IntrinsicWidth(
+        child: SizedBox(
+          height: itemHeight * 2 + spacing,
+          child: Stack(
             children: [
-              _ToggleItem(
-                icon: Icons.map_outlined,
-                isSelected: showMap,
-                isVertical: true,
+              // Animated background pill
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                top: selectedIndex * (itemHeight + spacing),
+                left: 0,
+                right: 0,
+                height: itemHeight,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: EcoColors.forest,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                ),
               ),
-              const SizedBox(height: 4),
-              _ToggleItem(
-                icon: Icons.list_alt_rounded,
-                isSelected: !showMap,
-                isVertical: true,
+              // Buttons
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _ToggleItem(
+                    icon: Icons.map_outlined,
+                    isSelected: showMap,
+                    onTap: showMap ? null : onToggle,
+                  ),
+                  const SizedBox(height: spacing),
+                  _ToggleItem(
+                    icon: Icons.list_alt_rounded,
+                    isSelected: !showMap,
+                    onTap: !showMap ? null : onToggle,
+                  ),
+                ],
               ),
             ],
           ),
@@ -56,32 +78,30 @@ class MissionViewToggle extends StatelessWidget {
 class _ToggleItem extends StatelessWidget {
   final IconData icon;
   final bool isSelected;
-  final bool isVertical;
+  final VoidCallback? onTap;
 
-  const _ToggleItem({
-    required this.icon,
-    required this.isSelected,
-    this.isVertical = false,
-  });
+  const _ToggleItem({required this.icon, required this.isSelected, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: isSelected ? Colors.white : Colors.transparent,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Center(
-        child: Icon(
-          icon,
-          size: 20,
-          color: isSelected
-              ? EcoColors.forest
-              : Colors.white.withValues(alpha: 0.7),
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Center(
+          child: Icon(
+            icon,
+            size: 20,
+            color: isSelected
+                ? Colors.white
+                : EcoColors.forest.withValues(alpha: 0.7),
+          ),
         ),
       ),
     );

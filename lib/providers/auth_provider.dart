@@ -87,6 +87,27 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    _setLoading(true);
+    try {
+      return await _authService.forgotPassword(email);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<Map<String, dynamic>> resetPassword(
+    String token,
+    String newPassword,
+  ) async {
+    _setLoading(true);
+    try {
+      return await _authService.resetPassword(token, newPassword);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();

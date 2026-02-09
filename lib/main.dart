@@ -11,6 +11,8 @@ import 'providers/collaboration_provider.dart';
 import 'services/auth_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/forgot_password_screen.dart';
+import 'screens/reset_password_screen.dart';
 import 'screens/main_shell.dart';
 
 void main() {
@@ -75,6 +77,8 @@ class _EcoPulseAppViewState extends State<EcoPulseAppView> {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
+        '/forgot-password': (context) => const ForgotPasswordScreen(),
+        '/reset-password': (context) => const ResetPasswordScreen(),
         '/dashboard': (context) => const MainShell(),
       },
       // Use logic to determine the initial screen wrapper

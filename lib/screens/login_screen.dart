@@ -157,14 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const Spacer(),
                           TextButton(
                             onPressed: () {
-                              // TODO: Implement Forgot Password Flow
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Forgot Password flow coming soon!',
-                                  ),
-                                ),
-                              );
+                              Navigator.pushNamed(context, '/forgot-password');
                             },
                             child: Text(
                               'Forgot Password?',

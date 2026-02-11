@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
-import '../../components/grain_overlay.dart';
 
 class MissionSuccessSummaryScreen extends StatelessWidget {
   final String missionTitle;
@@ -28,7 +27,6 @@ class MissionSuccessSummaryScreen extends StatelessWidget {
       backgroundColor: AppTheme.forest,
       body: Stack(
         children: [
-          const Positioned.fill(child: GrainOverlay()),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(24.0),

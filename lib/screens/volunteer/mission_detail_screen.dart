@@ -11,7 +11,6 @@ import '../../models/mission_model.dart';
 import '../../providers/auth_provider.dart';
 
 import '../../theme/app_theme.dart';
-import '../../components/grain_overlay.dart';
 import '../../widgets/eco_pulse_widgets.dart';
 import 'check_in_screen.dart';
 import '../coordinator/qr_display.dart';
@@ -77,8 +76,6 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
       backgroundColor: AppTheme.clay,
       body: Stack(
         children: [
-          const Positioned.fill(child: GrainOverlay()),
-
           SafeArea(
             child: Stack(
               children: [
@@ -508,6 +505,61 @@ class _ActionButtons extends StatelessWidget {
           icon: Icons.lock_clock,
           isPrimary: false,
           onConfirm: null, // Disabled
+        );
+      }
+
+      if (mission.registrationStatus == 'Invited') {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            _ExpandableActionButton(
+              label: 'Accept Invite',
+              icon: Icons.check_circle_outline,
+              backgroundColor: EcoColors.forest,
+              foregroundColor: Colors.white,
+              onConfirm: () async {
+                final provider = Provider.of<MissionProvider>(context, listen: false);
+                try {
+                  await provider.toggleRegistration(mission.id, false);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Invitation accepted!'), backgroundColor: EcoColors.forest),
+                    );
+                    Navigator.pop(context);
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+            _ExpandableActionButton(
+              label: 'Decline Invite',
+              icon: Icons.cancel_outlined,
+              isPrimary: false,
+              backgroundColor: EcoColors.terracotta,
+              foregroundColor: Colors.white,
+              onConfirm: () async {
+                final provider = Provider.of<MissionProvider>(context, listen: false);
+                try {
+                  await provider.declineInvitation(mission.id);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Invitation declined'), backgroundColor: EcoColors.terracotta),
+                    );
+                    Navigator.pop(context);
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                }
+              },
+            ),
+          ],
         );
       }
 

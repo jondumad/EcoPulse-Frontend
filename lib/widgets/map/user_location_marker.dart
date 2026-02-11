@@ -75,7 +75,7 @@ class UserLocationMarker extends StatelessWidget {
             alignment: Alignment.center,
             children: [
               // 7. Update Cone Rendering
-              if (showCone && heading != null && _shouldShowCone(status))
+              if (showCone && _shouldShowCone(status))
                 Transform.rotate(
                   angle: (heading * (math.pi / 180)),
                   child: CustomPaint(

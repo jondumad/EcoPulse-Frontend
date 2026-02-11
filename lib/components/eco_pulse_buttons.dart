@@ -7,6 +7,7 @@ class EcoPulseButton extends StatelessWidget {
   final bool isSecondary;
   final bool isLoading;
   final IconData? icon;
+  final Color? color;
 
   const EcoPulseButton({
     super.key,
@@ -15,6 +16,7 @@ class EcoPulseButton extends StatelessWidget {
     this.isSecondary = false,
     this.isLoading = false,
     this.icon,
+    this.color,
   });
 
   @override
@@ -23,8 +25,8 @@ class EcoPulseButton extends StatelessWidget {
       return OutlinedButton(
         onPressed: isLoading ? null : onPressed,
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppTheme.forest,
-          side: const BorderSide(color: AppTheme.forest, width: 2),
+          foregroundColor: color ?? AppTheme.forest,
+          side: BorderSide(color: color ?? AppTheme.forest, width: 2),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(40),
@@ -44,7 +46,7 @@ class EcoPulseButton extends StatelessWidget {
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: AppTheme.forest.withValues(alpha: 0.2),
+            color: (color ?? AppTheme.forest).withValues(alpha: 0.2),
             offset: const Offset(0, 4),
             blurRadius: 12,
           ),
@@ -54,7 +56,7 @@ class EcoPulseButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.forest,
+          backgroundColor: color ?? AppTheme.forest,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
           elevation: 0,

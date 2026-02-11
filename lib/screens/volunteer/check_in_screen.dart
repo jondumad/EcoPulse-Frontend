@@ -5,7 +5,9 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../providers/attendance_provider.dart';
+import '../../providers/mission_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
@@ -132,7 +134,28 @@ class _CheckInScreenState extends State<CheckInScreen>
 
   Future<void> _handleCheckIn(String qrToken) async {
     final loc = Provider.of<LocationProvider>(context, listen: false);
+    final missionProvider = Provider.of<MissionProvider>(context, listen: false);
     if (!_isInRange || _isProcessing) return;
+
+    final now = DateTime.now();
+    final mission = missionProvider.getMissionSync(widget.missionId);
+    
+    // Logging for debugging - convert UTC to Local for clarity
+    debugPrint('--- CHECK-IN SCAN LOG ---');
+    debugPrint('Volunteer Device Time (Local): ${DateFormat('HH:mm:ss').format(now)}');
+    if (mission != null) {
+      // Ensure we work with local time for logging
+      final startTimeLocal = mission.startTime.toLocal();
+      // Scan allowed 30 mins before + 5 mins grace for clock drift
+      final allowedStartLocal = startTimeLocal.subtract(const Duration(minutes: 35));
+      
+      debugPrint('Mission Start Time (Local): ${DateFormat('HH:mm:ss').format(startTimeLocal)}');
+      debugPrint('Scan Requirement (Local - 30m): ${DateFormat('HH:mm:ss').format(startTimeLocal.subtract(const Duration(minutes: 30)))}');
+      debugPrint('Status (w/ 5m grace): ${now.isBefore(allowedStartLocal) ? "TOO EARLY" : "VALID WINDOW"}');
+    } else {
+      debugPrint('Mission details not found in cache for logging.');
+    }
+    debugPrint('-------------------------');
 
     setState(() => _isProcessing = true);
     try {

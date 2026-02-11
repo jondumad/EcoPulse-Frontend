@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/providers/collaboration_provider.dart';
 import '../providers/nav_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -7,7 +8,6 @@ import '../theme/app_theme.dart';
 import '../widgets/eco_app_bar.dart';
 import '../widgets/active_mission_tracker.dart';
 import '../components/custom_navigation_bar.dart';
-import '../components/grain_overlay.dart';
 import 'volunteer_home_screen.dart';
 import 'profile_screen.dart';
 import 'volunteer/mission_hub.dart';
@@ -137,9 +137,6 @@ class _MainShellState extends State<MainShell> {
         children: [
           // 1. Content Wrapper (No bottom padding for true floating effect)
           Positioned.fill(child: content),
-
-          // 2. Grain Overlay
-          const Positioned.fill(child: GrainOverlay()),
 
           // 3. Active Mission Tracker (Floating above content, below nav)
           if (user.role == 'Volunteer' && selectedIndex == 1)

@@ -9,6 +9,7 @@ import '../theme/app_theme.dart';
 import '../screens/volunteer/mission_detail_screen.dart';
 import '../screens/volunteer/check_in_screen.dart';
 import '../widgets/eco_pulse_widgets.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class MissionCard extends StatelessWidget {
   final Mission mission;
@@ -107,12 +108,19 @@ class MissionCard extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Temporal Mission Timeline
+                    _buildTemporalTimeline(context),
+                    const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'PROGRESS',
-                          style: AppTheme.lightTheme.textTheme.labelLarge,
+                          'Impact Progress',
+                          style: AppTheme.lightTheme.textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppTheme.ink.withValues(alpha: 0.6),
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                         Text(
                           '${(progress * 100).toInt()}%',
@@ -153,7 +161,7 @@ class MissionCard extends StatelessWidget {
                       // Coordinated Expandable Buttons
                       Expanded(
                         flex: 3,
-                        child: _CoordinatedActionButtons(mission: mission),
+                        child: CoordinatedActionButtons(mission: mission),
                       ),
                     ] else ...[
                       // Start/Register Button (when not registered)
@@ -296,6 +304,81 @@ class MissionCard extends StatelessWidget {
     );
   }
 
+  Widget _buildTemporalTimeline(BuildContext context) {
+    final now = DateTime.now();
+    final start = mission.startTime;
+    final end = mission.endTime;
+
+    double progress = 0.0;
+    String status = "Scheduled";
+    if (now.isAfter(end)) {
+      progress = 1.0;
+      status = "Completed";
+    } else if (now.isAfter(start)) {
+      final total = end.difference(start).inSeconds;
+      final elapsed = now.difference(start).inSeconds;
+      progress = (elapsed / total).clamp(0.0, 1.0);
+      status = "In Progress";
+    } else if (mission.registeredAt != null) {
+      final totalWait = start.difference(mission.registeredAt!).inSeconds;
+      final elapsedWait = now.difference(mission.registeredAt!).inSeconds;
+      if (totalWait > 0) {
+        progress = (elapsedWait / totalWait).clamp(0.0, 1.0);
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Mission Timeline',
+              style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                color: AppTheme.ink.withValues(alpha: 0.6),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              status.toUpperCase(),
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 9,
+                fontWeight: FontWeight.w800,
+                color: progress > 0 && progress < 1
+                    ? AppTheme.forest
+                    : AppTheme.ink.withValues(alpha: 0.4),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 4,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppTheme.clay,
+            borderRadius: BorderRadius.circular(2),
+          ),
+          child: Stack(
+            children: [
+              FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: progress,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.forest.withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   String _formatTimeLeft(DateTime start, DateTime end) {
     final now = DateTime.now();
     if (now.isAfter(end)) return 'Ended';
@@ -330,17 +413,17 @@ class _MetaItem extends StatelessWidget {
 }
 
 // Coordinated Action Buttons - Only one can be expanded at a time
-class _CoordinatedActionButtons extends StatefulWidget {
+class CoordinatedActionButtons extends StatefulWidget {
   final Mission mission;
 
-  const _CoordinatedActionButtons({required this.mission});
+  const CoordinatedActionButtons({super.key, required this.mission});
 
   @override
-  State<_CoordinatedActionButtons> createState() =>
-      _CoordinatedActionButtonsState();
+  State<CoordinatedActionButtons> createState() =>
+      CoordinatedActionButtonsState();
 }
 
-class _CoordinatedActionButtonsState extends State<_CoordinatedActionButtons> {
+class CoordinatedActionButtonsState extends State<CoordinatedActionButtons> {
   String? _expandedButton; // 'checkin' or 'cancel'
 
   @override

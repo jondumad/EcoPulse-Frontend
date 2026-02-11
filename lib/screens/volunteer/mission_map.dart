@@ -19,14 +19,16 @@ class MissionMap extends StatefulWidget {
   final Mission? selectedMission;
   final ValueChanged<Mission?>? onMissionSelected;
   final bool showRegisteredOnly;
-
+  final List<Mission>? missionsOverride;
+  final bool centerOnMission;
   const MissionMap({
     super.key,
     this.selectedMission,
     this.onMissionSelected,
     this.showRegisteredOnly = false,
+    this.missionsOverride,
+    this.centerOnMission = false,
   });
-
   @override
   State<MissionMap> createState() => MissionMapState();
 }
@@ -43,11 +45,6 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
   }
 
   void animatedMapMove(ll.LatLng destLocation, [double? destZoom]) {
-    // Dynamic Zoom Logic:
-    // If too close (>17), zoom out to 16.0.
-    // If too far (<14), zoom in to 15.5.
-    // Otherwise maintain current zoom.
-    
     double targetZoom;
     if (destZoom != null) {
       targetZoom = destZoom;
@@ -61,7 +58,6 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
         targetZoom = currentZoom;
       }
     }
-
     _mapAnimationHelper.move(destLocation, targetZoom);
   }
 
@@ -72,8 +68,13 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
       mapController: _mapController,
       vsync: this,
     );
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.centerOnMission && widget.selectedMission != null) {
+        final point = _parseGps(widget.selectedMission!.locationGps);
+        animatedMapMove(point, 16.0);
+        _zoomNotifier.value = 16.0;
+        return;
+      }
       final loc = Provider.of<LocationProvider>(context, listen: false);
       if (loc.currentPosition != null) {
         animatedMapMove(loc.currentPosition!, 15.0);
@@ -173,11 +174,14 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
             children: [
               Consumer2<MissionProvider, LocationProvider>(
                 builder: (context, missionProvider, loc, child) {
+                  // Use missionsOverride if provided, otherwise fall back to all missions
+                  final sourceMissions = widget.missionsOverride ?? missionProvider.missions;
+
                   final displayMissions = widget.showRegisteredOnly
-                      ? missionProvider.missions
+                      ? sourceMissions
                             .where((m) => m.isRegistered)
                             .toList()
-                      : missionProvider.missions;
+                      : sourceMissions;
 
                   final markers = displayMissions.map((mission) {
                     final point = _parseGps(mission.locationGps);
@@ -245,7 +249,10 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                           ),
                           if (loc.currentPosition != null)
                             TweenAnimationBuilder<ll.LatLng>(
-                              tween: LatLngTween(end: loc.currentPosition!, begin: ll.LatLng(-6.2088, 106.8456)),
+                              tween: LatLngTween(
+                                end: loc.currentPosition!,
+                                begin: ll.LatLng(-6.2088, 106.8456),
+                              ),
                               duration: const Duration(milliseconds: 250),
                               curve: Curves.easeInOut,
                               builder: (context, animatedPos, _) {
@@ -312,7 +319,9 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                                 final missionIds = cluster.markers
                                     .map((m) {
                                       final key = m.key;
-                                      if (key is ValueKey<int>) return key.value;
+                                      if (key is ValueKey<int>) {
+                                        return key.value;
+                                      }
                                       return null;
                                     })
                                     .whereType<int>()
@@ -455,8 +464,11 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.location_on_outlined,
-                          size: 10, color: AppTheme.ink.withValues(alpha: 0.4)),
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 10,
+                        color: AppTheme.ink.withValues(alpha: 0.4),
+                      ),
                       const SizedBox(width: 2),
                       Expanded(
                         child: Text(
@@ -477,7 +489,9 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1.5),
+                          horizontal: 5,
+                          vertical: 1.5,
+                        ),
                         decoration: BoxDecoration(
                           color: EcoColors.forest,
                           borderRadius: BorderRadius.circular(4),
@@ -492,22 +506,32 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Icon(Icons.people_outline_rounded,
-                          size: 11, color: AppTheme.ink.withValues(alpha: 0.4)),
+                      Icon(
+                        Icons.people_outline_rounded,
+                        size: 11,
+                        color: AppTheme.ink.withValues(alpha: 0.4),
+                      ),
                       const SizedBox(width: 2),
                       Text(
                         '${mission.currentVolunteers}/${mission.maxVolunteers ?? "∞"}',
                         style: GoogleFonts.inter(
-                            fontSize: 10, fontWeight: FontWeight.w600),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(width: 8),
-                      Icon(Icons.calendar_today_outlined,
-                          size: 10, color: AppTheme.ink.withValues(alpha: 0.4)),
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 10,
+                        color: AppTheme.ink.withValues(alpha: 0.4),
+                      ),
                       const SizedBox(width: 2),
                       Text(
                         '${mission.startTime.day}/${mission.startTime.month}',
                         style: GoogleFonts.inter(
-                            fontSize: 10, fontWeight: FontWeight.w600),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -515,8 +539,11 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.arrow_forward_ios_rounded,
-                size: 12, color: Colors.grey),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 12,
+              color: Colors.grey,
+            ),
           ],
         ),
       ),

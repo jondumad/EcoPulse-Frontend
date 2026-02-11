@@ -493,6 +493,17 @@ class EcoStatItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // If the value is a number, we can use the animated version automatically
+    final double? numericValue = double.tryParse(value);
+    if (numericValue != null) {
+      return EcoAnimatedStatItem(
+        label: label,
+        value: numericValue,
+        color: color,
+        isInteger: !value.contains('.'),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -508,6 +519,104 @@ class EcoStatItem extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           label.toUpperCase(),
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
+            color: EcoColors.ink.withValues(alpha: 0.5),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class EcoAnimatedStatItem extends StatefulWidget {
+  final String label;
+  final double value;
+  final Color color;
+  final bool isInteger;
+
+  const EcoAnimatedStatItem({
+    super.key,
+    required this.label,
+    required this.value,
+    this.color = EcoColors.forest,
+    this.isInteger = true,
+  });
+
+  @override
+  State<EcoAnimatedStatItem> createState() => _EcoAnimatedStatItemState();
+}
+
+class _EcoAnimatedStatItemState extends State<EcoAnimatedStatItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+
+    _animation = Tween<double>(
+      begin: 0,
+      end: widget.value,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutQuart));
+
+    _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(EcoAnimatedStatItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value) {
+      _animation = Tween<double>(begin: _animation.value, end: widget.value)
+          .animate(
+            CurvedAnimation(parent: _controller, curve: Curves.easeOutQuart),
+          );
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        AnimatedBuilder(
+          animation: _animation,
+          builder: (context, child) {
+            String displayValue;
+            if (widget.isInteger) {
+              displayValue = _animation.value.toInt().toString();
+            } else {
+              displayValue = _animation.value.toStringAsFixed(1);
+            }
+
+            return Text(
+              displayValue,
+              style: GoogleFonts.fraunces(
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
+                color: widget.color,
+                height: 1,
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 4),
+        Text(
+          widget.label.toUpperCase(),
           style: GoogleFonts.inter(
             fontSize: 10,
             fontWeight: FontWeight.w800,

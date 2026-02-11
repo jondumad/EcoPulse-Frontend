@@ -64,7 +64,6 @@ class _EcoPulseAppViewState extends State<EcoPulseAppView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AuthProvider>(context, listen: false).initAuth();
       Provider.of<AttendanceProvider>(context, listen: false).refresh();
-      Provider.of<LocationProvider>(context, listen: false).init();
     });
   }
 

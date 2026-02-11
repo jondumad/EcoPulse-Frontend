@@ -54,6 +54,7 @@ dependencies:
   cached_network_image: ^3.4.1
   socket_io_client: ^2.0.2
   flutter_compass: ^0.8.1
+  sensors_plus: ^7.0.0
 
 dev_dependencies:
   flutter_test:

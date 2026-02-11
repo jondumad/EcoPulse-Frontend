@@ -168,4 +168,30 @@ class AttendanceService {
 
     return response.statusCode == 200;
   }
+
+  Future<bool> manualCheckIn(int missionId, int userId, String reason) async {
+    final token = await _authService.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/attendance/missions/$missionId/users/$userId/manual-checkin'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'reason': reason}),
+    );
+    return response.statusCode == 200;
+  }
+
+  Future<bool> manualComplete(int missionId, int userId, String reason) async {
+    final token = await _authService.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/attendance/missions/$missionId/users/$userId/manual-complete'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'reason': reason}),
+    );
+    return response.statusCode == 200;
+  }
 }

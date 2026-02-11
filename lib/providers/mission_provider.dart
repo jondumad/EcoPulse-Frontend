@@ -411,6 +411,33 @@ class MissionProvider with ChangeNotifier {
     }
   }
 
+  Future<List<dynamic>> getCollaborators(int missionId) async {
+    try {
+      return await _missionService.getCollaborators(missionId);
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    }
+  }
+
+  Future<void> addCollaborator(int missionId, int userId) async {
+    try {
+      await _missionService.addCollaborator(missionId, userId);
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    }
+  }
+
+  Future<void> removeCollaborator(int missionId, int userId) async {
+    try {
+      await _missionService.removeCollaborator(missionId, userId);
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    }
+  }
+
   Future<Map<String, dynamic>> inviteToMission(int missionId) async {
     try {
       return await _missionService.inviteToMission(missionId);
@@ -429,9 +456,48 @@ class MissionProvider with ChangeNotifier {
     }
   }
 
+  Future<void> contactVolunteer(int missionId, int userId, String message) async {
+    try {
+      await _missionService.contactVolunteer(missionId, userId, message);
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    }
+  }
+
   Future<void> promoteFromWaitlist(int registrationId) async {
     try {
       await _missionService.promoteFromWaitlist(registrationId);
+      await fetchMissions(forceRefresh: true);
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    }
+  }
+
+  Future<void> inviteUser(int missionId, int userId) async {
+    try {
+      await _missionService.inviteUser(missionId, userId);
+      await fetchMissions(forceRefresh: true);
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    }
+  }
+
+  Future<void> declineInvitation(int missionId) async {
+    try {
+      await _missionService.declineInvitation(missionId);
+      await fetchMissions(forceRefresh: true);
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    }
+  }
+
+  Future<void> promoteFromWaitlistByUserId(int missionId, int userId) async {
+    try {
+      await _missionService.promoteFromWaitlistByUserId(missionId, userId);
       await fetchMissions(forceRefresh: true);
     } catch (e) {
       _error = e.toString();
@@ -456,6 +522,19 @@ class MissionProvider with ChangeNotifier {
     } catch (e) {
       _error = e.toString();
       rethrow;
+    }
+  }
+
+  // Alias for UI components
+  Future<List<Map<String, dynamic>>> getMissionVolunteers(int missionId) async {
+    return await getMissionRegistrations(missionId);
+  }
+
+  Mission? getMissionSync(int missionId) {
+    try {
+      return _missions.firstWhere((m) => m.id == missionId);
+    } catch (_) {
+      return null;
     }
   }
 }

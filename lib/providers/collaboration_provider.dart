@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../services/collaboration_service.dart';
 import '../models/user_model.dart';
@@ -138,6 +139,12 @@ class CollaborationProvider with ChangeNotifier {
           notifyListeners();
         }
         break;
+      case 'live_update':
+        debugPrint('CollaborationProvider: Live update received: ${event['data']['type']}');
+        // We can choose to store this in a separate list for a "Live Feed"
+        // For now, we'll just notify that something changed.
+        notifyListeners();
+        break;
     }
   }
 
@@ -206,30 +213,91 @@ class CollaborationProvider with ChangeNotifier {
     }
   }
 
-  void sendComment(String content) {
-    debugPrint('CollaborationProvider: sendComment content=$content');
-    if (currentMissionId != null) {
-      _service.sendComment(currentMissionId!, content);
+  Future<void> sendComment(String content) async {
+    if (currentMissionId == null) {
+      debugPrint('CollaborationProvider Error: currentMissionId is null');
+      return;
     }
+    
+    final completer = Completer<void>();
+    bool timedOut = false;
+
+    final timer = Timer(const Duration(seconds: 10), () {
+      if (!completer.isCompleted) {
+        timedOut = true;
+        completer.completeError('Request timed out');
+      }
+    });
+
+    debugPrint('CollaborationProvider: Sending comment to mission $currentMissionId');
+    _service.sendComment(currentMissionId!, content, (response) {
+      if (timedOut) return;
+      timer.cancel();
+      
+      debugPrint('CollaborationProvider: Received send_comment ack: $response');
+      if (response != null && response['success'] == true) {
+        completer.complete();
+      } else {
+        completer.completeError(response?['error'] ?? 'Failed to send comment');
+      }
+    });
+    return completer.future;
   }
 
-  void togglePin(int commentId, bool isPinned) {
-    if (currentMissionId != null) {
-      _service.togglePin(currentMissionId!, commentId, isPinned);
-    }
+  Future<void> togglePin(int commentId, bool isPinned) async {
+    if (currentMissionId == null) return;
+    
+    final completer = Completer<void>();
+    _service.togglePin(currentMissionId!, commentId, isPinned, (response) {
+      if (response != null && response['success'] == true) {
+        completer.complete();
+      } else {
+        completer.completeError(response?['error'] ?? 'Failed to toggle pin');
+      }
+    });
+    return completer.future;
   }
 
-  void addChecklistItem(String content) {
-    debugPrint('CollaborationProvider: addChecklistItem content=$content');
-    if (currentMissionId != null) {
-      _service.addChecklistItem(currentMissionId!, content);
-    }
+  Future<void> addChecklistItem(String content) async {
+    if (currentMissionId == null) return;
+    
+    final completer = Completer<void>();
+    bool timedOut = false;
+
+    final timer = Timer(const Duration(seconds: 10), () {
+      if (!completer.isCompleted) {
+        timedOut = true;
+        completer.completeError('Request timed out');
+      }
+    });
+
+    debugPrint('CollaborationProvider: Adding checklist item to mission $currentMissionId');
+    _service.addChecklistItem(currentMissionId!, content, (response) {
+      if (timedOut) return;
+      timer.cancel();
+
+      debugPrint('CollaborationProvider: Received add_checklist_item ack: $response');
+      if (response != null && response['success'] == true) {
+        completer.complete();
+      } else {
+        completer.completeError(response?['error'] ?? 'Failed to add task');
+      }
+    });
+    return completer.future;
   }
 
-  void toggleChecklistItem(int itemId, bool isCompleted) {
-    if (currentMissionId != null) {
-      _service.toggleChecklistItem(currentMissionId!, itemId, isCompleted);
-    }
+  Future<void> toggleChecklistItem(int itemId, bool isCompleted) async {
+    if (currentMissionId == null) return;
+    
+    final completer = Completer<void>();
+    _service.toggleChecklistItem(currentMissionId!, itemId, isCompleted, (response) {
+      if (response != null && response['success'] == true) {
+        completer.complete();
+      } else {
+        completer.completeError(response?['error'] ?? 'Failed to update task');
+      }
+    });
+    return completer.future;
   }
 
   @override

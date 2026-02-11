@@ -6,10 +6,12 @@ import 'package:intl/intl.dart';
 import '../../models/mission_model.dart';
 import '../../providers/mission_provider.dart';
 import '../../providers/attendance_provider.dart';
+import '../../providers/collaboration_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
 import '../../widgets/mission_filter_widgets.dart';
 import '../../widgets/volunteer_list_modal.dart';
+import '../../widgets/waitlist_management_modal.dart';
 import 'qr_display.dart';
 import 'mission_management_screen.dart';
 
@@ -42,7 +44,26 @@ class _CoordinatorMissionListScreenState
         listen: false,
       ).fetchMissions(mine: true);
       _fetchPendingCounts();
+      
+      // Start listening for live updates
+      Provider.of<CollaborationProvider>(context, listen: false).addListener(_handleLiveUpdate);
     });
+  }
+
+  void _handleLiveUpdate() {
+    if (!mounted) return;
+    // Refresh missions and pending counts when a live update happens
+    Provider.of<MissionProvider>(context, listen: false).fetchMissions(mine: true, forceRefresh: true);
+    _fetchPendingCounts();
+  }
+
+  @override
+  void dispose() {
+    // Clean up listener
+    try {
+      Provider.of<CollaborationProvider>(context, listen: false).removeListener(_handleLiveUpdate);
+    } catch (_) {}
+    super.dispose();
   }
 
   Future<void> _fetchPendingCounts() async {
@@ -225,7 +246,6 @@ class _CoordinatorMissionListScreenState
   }
 
   void _handleExport(List<Mission> missions) {
-    // Placeholder for CSV export logic
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Exporting mission data...')));
@@ -604,7 +624,6 @@ class _CoordinatorMissionListScreenState
     List<Mission> missions,
     MissionProvider provider,
   ) {
-    // Note: Always sort by date for consistency in past views
     missions.sort((a, b) => b.endTime.compareTo(a.endTime));
 
     final Map<String, List<Mission>> groupedByDate = {};
@@ -693,6 +712,13 @@ class _CoordinatorMissionListScreenState
                   maxVolunteers: mission.maxVolunteers,
                 );
               },
+              onWaitlistTap: () {
+                WaitlistManagementModal.show(
+                  context,
+                  missionId: mission.id,
+                  missionTitle: mission.title,
+                );
+              },
             ),
           );
         }, childCount: missions.length),
@@ -706,20 +732,11 @@ class _CoordinatorMissionListScreenState
       color: AppTheme.clay,
       child: Column(
         children: [
-          // Search + Sort Row
           Row(
             children: [
               Expanded(
                 child: MissionSearchBar(
                   onChanged: provider.setSearchQuery,
-                  // Pass a dummy controller or handle clearer internally inside the widget if needed
-                  // For the provider version, we might just be setting state directly.
-                  // But MissionSearchBar supports controller if we passed one.
-                  // Since we didn't use a controller here before, we rely on onChanged.
-                  // To support 'clear', the widget handles suffix icon logic based on controller text.
-                  // If we want the suffix icon to clear the provider search, we might need a controller
-                  // or just rely on the user clearing the text manually.
-                  // For now, let's keep it simple and just use the onChanged.
                 ),
               ),
               const SizedBox(width: 12),
@@ -730,7 +747,6 @@ class _CoordinatorMissionListScreenState
             ],
           ),
           const SizedBox(height: 12),
-          // Filter Chips
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -914,15 +930,26 @@ class _BatchConfirmationDialog extends StatefulWidget {
 
 class _BatchConfirmationDialogState extends State<_BatchConfirmationDialog> {
   final _justificationController = TextEditingController();
+  final _confirmationController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
     final isEmergency = widget.action == 'Mark as Emergency';
+    final isCancel = widget.action == 'Cancel';
     final count = widget.missions.length;
 
     return AlertDialog(
-      title: Text('${widget.action} $count Missions?'),
+      title: Row(
+        children: [
+          Icon(
+            isCancel ? Icons.delete_forever : (isEmergency ? Icons.warning : Icons.help_outline),
+            color: isCancel || isEmergency ? AppTheme.terracotta : AppTheme.forest,
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Text('${widget.action} $count Missions?')),
+        ],
+      ),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -930,15 +957,31 @@ class _BatchConfirmationDialogState extends State<_BatchConfirmationDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (isCancel || isEmergency)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.terracotta.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.terracotta.withValues(alpha: 0.2)),
+                  ),
+                  child: Text(
+                    isCancel 
+                      ? 'WARNING: This will permanently cancel these missions and notify all registered volunteers.'
+                      : 'WARNING: This will prioritize these missions as EMERGENCIES for all users.',
+                    style: TextStyle(color: AppTheme.terracotta, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                ),
               Text(
                 widget.action == 'Duplicate'
-                    ? 'This will create copies of the following missions:'
-                    : 'This will update the following missions:',
-                style: const TextStyle(fontSize: 13, color: Colors.black54),
+                    ? 'Creating copies of:'
+                    : 'Target missions:',
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.black38),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Container(
-                constraints: const BoxConstraints(maxHeight: 150),
+                constraints: const BoxConstraints(maxHeight: 120),
                 decoration: BoxDecoration(
                   color: AppTheme.clay,
                   borderRadius: BorderRadius.circular(8),
@@ -950,36 +993,32 @@ class _BatchConfirmationDialogState extends State<_BatchConfirmationDialog> {
                   separatorBuilder: (ctx, idx) => const Divider(height: 8),
                   itemBuilder: (ctx, idx) => Text(
                     '• ${widget.missions[idx].title}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
               if (isEmergency) ...[
-                const SizedBox(height: 24),
-                const Text(
-                  'JUSTIFICATION REQUIRED',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1,
-                  ),
-                ),
+                const SizedBox(height: 20),
+                const Text('JUSTIFICATION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _justificationController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    hintText: 'Explain the emergency (min 20 chars)',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Required';
-                    if (v.length < 20) return 'More detail needed';
-                    return null;
-                  },
+                  maxLines: 2,
+                  decoration: const InputDecoration(hintText: 'Explain why (min 20 chars)', border: OutlineInputBorder()),
+                  style: const TextStyle(fontSize: 13),
+                  validator: (v) => (v == null || v.length < 20) ? 'More detail needed' : null,
+                ),
+              ],
+              if (isCancel) ...[
+                const SizedBox(height: 20),
+                const Text('TYPE "CONFIRM" TO PROCEED', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _confirmationController,
+                  decoration: const InputDecoration(hintText: 'CONFIRM', border: OutlineInputBorder()),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  validator: (v) => v != 'CONFIRM' ? 'Required' : null,
                 ),
               ],
             ],
@@ -987,25 +1026,21 @@ class _BatchConfirmationDialogState extends State<_BatchConfirmationDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Go Back')),
         ElevatedButton(
           onPressed: () {
-            if (isEmergency && !_formKey.currentState!.validate()) return;
+            if (!_formKey.currentState!.validate()) return;
             Navigator.pop(context, {
               'confirm': true,
               'justification': _justificationController.text,
             });
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: isEmergency
-                ? AppTheme.terracotta
-                : (widget.action == 'Cancel' ? Colors.red : AppTheme.forest),
+            backgroundColor: isCancel || isEmergency ? AppTheme.terracotta : AppTheme.forest,
             foregroundColor: Colors.white,
+            elevation: 0,
           ),
-          child: Text(widget.action),
+          child: Text(widget.action.toUpperCase()),
         ),
       ],
     );

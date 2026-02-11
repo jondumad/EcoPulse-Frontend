@@ -66,4 +66,12 @@ class AttendanceProvider with ChangeNotifier {
     final success = await _service.verifyAttendance(attendanceId, status);
     return success;
   }
+
+  Future<bool> manualCheckIn(int missionId, int userId, String reason) async {
+    return await _service.manualCheckIn(missionId, userId, reason);
+  }
+
+  Future<bool> manualComplete(int missionId, int userId, String reason) async {
+    return await _service.manualComplete(missionId, userId, reason);
+  }
 }

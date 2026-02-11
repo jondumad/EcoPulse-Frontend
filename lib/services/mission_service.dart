@@ -367,6 +367,61 @@ class MissionService {
     }
   }
 
+  Future<List<dynamic>> getCollaborators(int missionId) async {
+    final token = await _authService.getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/missions/$missionId/collaborators'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return List<dynamic>.from(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to load collaborators');
+    }
+  }
+
+  Future<bool> addCollaborator(int missionId, int userId) async {
+    final token = await _authService.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/missions/$missionId/collaborators'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'userId': userId}),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Failed to add collaborator');
+    }
+  }
+
+  Future<bool> removeCollaborator(int missionId, int userId) async {
+    final token = await _authService.getToken();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/missions/$missionId/collaborators'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'userId': userId}),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Failed to remove collaborator');
+    }
+  }
+
   Future<bool> contactVolunteers(int id, String message) async {
     final token = await _authService.getToken();
     final headers = {'Content-Type': 'application/json'};
@@ -390,6 +445,26 @@ class MissionService {
     }
   }
 
+  Future<bool> contactVolunteer(int missionId, int userId, String message) async {
+    final token = await _authService.getToken();
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+    final response = await http.post(
+      Uri.parse('$baseUrl/missions/$missionId/participants/$userId/notify'),
+      headers: headers,
+      body: jsonEncode({'message': message}),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Failed to send notification');
+    }
+  }
+
   Future<bool> promoteFromWaitlist(int registrationId) async {
     final token = await _authService.getToken();
     final response = await http.post(
@@ -406,6 +481,57 @@ class MissionService {
       final errorData = jsonDecode(response.body);
       throw Exception(errorData['error'] ?? 'Failed to promote user');
     }
+  }
+
+  Future<bool> inviteUser(int missionId, int userId) async {
+    final token = await _authService.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/missions/$missionId/invite-user'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'userId': userId}),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Failed to invite user');
+    }
+  }
+
+  Future<bool> declineInvitation(int missionId) async {
+    final token = await _authService.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/missions/$missionId/decline'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Failed to decline invitation');
+    }
+  }
+
+  Future<bool> promoteFromWaitlistByUserId(int missionId, int userId) async {
+    // 1. Get all registrations for this mission
+    final regs = await getMissionRegistrations(missionId);
+    
+    // 2. Find the one for our user
+    final userReg = regs.firstWhere(
+      (r) => r['userId'] == userId,
+      orElse: () => throw Exception('Registration not found for user $userId'),
+    );
+
+    // 3. Use the promoteFromWaitlist method with the registration ID
+    return await promoteFromWaitlist(userReg['id']);
   }
 
   Future<bool> setPriority(int registrationId, bool isPriority) async {

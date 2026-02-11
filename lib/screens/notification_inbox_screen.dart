@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/notification_model.dart';
+import '../providers/mission_provider.dart';
 import '../services/notification_service.dart';
 import '../services/mission_service.dart';
 import 'volunteer/mission_detail_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/eco_app_bar.dart';
+import '../widgets/eco_pulse_widgets.dart';
 import 'package:intl/intl.dart';
 
 class NotificationInboxScreen extends StatefulWidget {
@@ -24,6 +27,12 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
   void initState() {
     super.initState();
     _notificationsFuture = _notificationService.getNotifications();
+    // Pre-fetch missions to have accurate registration status
+    Future.microtask(() {
+      if (mounted) {
+        Provider.of<MissionProvider>(context, listen: false).fetchMissions();
+      }
+    });
   }
 
   void _refreshNotifications() {
@@ -47,7 +56,9 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
     if (notification.relatedId != null) {
       if (notification.type == 'points_awarded' ||
           notification.type == 'mission_reminder' ||
-          notification.type == 'emergency_mission') {
+          notification.type == 'emergency_mission' ||
+          notification.type == 'mission_invite' ||
+          notification.type == 'mission_update') {
         // Show loading dialog
         if (!mounted) return;
         showDialog(
@@ -245,10 +256,56 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
                 ],
               ),
             ),
+            if (notification.type == 'mission_invite') ...[
+              const SizedBox(width: 8),
+              Consumer<MissionProvider>(
+                builder: (context, missionProv, _) {
+                  final mission = notification.relatedId != null 
+                      ? missionProv.getMissionSync(notification.relatedId!) 
+                      : null;
+                  final isRegistered = mission?.isRegistered ?? false;
+
+                  return EcoPulseButton(
+                    label: '',
+                    icon: isRegistered ? Icons.check_circle_rounded : Icons.add_task_rounded,
+                    isSmall: true,
+                    isPrimary: !isRegistered,
+                    backgroundColor: isRegistered ? EcoColors.forest.withValues(alpha: 0.1) : null,
+                    foregroundColor: isRegistered ? EcoColors.forest : null,
+                    onPressed: isRegistered ? null : () => _handleRegisterFromNotification(notification),
+                  );
+                },
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _handleRegisterFromNotification(NotificationModel notification) async {
+    if (notification.relatedId == null) return;
+    
+    final provider = Provider.of<MissionProvider>(context, listen: false);
+    try {
+      await provider.toggleRegistration(notification.relatedId!, false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Successfully registered!'), backgroundColor: EcoColors.forest),
+        );
+        // Mark as read after successful action
+        if (!notification.isRead) {
+          await _notificationService.markAsRead(notification.id);
+          _refreshNotifications();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: EcoColors.terracotta),
+        );
+      }
+    }
   }
 
   Widget _buildIcon(String type, bool isRead) {
@@ -271,6 +328,14 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
       case 'emergency_mission':
         iconData = Icons.emergency_share;
         color = Colors.red;
+        break;
+      case 'mission_invite':
+        iconData = Icons.mail_outline_rounded;
+        color = AppTheme.violet;
+        break;
+      case 'mission_update':
+        iconData = Icons.campaign_rounded;
+        color = Colors.blue;
         break;
       default:
         iconData = Icons.notifications_outlined;

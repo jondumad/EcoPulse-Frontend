@@ -26,7 +26,7 @@ class QRDisplayScreen extends StatefulWidget {
 class _QRDisplayScreenState extends State<QRDisplayScreen> {
   String? _qrToken;
   Timer? _timer;
-  int _secondsLeft = 300;
+  int _secondsLeft = 60;
   bool _isLoading = true;
   String? _error;
 
@@ -68,7 +68,7 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
       if (mounted) {
         setState(() {
           _qrToken = result['qrToken'];
-          _secondsLeft = 300;
+          _secondsLeft = 60;
           _isLoading = false;
         });
         _startTimer();

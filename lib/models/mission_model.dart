@@ -18,6 +18,7 @@ class Mission {
   final bool isRegistered; // Helper for UI state
   final String?
   registrationStatus; // 'Registered', 'CheckedIn', 'Completed', 'Cancelled'
+  final DateTime? registeredAt;
   final String? creatorName;
   final int createdBy;
 
@@ -40,15 +41,21 @@ class Mission {
     required this.categories,
     this.isRegistered = false,
     this.registrationStatus,
+    this.registeredAt,
     this.creatorName,
     required this.createdBy,
   });
 
   factory Mission.fromJson(Map<String, dynamic> json) {
     String? regStatus;
+    DateTime? regAt;
     if (json['registrations'] != null &&
         (json['registrations'] as List).isNotEmpty) {
       regStatus = json['registrations'][0]['status'];
+      final regDate = json['registrations'][0]['createdAt'];
+      if (regDate != null) {
+        regAt = DateTime.parse(regDate);
+      }
     }
 
     return Mission(
@@ -74,6 +81,7 @@ class Mission {
           [],
       isRegistered: regStatus != null && regStatus != 'Cancelled',
       registrationStatus: regStatus,
+      registeredAt: regAt,
       creatorName: json['creator'] != null ? json['creator']['name'] : null,
       createdBy: json['createdBy'] ?? 0,
     );

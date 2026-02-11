@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../screens/coordinator/create_mission_screen.dart';
+import '../widgets/mission_template_picker.dart';
 
 class CoordinatorSpeedDial extends StatefulWidget {
   final VoidCallback? onNewMission;
@@ -75,23 +76,20 @@ class _CoordinatorSpeedDialState extends State<CoordinatorSpeedDial>
         // Reveal buttons when open
         if (_isOpen || _controller.isAnimating)
           _buildStep(
-            icon: Icons.campaign_rounded,
-            label: 'Broadcast',
-            onTap: () {
-              _toggle();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Broadcast feature coming soon')),
-              );
-            },
-          ),
-        if (_isOpen || _controller.isAnimating)
-          _buildStep(
             icon: Icons.copy_all_rounded,
             label: 'Templates',
             onTap: () {
               _toggle();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Templates feature coming soon')),
+              MissionTemplatePicker.show(
+                context,
+                onTemplateSelected: (template) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CreateMissionScreen(template: template),
+                    ),
+                  );
+                },
               );
             },
           ),

@@ -88,6 +88,14 @@ class CollaborationService {
       }),
     );
 
+    _socket!.on(
+      'live_update',
+      (data) => _eventController.add({
+        'type': 'live_update',
+        'data': data,
+      }),
+    );
+
     _socket!.connect();
   }
 
@@ -101,35 +109,56 @@ class CollaborationService {
     _socket?.emit('leave_mission', {'missionId': missionId});
   }
 
-  void sendComment(int missionId, String content) {
+  void sendComment(int missionId, String content, [Function? callback]) {
     debugPrint('CollaborationService: Emitting send_comment');
-    _socket?.emit('send_comment', {'missionId': missionId, 'content': content});
+    _socket?.emitWithAck(
+      'send_comment', 
+      {'missionId': missionId, 'content': content},
+      ack: (data) {
+        if (callback != null) callback(data);
+      }
+    );
   }
 
-  void togglePin(int missionId, int commentId, bool isPinned) {
+  void togglePin(int missionId, int commentId, bool isPinned, [Function? callback]) {
     debugPrint('CollaborationService: Emitting toggle_pin');
-    _socket?.emit('toggle_pin', {
-      'missionId': missionId,
-      'commentId': commentId,
-      'isPinned': isPinned,
-    });
+    _socket?.emitWithAck(
+      'toggle_pin', {
+        'missionId': missionId,
+        'commentId': commentId,
+        'isPinned': isPinned,
+      },
+      ack: (data) {
+        if (callback != null) callback(data);
+      }
+    );
   }
 
-  void addChecklistItem(int missionId, String content) {
+  void addChecklistItem(int missionId, String content, [Function? callback]) {
     debugPrint('CollaborationService: Emitting add_checklist_item');
-    _socket?.emit('add_checklist_item', {
-      'missionId': missionId,
-      'content': content,
-    });
+    _socket?.emitWithAck(
+      'add_checklist_item', {
+        'missionId': missionId,
+        'content': content,
+      },
+      ack: (data) {
+        if (callback != null) callback(data);
+      }
+    );
   }
 
-  void toggleChecklistItem(int missionId, int itemId, bool isCompleted) {
+  void toggleChecklistItem(int missionId, int itemId, bool isCompleted, [Function? callback]) {
     debugPrint('CollaborationService: Emitting toggle_checklist_item');
-    _socket?.emit('toggle_checklist_item', {
-      'missionId': missionId,
-      'itemId': itemId,
-      'isCompleted': isCompleted,
-    });
+    _socket?.emitWithAck(
+      'toggle_checklist_item', {
+        'missionId': missionId,
+        'itemId': itemId,
+        'isCompleted': isCompleted,
+      },
+      ack: (data) {
+        if (callback != null) callback(data);
+      }
+    );
   }
 
   void dispose() {

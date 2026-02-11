@@ -4,6 +4,7 @@ class User {
   final String email;
   final String role;
   final int totalPoints;
+  final DateTime? createdAt;
   final String? token;
   final List<UserBadge> userBadges;
 
@@ -13,6 +14,7 @@ class User {
     required this.email,
     required this.role,
     this.totalPoints = 0,
+    this.createdAt,
     this.token,
     this.userBadges = const [],
   });
@@ -26,6 +28,9 @@ class User {
           ? json['role']['name']
           : (json['role'] ?? 'Volunteer'),
       totalPoints: json['totalPoints'] ?? 0,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : null,
       userBadges:
           (json['userBadges'] as List?)
               ?.map((b) => UserBadge.fromJson(b))
@@ -41,6 +46,7 @@ class User {
       'email': email,
       'role': role,
       'totalPoints': totalPoints,
+      'createdAt': createdAt?.toIso8601String(),
     };
   }
 }

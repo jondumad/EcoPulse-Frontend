@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/mission_provider.dart';
 import '../theme/app_theme.dart';
 import 'eco_pulse_widgets.dart';
+import 'user_search_modal.dart';
 
 class VolunteerListModal extends StatefulWidget {
   final int missionId;
@@ -111,13 +112,8 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
                   ),
                   EcoPulseButton(
                     label: 'INVITE',
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Invite feature coming soon!'),
-                        ),
-                      );
-                    },
+                    onPressed: () =>
+                        UserSearchModal.show(context, widget.missionId),
                     isSmall: true,
                   ),
                 ],
@@ -249,15 +245,8 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
                                 size: 20,
                                 color: EcoColors.ink,
                               ),
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Message feature coming soon!',
-                                    ),
-                                  ),
-                                );
-                              },
+                              onPressed: () =>
+                                  _showNotifySheet(user['id'], name),
                             ),
                           ],
                         ),
@@ -271,6 +260,151 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
         ),
       ),
     );
+  }
+
+  Future<void> _showNotifySheet(int userId, String userName) async {
+    final TextEditingController notifyController = TextEditingController();
+    bool isSending = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalContext) => StatefulBuilder(
+        // Renamed to modalContext for clarity
+        builder: (context, setModalState) => Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: const BoxDecoration(
+            color: EcoColors.clay,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: EcoColors.forest.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            color: EcoColors.forest,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Message $userName',
+                                style: GoogleFonts.fraunces(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900,
+                                  color: EcoColors.ink,
+                                ),
+                              ),
+                              Text(
+                                'Send a direct notification',
+                                style: TextStyle(
+                                  color: EcoColors.ink.withValues(alpha: 0.6),
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                    EcoTextField(
+                      controller: notifyController,
+                      label: 'Message',
+                      hint: 'Hello $userName, ...',
+                      maxLines: 4,
+                    ),
+                    const SizedBox(height: 24),
+                    EcoPulseButton(
+                      label: 'Send Message',
+                      icon: Icons.send_rounded,
+                      width: double.infinity,
+                      isLoading: isSending,
+                      backgroundColor: EcoColors.forest,
+                      onPressed: () async {
+                        final message = notifyController.text.trim();
+                        if (message.isEmpty) return;
+
+                        setModalState(() => isSending = true);
+
+                        // We capture the provider before the async gap to be safe
+                        final missionProvider = Provider.of<MissionProvider>(
+                          context,
+                          listen: false,
+                        );
+
+                        try {
+                          await missionProvider.contactVolunteer(
+                            widget.missionId,
+                            userId,
+                            message,
+                          );
+
+                          // THE FIX: Check if the context of the modal is still mounted
+                          if (!context.mounted) return;
+
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Message sent to $userName'),
+                              backgroundColor: EcoColors.forest,
+                            ),
+                          );
+                        } catch (e) {
+                          if (!context.mounted) return;
+
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                        } finally {
+                          // Check mounted again before calling setModalState
+                          if (context.mounted) {
+                            setModalState(() => isSending = false);
+                          }
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    notifyController.dispose();
   }
 }
 

@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/mission_provider.dart';
+import '../models/user_model.dart';
 import '../widgets/eco_pulse_widgets.dart';
 import '../components/mission_list.dart';
-import '../components/hero_card.dart';
 import './volunteer/mission_history_screen.dart';
 import 'volunteer/badges_modal.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_theme.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -57,62 +59,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 8),
-                // Hero Card (Profile & Role)
-                HeroCard(user: user),
+                // Premium Modular Profile Header
+                _ProfileHero(user: user),
                 const SizedBox(height: 32),
 
                 // Weekly Impact Chart
-                if (user.role == 'Volunteer') ...[
-                  _buildWeeklyImpact(context),
-                  const SizedBox(height: 32),
-                ],
+                _buildWeeklyImpact(context),
+                const SizedBox(height: 32),
 
-                // Volunteer Stats & Gamification
+                // Role-Specific Sections
                 if (user.role == 'Volunteer') ...[
                   Text('Field Statistics', style: EcoText.displayMD(context)),
                   const SizedBox(height: 16),
-
                   Row(
                     children: [
                       Expanded(
-                        child: EcoPulseCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'TOTAL POINTS',
-                                style: EcoText.monoSM(context),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '${user.totalPoints}',
-                                style: EcoText.displayMD(context),
-                              ),
-                            ],
-                          ),
+                        child: _StatTile(
+                          label: 'TOTAL IMPACT',
+                          value: '${user.totalPoints}',
+                          icon: Icons.bolt_rounded,
+                          color: AppTheme.forest,
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: EcoPulseCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('RANK', style: EcoText.monoSM(context)),
-                              const SizedBox(height: 8),
-                              Text(
-                                _calculateLevel(user.totalPoints),
-                                style: EcoText.displayMD(context),
-                              ),
-                            ],
-                          ),
+                        child: _StatTile(
+                          label: 'FIELD RANK',
+                          value: _calculateLevel(user.totalPoints),
+                          icon: Icons.shield_rounded,
+                          color: AppTheme.forest,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
 
-                  // Progress
+                  // Progress Section Refined
                   GestureDetector(
                     onTap: () => BadgesModal.show(context),
                     child: EcoPulseCard(
@@ -123,66 +105,106 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'NEXT MILESTONE',
-                                style: EcoText.monoSM(context),
+                                'CERTIFICATION PROGRESS',
+                                style: GoogleFonts.jetBrainsMono(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppTheme.ink.withValues(alpha: 0.4),
+                                  letterSpacing: 0.5,
+                                ),
                               ),
-                              GestureDetector(
-                                onTap: () => BadgesModal.show(context),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      'SEE ALL',
-                                      style: EcoText.bodyBoldMD(context)
-                                          .copyWith(
-                                            color: EcoColors.violet,
-                                            fontSize: 11,
-                                            letterSpacing: 1,
-                                          ),
-                                    ),
-                                    const Icon(
-                                      Icons.chevron_right,
-                                      size: 16,
-                                      color: EcoColors.violet,
-                                    ),
-                                  ],
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.forest.withValues(
+                                    alpha: 0.05,
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'LVL ${user.totalPoints ~/ 500 + 1}',
+                                  style: GoogleFonts.jetBrainsMono(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppTheme.forest,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Next Milestone',
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.ink,
+                                ),
+                              ),
+                              Text(
+                                '${user.totalPoints % 500} / 500 PTS',
+                                style: GoogleFonts.jetBrainsMono(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.forest,
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          Stack(
                             children: [
-                              Text(
-                                'Level Progress',
-                                style: EcoText.bodyMD(
-                                  context,
-                                ).copyWith(fontWeight: FontWeight.w600),
+                              Container(
+                                height: 6,
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.clay,
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
                               ),
-                              Text(
-                                '${user.totalPoints} / 1000 XP',
-                                style: EcoText.monoSM(context),
+                              FractionallySizedBox(
+                                widthFactor: (user.totalPoints % 500) / 500,
+                                child: Container(
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        AppTheme.forest,
+                                        Color(0xFF2D6A4F), // Darker forest
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(2),
-                            child: LinearProgressIndicator(
-                              value: user.totalPoints / 1000,
-                              minHeight: 8,
-                              backgroundColor: EcoColors.clay,
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                EcoColors.forest,
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline_rounded,
+                                size: 14,
+                                color: AppTheme.ink.withValues(alpha: 0.3),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Earn ${1000 - user.totalPoints} more points to reach Community Hero status.',
-                            style: EcoText.bodyMD(context).copyWith(
-                              color: EcoColors.ink.withValues(alpha: 0.6),
-                            ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Earn ${500 - (user.totalPoints % 500)} more points to unlock the next community badge.',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: AppTheme.ink.withValues(alpha: 0.5),
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -239,6 +261,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       isHistory: true,
                     ),
                   ],
+                ] else if (user.role == 'Coordinator') ...[
+                  Text(
+                    'Coordination Metrics',
+                    style: EcoText.displayMD(context),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatTile(
+                          label: 'MISSIONS MANAGED',
+                          value: '${auth.userStats?['missionsManaged'] ?? 0}',
+                          icon: Icons.assignment_rounded,
+                          color: AppTheme.violet,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _StatTile(
+                          label: 'VOLUNTEERS VERIFIED',
+                          value:
+                              '${auth.userStats?['totalVerifications'] ?? 0}',
+                          icon: Icons.verified_user_rounded,
+                          color: AppTheme.forest,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Managed Missions Section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Missions I Manage',
+                        style: EcoText.displayMD(context),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Provider.of<MissionProvider>(
+                            context,
+                            listen: false,
+                          ).fetchMissions(forceRefresh: true);
+                        },
+                        child: Text(
+                          'Refresh List',
+                          style: EcoText.bodyBoldMD(
+                            context,
+                          ).copyWith(color: EcoColors.forest, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  if (missionProvider.isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else if (missionProvider.missions
+                      .where((m) => m.createdBy == user.id)
+                      .isEmpty)
+                    _buildEmptyState(
+                      'You haven\'t created any missions yet.\nHead to the Mission Hub to start one!',
+                    )
+                  else
+                    MissionList(
+                      missions: missionProvider.missions
+                          .where((m) => m.createdBy == user.id)
+                          .toList(),
+                    ),
                 ],
                 const SizedBox(height: 100), // Spacing for bottom nav
               ],
@@ -253,19 +344,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final auth = Provider.of<AuthProvider>(context);
     final stats = auth.userStats;
 
-    final actionsCompleted = stats?['actionsCompleted']?.toString() ?? '0';
+    final weeklyActivity = (stats?['weeklyActivity'] as List?) ?? [];
+    final isCoordinator = stats?['role'] == 'Coordinator';
     final rank = stats?['rank']?.toString() ?? '-';
     final totalVolunteers = stats?['totalVolunteers']?.toString() ?? '-';
-    final weeklyActivity = (stats?['weeklyActivity'] as List?) ?? [];
 
     return EcoPulseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('WEEKLY IMPACT', style: EcoText.monoSM(context)),
+          Text(
+            isCoordinator ? 'WEEKLY CO-ORDINATION' : 'WEEKLY IMPACT',
+            style: EcoText.monoSM(context),
+          ),
           const SizedBox(height: 8),
           Text(
-            actionsCompleted,
+            isCoordinator
+                ? (stats?['totalVerifications']?.toString() ?? '0')
+                : (stats?['actionsCompleted']?.toString() ?? '0'),
             style: EcoText.displayXL(
               context,
             ).copyWith(fontSize: 56, color: EcoColors.forest),
@@ -274,7 +370,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Actions Completed · Rank #$rank of $totalVolunteers',
+            isCoordinator
+                ? 'Volunteers Verified'
+                : 'Actions Completed · Rank #$rank of $totalVolunteers',
             style: EcoText.bodyMD(
               context,
             ).copyWith(color: EcoColors.ink.withValues(alpha: 0.6)),
@@ -399,9 +497,224 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   String _calculateLevel(int points) {
-    if (points < 100) return 'Newbie';
-    if (points < 500) return 'Active';
-    if (points < 1000) return 'Hero';
-    return 'Legend';
+    if (points < 100) return 'NOVICE';
+    if (points < 500) return 'ACTIVE';
+    if (points < 1000) return 'HERO';
+    return 'LEGEND';
+  }
+}
+
+class _ProfileHero extends StatelessWidget {
+  final User user;
+
+  const _ProfileHero({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.borderSubtle),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppTheme.forest.withValues(alpha: 0.1),
+                    width: 4,
+                  ),
+                ),
+                child: ClipOval(
+                  child: Image.network(
+                    "https://api.dicebear.com/7.x/avataaars/png?seed=${user.name}",
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.forest,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Text(
+                        user.role.toUpperCase(),
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      user.name,
+                      style: GoogleFonts.fraunces(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.ink,
+                        height: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      user.email,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: AppTheme.ink.withValues(alpha: 0.5),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Divider(color: AppTheme.borderSubtle),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _HeroMetaItem(
+                label: "MEMBER SINCE",
+                value: user.createdAt != null
+                    ? "${user.createdAt!.year}"
+                    : "${DateTime.now().year}",
+                icon: Icons.calendar_today_rounded,
+                color: AppTheme.ink,
+              ),
+              _HeroMetaItem(
+                label: "STATUS",
+                value: "VERIFIED",
+                icon: Icons.verified_user_rounded,
+                color: AppTheme.forest,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroMetaItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color? color;
+
+  const _HeroMetaItem({
+    required this.label,
+    required this.value,
+    required this.icon,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.jetBrainsMono(
+            fontSize: 9,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.ink.withValues(alpha: 0.4),
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: color ?? AppTheme.ink.withValues(alpha: 0.7),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              value,
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.ink,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _StatTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return EcoPulseCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 20, color: color),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            label,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.ink.withValues(alpha: 0.4),
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: GoogleFonts.fraunces(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              color: AppTheme.ink,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -25,7 +25,7 @@ class MissionDetailScreen extends StatefulWidget {
 }
 
 class _MissionDetailScreenState extends State<MissionDetailScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   bool _isDescriptionExpanded = false;
   late AnimationController _tiltController;
 

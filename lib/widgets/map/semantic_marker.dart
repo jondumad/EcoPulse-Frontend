@@ -187,7 +187,7 @@ class _UrgentPulse extends StatefulWidget {
 }
 
 class _UrgentPulseState extends State<_UrgentPulse>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
 
   @override

@@ -813,7 +813,7 @@ class _CheckInScreenState extends State<CheckInScreen>
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.civic',
+                  userAgentPackageName: 'com.example.ecopulse',
                 ),
                 CircleLayer(
                   circles: [

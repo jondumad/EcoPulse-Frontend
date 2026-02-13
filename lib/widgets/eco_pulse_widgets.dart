@@ -550,7 +550,7 @@ class EcoAnimatedStatItem extends StatefulWidget {
 }
 
 class _EcoAnimatedStatItemState extends State<EcoAnimatedStatItem>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
@@ -725,7 +725,7 @@ class EcoPulseSkeleton extends StatefulWidget {
 }
 
 class _EcoPulseSkeletonState extends State<EcoPulseSkeleton>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 

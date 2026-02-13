@@ -16,7 +16,7 @@ class CoordinatorSpeedDial extends StatefulWidget {
 }
 
 class _CoordinatorSpeedDialState extends State<CoordinatorSpeedDial>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _expandAnimation;
   late Animation<Offset> _slideAnimation;

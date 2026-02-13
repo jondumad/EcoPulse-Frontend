@@ -55,7 +55,11 @@ class MapAnimationHelper {
 
   bool get isAnimating => _animationController?.isAnimating ?? false;
 
-  void move(ll.LatLng destLocation, double destZoom) {
+  void move(
+    ll.LatLng destLocation,
+    double destZoom, {
+    Duration duration = const Duration(milliseconds: 1400),
+  }) {
     // Gracefully stop previous animation if any
     _animationController?.stop();
     _animationController?.dispose();
@@ -69,7 +73,7 @@ class MapAnimationHelper {
     final startZoom = camera.zoom;
 
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1400), // Slightly longer for the sequence
+      duration: duration,
       vsync: vsync,
     );
 
@@ -96,15 +100,11 @@ class MapAnimationHelper {
 
     void updateMap() {
       if (_animationController == null) return;
-      
       final currentLat = latTween.evaluate(moveAnimation);
       final currentLng = lngTween.evaluate(moveAnimation);
       final currentZoom = zoomTween.evaluate(zoomAnimation);
 
-      mapController.move(
-        ll.LatLng(currentLat, currentLng),
-        currentZoom,
-      );
+      mapController.move(ll.LatLng(currentLat, currentLng), currentZoom);
     }
 
     _animationController!.addListener(updateMap);

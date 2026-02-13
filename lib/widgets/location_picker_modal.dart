@@ -1,11 +1,13 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:geocoding/geocoding.dart' as geo;
-import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/location_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/map_utils.dart';
 import 'eco_pulse_widgets.dart';
 
 class LocationPickerModal extends StatefulWidget {
@@ -15,36 +17,42 @@ class LocationPickerModal extends StatefulWidget {
   State<LocationPickerModal> createState() => _LocationPickerModalState();
 }
 
-class _LocationPickerModalState extends State<LocationPickerModal> {
+class _LocationPickerModalState extends State<LocationPickerModal>
+    with TickerProviderStateMixin {
   ll.LatLng _pickedLocation = const ll.LatLng(-6.2088, 106.8456);
   final MapController _mapController = MapController();
+  late MapAnimationHelper _mapAnimationHelper;
   final TextEditingController _searchController = TextEditingController();
+  final ValueNotifier<double> _zoomNotifier = ValueNotifier(15.0);
+
   String? _selectedAddress;
   bool _isLoading = false;
+  bool _mapReady = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initLocation();
-    });
+    _mapAnimationHelper = MapAnimationHelper(
+      mapController: _mapController,
+      vsync: this,
+    );
   }
 
   @override
   void dispose() {
+    _mapAnimationHelper.dispose();
+    _zoomNotifier.dispose();
     _searchController.dispose();
     _mapController.dispose();
     super.dispose();
   }
 
   Future<void> _initLocation() async {
+    if (!_mapReady) return;
+
     final locProvider = Provider.of<LocationProvider>(context, listen: false);
     if (locProvider.currentPosition != null) {
-      setState(() {
-        _pickedLocation = locProvider.currentPosition!;
-      });
-      _mapController.move(_pickedLocation, 15.0);
-      _updateAddress(_pickedLocation);
+      _updateLocation(locProvider.currentPosition!);
     } else {
       await _determinePosition();
     }
@@ -53,43 +61,40 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
   Future<void> _determinePosition() async {
     setState(() => _isLoading = true);
     try {
-      bool serviceEnabled = await geolocator.GeolocatorPlatform.instance
-          .isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        setState(() => _isLoading = false);
-        return;
+      final locProvider = Provider.of<LocationProvider>(context, listen: false);
+
+      if (locProvider.currentPosition != null) {
+        _updateLocation(locProvider.currentPosition!);
       }
 
-      geolocator.LocationPermission permission =
-          await geolocator.GeolocatorPlatform.instance.checkPermission();
-      if (permission == geolocator.LocationPermission.denied) {
-        permission = await geolocator.GeolocatorPlatform.instance
-            .requestPermission();
-        if (permission == geolocator.LocationPermission.denied) {
-          setState(() => _isLoading = false);
-          return;
-        }
+      await locProvider.determinePosition();
+
+      if (locProvider.currentPosition != null && mounted) {
+        _updateLocation(locProvider.currentPosition!);
       }
-
-      if (permission == geolocator.LocationPermission.deniedForever) {
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      final position =
-          await geolocator.GeolocatorPlatform.instance.getCurrentPosition();
-      final latLng = ll.LatLng(position.latitude, position.longitude);
-
-      setState(() {
-        _pickedLocation = latLng;
-        _isLoading = false;
-      });
-
-      _mapController.move(latLng, 15.0);
-      _updateAddress(latLng);
     } catch (e) {
-      setState(() => _isLoading = false);
+      // Error
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _updateLocation(ll.LatLng latLng) {
+    setState(() {
+      _pickedLocation = latLng;
+    });
+    _animatedMapMove(latLng, 16.0);
+    _updateAddress(latLng);
+  }
+
+  void _animatedMapMove(ll.LatLng destLocation, double destZoom) {
+    if (!_mapReady) return;
+    _mapAnimationHelper.move(
+      destLocation,
+      destZoom,
+      duration: const Duration(milliseconds: 800),
+    );
+    _zoomNotifier.value = destZoom;
   }
 
   Future<void> _updateAddress(ll.LatLng point) async {
@@ -107,12 +112,14 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
           p.administrativeArea,
         ].where((s) => s != null && s.isNotEmpty).join(', ');
 
-        setState(() {
-          _selectedAddress = name;
-        });
+        if (mounted) {
+          setState(() {
+            _selectedAddress = name;
+          });
+        }
       }
     } catch (e) {
-      // Silently fail
+      // fail silently
     }
   }
 
@@ -128,29 +135,22 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
       if (locations.isNotEmpty) {
         final loc = locations.first;
         final latLng = ll.LatLng(loc.latitude, loc.longitude);
-
-        setState(() {
-          _pickedLocation = latLng;
-          _isLoading = false;
-        });
-
-        _mapController.move(latLng, 15.0);
-        _updateAddress(latLng);
+        _updateLocation(latLng);
       } else {
-        setState(() => _isLoading = false);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Location not found")),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Location not found")));
         }
       }
     } catch (e) {
-      setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Search failed: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Search failed: $e")));
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -186,23 +186,64 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                     Expanded(
                       child: Text(
                         'Select Location',
-                        style: EcoText.displayMD(context).copyWith(
+                        style: GoogleFonts.inter(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
+                          color: AppTheme.ink,
+                          letterSpacing: -0.5,
                         ),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.my_location),
-                      onPressed: _determinePosition,
-                      tooltip: "Use Current Location",
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.white,
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        key: const ValueKey('my_location_btn'),
+                        onPressed: _isLoading ? null : _determinePosition,
+                        icon: Semantics(
+                          label: "Use Current Location",
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Opacity(
+                                opacity: _isLoading ? 0 : 1,
+                                child: const Icon(
+                                  Icons.my_location,
+                                  size: 20,
+                                  color: AppTheme.forest,
+                                ),
+                              ),
+                              if (_isLoading)
+                                const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppTheme.forest,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     IconButton(
-                      icon: const Icon(Icons.close),
+                      key: const ValueKey('picker_close_btn'),
                       onPressed: () => Navigator.pop(context),
+                      icon: Semantics(
+                        label: 'Close Picker',
+                        child: const Icon(Icons.close),
+                      ),
                     ),
                   ],
                 ),
@@ -212,8 +253,16 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                     Expanded(
                       child: TextField(
                         controller: _searchController,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.ink,
+                        ),
                         decoration: InputDecoration(
                           hintText: "Search for a place...",
+                          hintStyle: GoogleFonts.inter(
+                            color: AppTheme.ink.withValues(alpha: 0.4),
+                          ),
                           filled: true,
                           fillColor: Colors.white,
                           prefixIcon: const Icon(Icons.search, size: 20),
@@ -249,10 +298,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Icon(
-                                  Icons.search,
-                                  color: Colors.white,
-                                ),
+                              : const Icon(Icons.search, color: Colors.white),
                         ),
                       ),
                     ),
@@ -273,29 +319,66 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                       options: MapOptions(
                         initialCenter: _pickedLocation,
                         initialZoom: 15.0,
+                        minZoom: 3.0,
+                        maxZoom: 18.0,
+                        cameraConstraint: CameraConstraint.contain(
+                          bounds: LatLngBounds(
+                            const ll.LatLng(-85.05, -180.0),
+                            const ll.LatLng(85.05, 180.0),
+                          ),
+                        ),
+                        interactionOptions: const InteractionOptions(
+                          flags: InteractiveFlag.all,
+                        ),
                         onTap: (tapPosition, point) {
+                          FocusManager.instance.primaryFocus?.unfocus();
                           setState(() {
                             _pickedLocation = point;
                           });
                           _updateAddress(point);
+                        },
+                        onMapReady: () {
+                          if (mounted) {
+                            setState(() => _mapReady = true);
+                            _initLocation();
+                          }
+                        },
+                        onPositionChanged: (pos, hasGesture) {
+                          if (hasGesture) {
+                            _mapAnimationHelper.stop(force: true);
+                          }
+                          _zoomNotifier.value = pos.zoom;
                         },
                       ),
                       children: [
                         TileLayer(
                           urlTemplate:
                               'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          userAgentPackageName: 'com.example.civic',
+                          userAgentPackageName: 'com.example.ecopulse',
                         ),
                         MarkerLayer(
                           markers: [
                             Marker(
                               point: _pickedLocation,
-                              width: 50,
-                              height: 50,
-                              child: const Icon(
-                                Icons.location_on,
-                                color: EcoColors.terracotta,
-                                size: 50,
+                              width: 60,
+                              height: 60,
+                              rotate: false,
+                              child: ValueListenableBuilder<double>(
+                                valueListenable: _zoomNotifier,
+                                builder: (context, zoom, child) {
+                                  final double scale = (zoom / 15.0).clamp(
+                                    0.6,
+                                    1.3,
+                                  );
+                                  return Transform.scale(
+                                    scale: scale,
+                                    child: const Icon(
+                                      Icons.location_on,
+                                      size: 60,
+                                      color: EcoColors.terracotta,
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ],
@@ -307,18 +390,8 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                         bottom: 20,
                         left: 20,
                         right: 20,
-                        child: Container(
+                        child: EcoPulseCard(
                           padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                blurRadius: 12,
-                                color: Colors.black.withValues(alpha: 0.1),
-                              ),
-                            ],
-                          ),
                           child: Row(
                             children: [
                               Container(
@@ -337,9 +410,10 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                               Expanded(
                                 child: Text(
                                   _selectedAddress!,
-                                  style: const TextStyle(
+                                  style: GoogleFonts.inter(
                                     fontWeight: FontWeight.w600,
                                     fontSize: 14,
+                                    color: AppTheme.ink,
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,

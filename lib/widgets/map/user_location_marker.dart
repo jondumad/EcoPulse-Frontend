@@ -62,10 +62,6 @@ class UserLocationMarker extends StatelessWidget {
     return ValueListenableBuilder<double>(
       valueListenable: zoomNotifier,
       builder: (context, currentZoom, _) {
-        // More robust scaling:
-        // At zoom 15: size = 80
-        // At zoom 5: size = 45 (minimum clamp)
-        // At zoom 18: size = 92
         final double size = (currentZoom * 4 + 20).clamp(45.0, 100.0);
 
         return SizedBox(
@@ -74,7 +70,6 @@ class UserLocationMarker extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // 7. Update Cone Rendering
               if (showCone && _shouldShowCone(status))
                 Transform.rotate(
                   angle: (heading * (math.pi / 180)),
@@ -87,7 +82,6 @@ class UserLocationMarker extends StatelessWidget {
                   ),
                 ),
 
-              // 2. Pulsing Dot
               UserLocationPulseWrapper(
                 child: Container(
                   width: size * 0.4,
@@ -154,7 +148,10 @@ class _ConePainter extends CustomPainter {
 
     final rect = Rect.fromLTWH(0, 0, size.width, size.height);
     paint.shader = RadialGradient(
-      colors: [color.withValues(alpha: opacity), color.withValues(alpha: 0.0)],
+      colors: [
+        color.withValues(alpha: opacity),
+        color.withValues(alpha: 0.0),
+      ],
       stops: const [0.0, 1.0],
       center: Alignment.center,
       radius: 0.8,
@@ -187,7 +184,7 @@ class UserLocationPulseWrapper extends StatefulWidget {
 }
 
 class _PulseState extends State<UserLocationPulseWrapper>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -198,8 +195,10 @@ class _PulseState extends State<UserLocationPulseWrapper>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override

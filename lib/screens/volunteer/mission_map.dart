@@ -175,12 +175,11 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
               Consumer2<MissionProvider, LocationProvider>(
                 builder: (context, missionProvider, loc, child) {
                   // Use missionsOverride if provided, otherwise fall back to all missions
-                  final sourceMissions = widget.missionsOverride ?? missionProvider.missions;
+                  final sourceMissions =
+                      widget.missionsOverride ?? missionProvider.missions;
 
                   final displayMissions = widget.showRegisteredOnly
-                      ? sourceMissions
-                            .where((m) => m.isRegistered)
-                            .toList()
+                      ? sourceMissions.where((m) => m.isRegistered).toList()
                       : sourceMissions;
 
                   final markers = displayMissions.map((mission) {
@@ -192,9 +191,14 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                       height: 80,
                       alignment: Alignment.center,
                       rotate: true,
-                      child: SemanticMarker(
-                        mission: mission,
-                        zoomNotifier: _zoomNotifier,
+                      child: Container(
+                        color: EcoColors.terracotta.withValues(
+                          alpha: 0.15,
+                        ), // Visualized Hitbox
+                        child: SemanticMarker(
+                          mission: mission,
+                          zoomNotifier: _zoomNotifier,
+                        ),
                       ),
                     );
                   }).toList();
@@ -220,7 +224,8 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                           interactionOptions: const InteractionOptions(
                             flags: InteractiveFlag.all,
                           ),
-                          onTap: (_, _) {
+                          onTap: (tapPosition, point) {
+                            debugPrint('DEBUG: Map tapped at $point');
                             if (widget.onMissionSelected != null) {
                               widget.onMissionSelected!(null);
                             }
@@ -242,29 +247,26 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                           TileLayer(
                             urlTemplate:
                                 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.example.civic',
+                            userAgentPackageName: 'com.example.ecopulse',
                             tileDisplay: const TileDisplay.fadeIn(),
                             panBuffer: 1,
                             keepBuffer: 2,
                           ),
-                          if (loc.currentPosition != null)
-                            TweenAnimationBuilder<ll.LatLng>(
-                              tween: LatLngTween(
-                                end: loc.currentPosition!,
-                                begin: ll.LatLng(-6.2088, 106.8456),
-                              ),
-                              duration: const Duration(milliseconds: 250),
-                              curve: Curves.easeInOut,
-                              builder: (context, animatedPos, _) {
+                          IgnorePointer(
+                            child: Consumer<LocationProvider>(
+                              builder: (context, loc, _) {
+                                if (loc.currentPosition == null) {
+                                  return const SizedBox.shrink();
+                                }
                                 return MarkerLayer(
                                   markers: [
                                     Marker(
-                                      point: animatedPos,
-                                      width: 120,
-                                      height: 120,
+                                      point: loc.currentPosition!,
+                                      width: 80,
+                                      height: 80,
                                       rotate: false,
                                       child: UserLocationMarker(
-                                        position: animatedPos,
+                                        position: loc.currentPosition!,
                                         zoomNotifier: _zoomNotifier,
                                         rotationNotifier: _rotationNotifier,
                                         showCone: true,
@@ -274,48 +276,83 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                                 );
                               },
                             ),
-
+                          ),
                           MarkerClusterLayerWidget(
                             options: MarkerClusterLayerOptions(
                               maxClusterRadius: 45,
-                              size: const Size(40, 40),
+                              size: const Size(
+                                60,
+                                60,
+                              ), // Increased hitbox to 60x60
                               alignment: Alignment.center,
                               padding: const EdgeInsets.all(50),
                               maxZoom: 15,
                               markers: markers,
                               onMarkerTap: (marker) {
                                 final key = marker.key;
+                                debugPrint('DEBUG: Marker clicked. Key: $key');
                                 if (key is ValueKey<int>) {
-                                  final mission = missionProvider.missions
-                                      .firstWhere((m) => m.id == key.value);
-                                  if (widget.onMissionSelected != null) {
-                                    widget.onMissionSelected!(mission);
+                                  try {
+                                    final mission = displayMissions.firstWhere(
+                                      (m) => m.id == key.value,
+                                    );
+                                    debugPrint(
+                                      'DEBUG: Found mission ID ${mission.id}. Calling selector.',
+                                    );
+                                    if (widget.onMissionSelected != null) {
+                                      widget.onMissionSelected!(mission);
+                                    }
+                                    animatedMapMove(marker.point);
+                                  } catch (e) {
+                                    debugPrint(
+                                      'Map Error: Mission ${key.value} not found in display list',
+                                    );
                                   }
-                                  animatedMapMove(marker.point);
                                 }
                               },
                               builder: (context, markers) {
                                 return Container(
-                                  decoration: BoxDecoration(
-                                    color: EcoColors.forest,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2,
-                                    ),
+                                  // Reveal the enlarged hit-area (60x60)
+                                  color: EcoColors.terracotta.withValues(
+                                    alpha: 0.25,
                                   ),
                                   child: Center(
-                                    child: Text(
-                                      markers.length.toString(),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
+                                    child: Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color: EcoColors.terracotta,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 2,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.2,
+                                            ),
+                                            blurRadius: 8,
+                                          ),
+                                        ],
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          markers.length.toString(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
                                 );
                               },
                               onClusterTap: (cluster) {
+                                debugPrint(
+                                  'DEBUG: Cluster clicked. Markers count: ${cluster.markers.length}',
+                                );
                                 final missionIds = cluster.markers
                                     .map((m) {
                                       final key = m.key;
@@ -327,12 +364,18 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                                     .whereType<int>()
                                     .toSet();
 
+                                debugPrint(
+                                  'DEBUG: Extracted mission IDs: $missionIds',
+                                );
                                 if (missionIds.isEmpty) return;
 
-                                final clusterMissions = missionProvider.missions
+                                final clusterMissions = displayMissions
                                     .where((m) => missionIds.contains(m.id))
                                     .toList();
 
+                                debugPrint(
+                                  'DEBUG: Found ${clusterMissions.length} valid missions. Showing summary.',
+                                );
                                 _showClusterSummary(context, clusterMissions);
                               },
                             ),

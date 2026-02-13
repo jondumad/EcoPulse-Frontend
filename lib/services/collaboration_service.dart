@@ -7,6 +7,7 @@ class CollaborationService {
   final _eventController = StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Map<String, dynamic>> get eventStream => _eventController.stream;
+  io.Socket? get socket => _socket; // Expose socket for direct listeners
 
   void connect(String baseUrl, String token) {
     if (_socket != null && _socket!.connected) {
@@ -15,7 +16,9 @@ class CollaborationService {
     }
 
     if (_socket != null) {
-      debugPrint('CollaborationService: Socket exists, disposing old instance.');
+      debugPrint(
+        'CollaborationService: Socket exists, disposing old instance.',
+      );
       _socket!.dispose();
     }
 
@@ -23,7 +26,9 @@ class CollaborationService {
     _socket = io.io(
       baseUrl,
       io.OptionBuilder()
-          .setTransports(['websocket']) // Force websocket for better reliability
+          .setTransports([
+            'websocket',
+          ]) // Force websocket for better reliability
           .setAuth({'token': token})
           .enableAutoConnect()
           .enableReconnection()
@@ -90,10 +95,7 @@ class CollaborationService {
 
     _socket!.on(
       'live_update',
-      (data) => _eventController.add({
-        'type': 'live_update',
-        'data': data,
-      }),
+      (data) => _eventController.add({'type': 'live_update', 'data': data}),
     );
 
     _socket!.connect();
@@ -112,52 +114,54 @@ class CollaborationService {
   void sendComment(int missionId, String content, [Function? callback]) {
     debugPrint('CollaborationService: Emitting send_comment');
     _socket?.emitWithAck(
-      'send_comment', 
+      'send_comment',
       {'missionId': missionId, 'content': content},
       ack: (data) {
         if (callback != null) callback(data);
-      }
+      },
     );
   }
 
-  void togglePin(int missionId, int commentId, bool isPinned, [Function? callback]) {
+  void togglePin(
+    int missionId,
+    int commentId,
+    bool isPinned, [
+    Function? callback,
+  ]) {
     debugPrint('CollaborationService: Emitting toggle_pin');
     _socket?.emitWithAck(
-      'toggle_pin', {
-        'missionId': missionId,
-        'commentId': commentId,
-        'isPinned': isPinned,
-      },
+      'toggle_pin',
+      {'missionId': missionId, 'commentId': commentId, 'isPinned': isPinned},
       ack: (data) {
         if (callback != null) callback(data);
-      }
+      },
     );
   }
 
   void addChecklistItem(int missionId, String content, [Function? callback]) {
     debugPrint('CollaborationService: Emitting add_checklist_item');
     _socket?.emitWithAck(
-      'add_checklist_item', {
-        'missionId': missionId,
-        'content': content,
-      },
+      'add_checklist_item',
+      {'missionId': missionId, 'content': content},
       ack: (data) {
         if (callback != null) callback(data);
-      }
+      },
     );
   }
 
-  void toggleChecklistItem(int missionId, int itemId, bool isCompleted, [Function? callback]) {
+  void toggleChecklistItem(
+    int missionId,
+    int itemId,
+    bool isCompleted, [
+    Function? callback,
+  ]) {
     debugPrint('CollaborationService: Emitting toggle_checklist_item');
     _socket?.emitWithAck(
-      'toggle_checklist_item', {
-        'missionId': missionId,
-        'itemId': itemId,
-        'isCompleted': isCompleted,
-      },
+      'toggle_checklist_item',
+      {'missionId': missionId, 'itemId': itemId, 'isCompleted': isCompleted},
       ack: (data) {
         if (callback != null) callback(data);
-      }
+      },
     );
   }
 

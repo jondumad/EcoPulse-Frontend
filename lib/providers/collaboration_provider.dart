@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:socket_io_client/socket_io_client.dart' as io;
+
 import '../services/collaboration_service.dart';
 import '../models/user_model.dart';
 import '../models/mission_model.dart';
@@ -66,6 +68,10 @@ class MissionChecklistItem {
 
 class CollaborationProvider with ChangeNotifier {
   final CollaborationService _service = CollaborationService();
+
+  // Expose socket for direct usage
+  io.Socket? get socket => _service.socket;
+
   AuthProvider _authProvider;
   AuthProvider get authProvider => _authProvider;
   final String baseUrl;
@@ -140,7 +146,9 @@ class CollaborationProvider with ChangeNotifier {
         }
         break;
       case 'live_update':
-        debugPrint('CollaborationProvider: Live update received: ${event['data']['type']}');
+        debugPrint(
+          'CollaborationProvider: Live update received: ${event['data']['type']}',
+        );
         // We can choose to store this in a separate list for a "Live Feed"
         // For now, we'll just notify that something changed.
         notifyListeners();
@@ -218,7 +226,6 @@ class CollaborationProvider with ChangeNotifier {
       debugPrint('CollaborationProvider Error: currentMissionId is null');
       return;
     }
-    
     final completer = Completer<void>();
     bool timedOut = false;
 
@@ -229,11 +236,13 @@ class CollaborationProvider with ChangeNotifier {
       }
     });
 
-    debugPrint('CollaborationProvider: Sending comment to mission $currentMissionId');
+    debugPrint(
+      'CollaborationProvider: Sending comment to mission $currentMissionId',
+    );
     _service.sendComment(currentMissionId!, content, (response) {
       if (timedOut) return;
       timer.cancel();
-      
+
       debugPrint('CollaborationProvider: Received send_comment ack: $response');
       if (response != null && response['success'] == true) {
         completer.complete();
@@ -246,7 +255,7 @@ class CollaborationProvider with ChangeNotifier {
 
   Future<void> togglePin(int commentId, bool isPinned) async {
     if (currentMissionId == null) return;
-    
+
     final completer = Completer<void>();
     _service.togglePin(currentMissionId!, commentId, isPinned, (response) {
       if (response != null && response['success'] == true) {
@@ -260,7 +269,7 @@ class CollaborationProvider with ChangeNotifier {
 
   Future<void> addChecklistItem(String content) async {
     if (currentMissionId == null) return;
-    
+
     final completer = Completer<void>();
     bool timedOut = false;
 
@@ -271,12 +280,16 @@ class CollaborationProvider with ChangeNotifier {
       }
     });
 
-    debugPrint('CollaborationProvider: Adding checklist item to mission $currentMissionId');
+    debugPrint(
+      'CollaborationProvider: Adding checklist item to mission $currentMissionId',
+    );
     _service.addChecklistItem(currentMissionId!, content, (response) {
       if (timedOut) return;
       timer.cancel();
 
-      debugPrint('CollaborationProvider: Received add_checklist_item ack: $response');
+      debugPrint(
+        'CollaborationProvider: Received add_checklist_item ack: $response',
+      );
       if (response != null && response['success'] == true) {
         completer.complete();
       } else {
@@ -288,9 +301,11 @@ class CollaborationProvider with ChangeNotifier {
 
   Future<void> toggleChecklistItem(int itemId, bool isCompleted) async {
     if (currentMissionId == null) return;
-    
+
     final completer = Completer<void>();
-    _service.toggleChecklistItem(currentMissionId!, itemId, isCompleted, (response) {
+    _service.toggleChecklistItem(currentMissionId!, itemId, isCompleted, (
+      response,
+    ) {
       if (response != null && response['success'] == true) {
         completer.complete();
       } else {

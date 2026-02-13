@@ -22,7 +22,9 @@ class _CollaborationTabState extends State<CollaborationTab> {
   final PageController _pageController = PageController();
   final FocusNode _commentFocusNode = FocusNode();
   final FocusNode _checklistFocusNode = FocusNode();
-  
+
+  CollaborationProvider? _collaborationProvider;
+
   int _selectedTab = 0;
   bool _isInitialized = false;
   String? _initError;
@@ -39,8 +41,8 @@ class _CollaborationTabState extends State<CollaborationTab> {
 
   Future<void> _initializeCollaboration() async {
     try {
-      final provider = context.read<CollaborationProvider>();
-      await provider.initBoard(widget.mission.id);
+      _collaborationProvider = context.read<CollaborationProvider>();
+      await _collaborationProvider!.initBoard(widget.mission.id);
       if (mounted) {
         setState(() {
           _isInitialized = true;
@@ -66,7 +68,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
     _commentFocusNode.dispose();
     _checklistFocusNode.dispose();
 
-    context.read<CollaborationProvider>().leaveBoard();
+    _collaborationProvider?.leaveBoard();
 
     super.dispose();
   }
@@ -129,7 +131,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
 
     final provider = context.watch<CollaborationProvider>();
     final authProvider = context.read<AuthProvider>();
-    
+
     return Column(
       children: [
         _buildPresenceHeader(provider.activeUsers),
@@ -163,7 +165,11 @@ class _CollaborationTabState extends State<CollaborationTab> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: EcoColors.terracotta),
+                  const Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: EcoColors.terracotta,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Failed to load collaboration',
@@ -185,7 +191,10 @@ class _CollaborationTabState extends State<CollaborationTab> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: EcoColors.forest,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                     ),
                     child: const Text('Retry'),
                   ),
@@ -193,7 +202,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
               ),
             ),
           );
-        }
+        },
       );
     }
 
@@ -215,15 +224,19 @@ class _CollaborationTabState extends State<CollaborationTab> {
             width: 10,
             height: 10,
             decoration: BoxDecoration(
-              color: users.isNotEmpty ? EcoColors.violet : EcoColors.ink.withValues(alpha: 0.1),
+              color: users.isNotEmpty
+                  ? EcoColors.violet
+                  : EcoColors.ink.withValues(alpha: 0.1),
               shape: BoxShape.circle,
-              boxShadow: users.isNotEmpty ? [
-                BoxShadow(
-                  color: EcoColors.violet.withValues(alpha: 0.4),
-                  blurRadius: 8,
-                  spreadRadius: 2,
-                )
-              ] : null,
+              boxShadow: users.isNotEmpty
+                  ? [
+                      BoxShadow(
+                        color: EcoColors.violet.withValues(alpha: 0.4),
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                      ),
+                    ]
+                  : null,
             ),
           ),
           const SizedBox(width: 12),
@@ -252,10 +265,12 @@ class _CollaborationTabState extends State<CollaborationTab> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ...visibleUsers.map((user) => Padding(
-            padding: const EdgeInsets.only(left: 4),
-            child: _buildUserAvatar(user),
-          )),
+          ...visibleUsers.map(
+            (user) => Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: _buildUserAvatar(user),
+            ),
+          ),
           if (remainingCount > 0)
             Padding(
               padding: const EdgeInsets.only(left: 12),
@@ -274,8 +289,8 @@ class _CollaborationTabState extends State<CollaborationTab> {
 
   Widget _buildUserAvatar(dynamic user) {
     final userName = user['name'] as String?;
-    final initial = userName?.isNotEmpty == true 
-        ? userName![0].toUpperCase() 
+    final initial = userName?.isNotEmpty == true
+        ? userName![0].toUpperCase()
         : '?';
 
     return Container(
@@ -311,8 +326,10 @@ class _CollaborationTabState extends State<CollaborationTab> {
       color: EcoColors.clay,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final tabWidth = (constraints.maxWidth - 8) / 2; // -8 for 4px inner padding on each side
-          
+          final tabWidth =
+              (constraints.maxWidth - 8) /
+              2; // -8 for 4px inner padding on each side
+
           return Container(
             height: 48,
             padding: const EdgeInsets.all(4),
@@ -384,7 +401,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
     required VoidCallback onTap,
   }) {
     final isSelected = _selectedTab == index;
-    
+
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -395,7 +412,9 @@ class _CollaborationTabState extends State<CollaborationTab> {
             style: EcoText.monoSM(context).copyWith(
               fontWeight: FontWeight.w900,
               letterSpacing: 1.0,
-              color: isSelected ? Colors.white : EcoColors.ink.withValues(alpha: 0.4),
+              color: isSelected
+                  ? Colors.white
+                  : EcoColors.ink.withValues(alpha: 0.4),
             ),
             child: Text(label),
           ),
@@ -404,7 +423,10 @@ class _CollaborationTabState extends State<CollaborationTab> {
     );
   }
 
-  Widget _buildChatSection(CollaborationProvider provider, AuthProvider authProvider) {
+  Widget _buildChatSection(
+    CollaborationProvider provider,
+    AuthProvider authProvider,
+  ) {
     final pinnedComments = provider.comments.where((c) => c.isPinned).toList();
     final otherComments = provider.comments.where((c) => !c.isPinned).toList();
 
@@ -412,7 +434,8 @@ class _CollaborationTabState extends State<CollaborationTab> {
       color: EcoColors.clay,
       child: Column(
         children: [
-          if (pinnedComments.isNotEmpty) _buildPinnedSection(provider, pinnedComments),
+          if (pinnedComments.isNotEmpty)
+            _buildPinnedSection(provider, pinnedComments),
           Expanded(
             child: otherComments.isEmpty && pinnedComments.isEmpty
                 ? _buildEmptyState(
@@ -426,7 +449,11 @@ class _CollaborationTabState extends State<CollaborationTab> {
                     padding: const EdgeInsets.all(20),
                     itemCount: otherComments.length,
                     itemBuilder: (context, index) {
-                      return _buildChatBubble(provider, authProvider, otherComments[index]);
+                      return _buildChatBubble(
+                        provider,
+                        authProvider,
+                        otherComments[index],
+                      );
                     },
                   ),
           ),
@@ -436,7 +463,10 @@ class _CollaborationTabState extends State<CollaborationTab> {
     );
   }
 
-  Widget _buildPinnedSection(CollaborationProvider provider, List<MissionComment> pinned) {
+  Widget _buildPinnedSection(
+    CollaborationProvider provider,
+    List<MissionComment> pinned,
+  ) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -451,7 +481,11 @@ class _CollaborationTabState extends State<CollaborationTab> {
         children: [
           Row(
             children: [
-              const Icon(Icons.push_pin_rounded, size: 16, color: EcoColors.violet),
+              const Icon(
+                Icons.push_pin_rounded,
+                size: 16,
+                color: EcoColors.violet,
+              ),
               const SizedBox(width: 8),
               Text(
                 'PINNED UPDATES',
@@ -463,50 +497,62 @@ class _CollaborationTabState extends State<CollaborationTab> {
             ],
           ),
           const SizedBox(height: 12),
-          ...pinned.map((c) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    c.content,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700, 
-                      fontSize: 13, 
-                      height: 1.4,
-                      color: EcoColors.ink.withValues(alpha: 0.9),
+          ...pinned.map(
+            (c) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      c.content,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        height: 1.4,
+                        color: EcoColors.ink.withValues(alpha: 0.9),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => provider.togglePin(c.id, false),
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: EcoColors.violet.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => provider.togglePin(c.id, false),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: EcoColors.violet.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 12,
+                        color: EcoColors.violet,
+                      ),
                     ),
-                    child: const Icon(Icons.close_rounded, size: 12, color: EcoColors.violet),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildChatBubble(CollaborationProvider provider, AuthProvider authProvider, dynamic comment) {
+  Widget _buildChatBubble(
+    CollaborationProvider provider,
+    AuthProvider authProvider,
+    dynamic comment,
+  ) {
     final currentUserId = authProvider.user?.id;
     final isMine = comment.userId == currentUserId;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
-        crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: isMine
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           if (!isMine)
             Padding(
@@ -520,13 +566,18 @@ class _CollaborationTabState extends State<CollaborationTab> {
               ),
             ),
           Row(
-            mainAxisAlignment: isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: isMine
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (isMine) _buildPinAction(provider, comment, isMine),
               Flexible(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: isMine ? EcoColors.forest : EcoColors.terracotta,
                     borderRadius: BorderRadius.only(
@@ -562,7 +613,11 @@ class _CollaborationTabState extends State<CollaborationTab> {
     );
   }
 
-  Widget _buildPinAction(CollaborationProvider provider, dynamic comment, bool isMine) {
+  Widget _buildPinAction(
+    CollaborationProvider provider,
+    dynamic comment,
+    bool isMine,
+  ) {
     return Padding(
       padding: EdgeInsets.only(left: isMine ? 0 : 8, right: isMine ? 8 : 0),
       child: InkWell(
@@ -571,9 +626,9 @@ class _CollaborationTabState extends State<CollaborationTab> {
         child: Container(
           padding: const EdgeInsets.all(8),
           child: Icon(
-            Icons.push_pin_outlined, 
-            size: 14, 
-            color: EcoColors.forest.withValues(alpha: 0.2)
+            Icons.push_pin_outlined,
+            size: 14,
+            color: EcoColors.forest.withValues(alpha: 0.2),
           ),
         ),
       ),
@@ -583,7 +638,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
   Widget _buildChatInput(CollaborationProvider provider) {
     return Container(
       // 1. Match the background color and padding to the input's intended look
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: EcoColors.clay, // The background now fills the whole bottom area
         border: Border(
@@ -606,7 +661,9 @@ class _CollaborationTabState extends State<CollaborationTab> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
                   // Optional: add a subtle border to define the input better
-                  border: Border.all(color: EcoColors.ink.withValues(alpha: 0.05)),
+                  border: Border.all(
+                    color: EcoColors.ink.withValues(alpha: 0.05),
+                  ),
                 ),
                 child: TextField(
                   controller: _commentController,
@@ -617,10 +674,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
                   decoration: const InputDecoration(
                     hintText: 'Message team...',
                     border: InputBorder.none,
-                    hintStyle: TextStyle(
-                      color: Colors.black38,
-                      fontSize: 14,
-                    ),
+                    hintStyle: TextStyle(color: Colors.black38, fontSize: 14),
                     contentPadding: EdgeInsets.symmetric(vertical: 12),
                   ),
                   onSubmitted: (_) => _sendComment(provider),
@@ -630,21 +684,28 @@ class _CollaborationTabState extends State<CollaborationTab> {
             const SizedBox(width: 8),
             // 3. The Send Button now sits cleanly next to the input
             IconButton.filled(
-              icon: _isSendingComment 
-                ? const SizedBox(
-                    width: 20, 
-                    height: 20, 
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                  )
-                : const Icon(Icons.send_rounded, size: 20),
+              icon: _isSendingComment
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.send_rounded, size: 20),
               style: IconButton.styleFrom(
                 backgroundColor: EcoColors.forest,
                 foregroundColor: Colors.white,
                 // Match height of the single-line input
-                minimumSize: const Size(48, 48), 
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                minimumSize: const Size(48, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
               ),
-              onPressed: _isSendingComment ? null : () => _sendComment(provider),
+              onPressed: _isSendingComment
+                  ? null
+                  : () => _sendComment(provider),
             ),
           ],
         ),
@@ -665,7 +726,10 @@ class _CollaborationTabState extends State<CollaborationTab> {
                     subtitle: 'Add tasks to track progress together',
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
                     itemCount: provider.checklist.length,
                     itemBuilder: (context, index) {
                       final item = provider.checklist[index];
@@ -688,7 +752,9 @@ class _CollaborationTabState extends State<CollaborationTab> {
         color: isDone ? Colors.white.withValues(alpha: 0.5) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDone ? Colors.transparent : EcoColors.forest.withValues(alpha: 0.1),
+          color: isDone
+              ? Colors.transparent
+              : EcoColors.forest.withValues(alpha: 0.1),
           width: 1,
         ),
         boxShadow: [
@@ -708,18 +774,24 @@ class _CollaborationTabState extends State<CollaborationTab> {
               fontSize: 14,
               fontWeight: isDone ? FontWeight.w500 : FontWeight.w600,
               decoration: isDone ? TextDecoration.lineThrough : null,
-              color: isDone ? EcoColors.ink.withValues(alpha: 0.4) : EcoColors.ink,
+              color: isDone
+                  ? EcoColors.ink.withValues(alpha: 0.4)
+                  : EcoColors.ink,
               height: 1.4,
             ),
           ),
           value: isDone,
-          onChanged: (value) => provider.toggleChecklistItem(item.id, value ?? false),
+          onChanged: (value) =>
+              provider.toggleChecklistItem(item.id, value ?? false),
           activeColor: EcoColors.forest,
           checkColor: Colors.white,
           checkboxShape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(5),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 4,
+          ),
           controlAffinity: ListTileControlAffinity.leading,
         ),
       ),
@@ -750,7 +822,9 @@ class _CollaborationTabState extends State<CollaborationTab> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24), // Capsule style
-                  border: Border.all(color: EcoColors.ink.withValues(alpha: 0.05)),
+                  border: Border.all(
+                    color: EcoColors.ink.withValues(alpha: 0.05),
+                  ),
                 ),
                 child: TextField(
                   controller: _checklistController,
@@ -761,11 +835,11 @@ class _CollaborationTabState extends State<CollaborationTab> {
                   decoration: const InputDecoration(
                     hintText: 'Add a new task...',
                     border: InputBorder.none,
-                    hintStyle: TextStyle(
-                      color: Colors.black38,
-                      fontSize: 14,
+                    hintStyle: TextStyle(color: Colors.black38, fontSize: 14),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
                     ),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
                   onSubmitted: (_) => _addChecklistItem(provider),
                 ),
@@ -778,7 +852,10 @@ class _CollaborationTabState extends State<CollaborationTab> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
                     )
                   : const Icon(Icons.add_rounded, size: 24),
               style: IconButton.styleFrom(
@@ -787,7 +864,9 @@ class _CollaborationTabState extends State<CollaborationTab> {
                 minimumSize: const Size(48, 48),
                 shape: const CircleBorder(), // Perfect circle to match chat
               ),
-              onPressed: _isAddingTask ? null : () => _addChecklistItem(provider),
+              onPressed: _isAddingTask
+                  ? null
+                  : () => _addChecklistItem(provider),
             ),
           ],
         ),
@@ -840,7 +919,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
             ),
           ),
         );
-      }
+      },
     );
   }
 }

@@ -18,8 +18,7 @@ class MissionManagementScreen extends StatefulWidget {
       _MissionManagementScreenState();
 }
 
-class _MissionManagementScreenState extends State<MissionManagementScreen>
-    with SingleTickerProviderStateMixin {
+class _MissionManagementScreenState extends State<MissionManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(

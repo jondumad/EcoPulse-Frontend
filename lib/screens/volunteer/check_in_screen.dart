@@ -134,24 +134,37 @@ class _CheckInScreenState extends State<CheckInScreen>
 
   Future<void> _handleCheckIn(String qrToken) async {
     final loc = Provider.of<LocationProvider>(context, listen: false);
-    final missionProvider = Provider.of<MissionProvider>(context, listen: false);
+    final missionProvider = Provider.of<MissionProvider>(
+      context,
+      listen: false,
+    );
     if (!_isInRange || _isProcessing) return;
 
     final now = DateTime.now();
     final mission = missionProvider.getMissionSync(widget.missionId);
-    
+
     // Logging for debugging - convert UTC to Local for clarity
     debugPrint('--- CHECK-IN SCAN LOG ---');
-    debugPrint('Volunteer Device Time (Local): ${DateFormat('HH:mm:ss').format(now)}');
+    debugPrint(
+      'Volunteer Device Time (Local): ${DateFormat('HH:mm:ss').format(now)}',
+    );
     if (mission != null) {
       // Ensure we work with local time for logging
       final startTimeLocal = mission.startTime.toLocal();
       // Scan allowed 30 mins before + 5 mins grace for clock drift
-      final allowedStartLocal = startTimeLocal.subtract(const Duration(minutes: 35));
-      
-      debugPrint('Mission Start Time (Local): ${DateFormat('HH:mm:ss').format(startTimeLocal)}');
-      debugPrint('Scan Requirement (Local - 30m): ${DateFormat('HH:mm:ss').format(startTimeLocal.subtract(const Duration(minutes: 30)))}');
-      debugPrint('Status (w/ 5m grace): ${now.isBefore(allowedStartLocal) ? "TOO EARLY" : "VALID WINDOW"}');
+      final allowedStartLocal = startTimeLocal.subtract(
+        const Duration(minutes: 35),
+      );
+
+      debugPrint(
+        'Mission Start Time (Local): ${DateFormat('HH:mm:ss').format(startTimeLocal)}',
+      );
+      debugPrint(
+        'Scan Requirement (Local - 30m): ${DateFormat('HH:mm:ss').format(startTimeLocal.subtract(const Duration(minutes: 30)))}',
+      );
+      debugPrint(
+        'Status (w/ 5m grace): ${now.isBefore(allowedStartLocal) ? "TOO EARLY" : "VALID WINDOW"}',
+      );
     } else {
       debugPrint('Mission details not found in cache for logging.');
     }
@@ -161,17 +174,39 @@ class _CheckInScreenState extends State<CheckInScreen>
     try {
       final userGps =
           '${loc.currentPosition?.latitude},${loc.currentPosition?.longitude}';
-      await Provider.of<AttendanceProvider>(
+      final result = await Provider.of<AttendanceProvider>(
         context,
         listen: false,
       ).checkIn(widget.missionId, qrToken, userGps);
 
       if (mounted) {
-        _showEcoSnackBar(
-          context,
-          'Check-in successful! Impact recorded.',
-          isError: false,
-        );
+        if (result['isEarly'] == true) {
+          // Show Early Arrival Dialog
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              title: const Text('You are Early!'),
+              content: const Text(
+                'We have notified the coordinator that you are here.\n'
+                'Please wait for them to start the mission.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Okay, I\'ll Wait'),
+                ),
+              ],
+            ),
+          );
+          if (!mounted) return;
+        } else {
+          _showEcoSnackBar(
+            context,
+            'Check-in successful! Impact recorded.',
+            isError: false,
+          );
+        }
         Navigator.pop(context);
       }
     } catch (e) {
@@ -649,7 +684,6 @@ class _CheckInScreenState extends State<CheckInScreen>
               }
             },
           ),
-          // Heritage Overlay
           CustomPaint(
             painter: ScannerOverlay(
               _isProcessing ? EcoColors.violet : EcoColors.forest,

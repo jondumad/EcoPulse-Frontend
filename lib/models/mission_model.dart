@@ -14,6 +14,8 @@ class Mission {
   final String? emergencyJustification;
   final bool isTemplate;
   final String status; // 'Open', 'InProgress', 'Completed', 'Cancelled'
+  final DateTime? actualStartTime;
+  final DateTime? actualEndTime;
   final List<Category> categories;
   final bool isRegistered; // Helper for UI state
   final String?
@@ -38,6 +40,8 @@ class Mission {
     this.emergencyJustification,
     this.isTemplate = false,
     required this.status,
+    this.actualStartTime,
+    this.actualEndTime,
     required this.categories,
     this.isRegistered = false,
     this.registrationStatus,
@@ -64,8 +68,8 @@ class Mission {
       description: json['description'],
       locationName: json['locationName'],
       locationGps: json['locationGps'],
-      startTime: DateTime.parse(json['startTime']),
-      endTime: DateTime.parse(json['endTime']),
+      startTime: DateTime.parse(json['startTime']).toLocal(),
+      endTime: DateTime.parse(json['endTime']).toLocal(),
       pointsValue: json['pointsValue'],
       maxVolunteers: json['maxVolunteers'],
       currentVolunteers: json['currentVolunteers'] ?? 0,
@@ -74,6 +78,12 @@ class Mission {
       emergencyJustification: json['emergencyJustification'],
       isTemplate: json['isTemplate'] ?? false,
       status: json['status'] ?? 'Open',
+      actualStartTime: json['actualStartTime'] != null
+          ? DateTime.parse(json['actualStartTime']).toLocal()
+          : null,
+      actualEndTime: json['actualEndTime'] != null
+          ? DateTime.parse(json['actualEndTime']).toLocal()
+          : null,
       categories:
           (json['missionCategories'] as List?)
               ?.map((mc) => Category.fromJson(mc['category']))

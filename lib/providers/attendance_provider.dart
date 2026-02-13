@@ -22,13 +22,18 @@ class AttendanceProvider with ChangeNotifier {
     }
   }
 
-  Future<void> checkIn(int missionId, String qrToken, String userGps) async {
+  Future<Map<String, dynamic>> checkIn(
+    int missionId,
+    String qrToken,
+    String userGps,
+  ) async {
     _isLoading = true;
     notifyListeners();
     try {
       final result = await _service.checkIn(missionId, qrToken, userGps);
       _currentAttendance = result['attendance'];
       await refresh(); // To get mission details
+      return result;
     } finally {
       _isLoading = false;
       notifyListeners();

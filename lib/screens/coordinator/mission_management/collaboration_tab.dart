@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/widgets/eco_pulse_widgets.dart';
+import 'package:frontend/widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 import '../../../../models/mission_model.dart';
 import '../../../../providers/auth_provider.dart';
@@ -438,10 +439,10 @@ class _CollaborationTabState extends State<CollaborationTab> {
             _buildPinnedSection(provider, pinnedComments),
           Expanded(
             child: otherComments.isEmpty && pinnedComments.isEmpty
-                ? _buildEmptyState(
+                ? EmptyState(
                     icon: Icons.chat_bubble_outline,
                     title: 'No messages yet',
-                    subtitle: 'Start the conversation with your team',
+                    description: 'Start the conversation with your team',
                   )
                 : ListView.builder(
                     controller: _chatScrollController,
@@ -720,10 +721,10 @@ class _CollaborationTabState extends State<CollaborationTab> {
         children: [
           Expanded(
             child: provider.checklist.isEmpty
-                ? _buildEmptyState(
+                ? EmptyState(
                     icon: Icons.checklist_rounded,
                     title: 'No tasks yet',
-                    subtitle: 'Add tasks to track progress together',
+                    description: 'Add tasks to track progress together',
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(
@@ -871,55 +872,6 @@ class _CollaborationTabState extends State<CollaborationTab> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildEmptyState({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Container(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 64,
-                  color: Colors.black.withValues(alpha: 0.15),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontFamily: 'Fraunces',
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: EcoColors.ink,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black.withValues(alpha: 0.6),
-                    height: 1.4,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }

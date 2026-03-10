@@ -6,6 +6,8 @@ import '../../../../providers/mission_provider.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/eco_notify_widgets.dart';
 import '../../../../widgets/eco_pulse_widgets.dart';
+import '../../../../widgets/atoms/eco_button.dart';
+import '../../../../widgets/atoms/eco_card.dart';
 
 class VolunteersTab extends StatefulWidget {
   final Mission mission;
@@ -32,7 +34,10 @@ class _VolunteersTabState extends State<VolunteersTab> {
     if (!mounted) return;
     setState(() => _isLoadingRegistrations = true);
     try {
-      final missionProvider = Provider.of<MissionProvider>(context, listen: false);
+      final missionProvider = Provider.of<MissionProvider>(
+        context,
+        listen: false,
+      );
       final data = await missionProvider.fetchRegistrations(widget.mission.id);
       if (mounted) {
         setState(() {
@@ -47,11 +52,16 @@ class _VolunteersTabState extends State<VolunteersTab> {
 
   Future<void> _fetchPendingVerifications() async {
     try {
-      final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+      final attendanceProvider = Provider.of<AttendanceProvider>(
+        context,
+        listen: false,
+      );
       final allPending = await attendanceProvider.getPendingVerifications();
       if (mounted) {
         setState(() {
-          _pendingVerifications = allPending.where((v) => v['missionId'] == widget.mission.id).toList();
+          _pendingVerifications = allPending
+              .where((v) => v['missionId'] == widget.mission.id)
+              .toList();
         });
       }
     } catch (e) {
@@ -61,22 +71,40 @@ class _VolunteersTabState extends State<VolunteersTab> {
 
   Future<void> _handleVerification(int attendanceId, String status) async {
     try {
-      final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
-      final success = await attendanceProvider.verifyAttendance(attendanceId, status);
+      final attendanceProvider = Provider.of<AttendanceProvider>(
+        context,
+        listen: false,
+      );
+      final success = await attendanceProvider.verifyAttendance(
+        attendanceId,
+        status,
+      );
       if (!mounted) return;
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Attendance $status'), backgroundColor: EcoColors.forest));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Attendance $status'),
+            backgroundColor: EcoColors.forest,
+          ),
+        );
         _fetchPendingVerifications();
         _fetchRegistrations();
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     }
   }
 
   Future<void> _promoteUser(int registrationId) async {
     try {
-      await Provider.of<MissionProvider>(context, listen: false).promoteFromWaitlist(registrationId);
+      await Provider.of<MissionProvider>(
+        context,
+        listen: false,
+      ).promoteFromWaitlist(registrationId);
       if (mounted) _fetchRegistrations();
     } catch (e) {
       debugPrint('Error promoting user: $e');
@@ -86,10 +114,16 @@ class _VolunteersTabState extends State<VolunteersTab> {
   @override
   Widget build(BuildContext context) {
     if (_isLoadingRegistrations && _registrations.isEmpty) {
-      return const Center(child: CircularProgressIndicator(color: EcoColors.forest));
+      return const Center(
+        child: CircularProgressIndicator(color: EcoColors.forest),
+      );
     }
-    final waitlisted = _registrations.where((r) => r['status'] == 'Waitlisted').toList();
-    final active = _registrations.where((r) => r['status'] != 'Waitlisted' && r['status'] != 'Cancelled').toList();
+    final waitlisted = _registrations
+        .where((r) => r['status'] == 'Waitlisted')
+        .toList();
+    final active = _registrations
+        .where((r) => r['status'] != 'Waitlisted' && r['status'] != 'Cancelled')
+        .toList();
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -109,9 +143,17 @@ class _VolunteersTabState extends State<VolunteersTab> {
             ...waitlisted.map((r) => _buildVolunteerCard(r)),
             const SizedBox(height: 24),
           ],
-          EcoSectionHeader(title: 'ACTIVE ROSTER', trailing: Text('${active.length} total')),
-          if (active.isEmpty) 
-            const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('No active volunteers')))
+          EcoSectionHeader(
+            title: 'ACTIVE ROSTER',
+            trailing: Text('${active.length} total'),
+          ),
+          if (active.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Text('No active volunteers'),
+              ),
+            )
           else
             ...active.map((r) => _buildVolunteerCard(r)),
           const SizedBox(height: 100),
@@ -131,13 +173,29 @@ class _VolunteersTabState extends State<VolunteersTab> {
               contentPadding: EdgeInsets.zero,
               title: Text(user['name'], style: EcoText.bodyBoldMD(context)),
               subtitle: Text('${v['totalHours']} hours requested'),
-              trailing: const EcoPulseTag(label: 'Pending', color: EcoColors.violet),
+              trailing: const EcoPulseTag(
+                label: 'Pending',
+                color: EcoColors.violet,
+              ),
             ),
             Row(
               children: [
-                Expanded(child: EcoPulseButton(label: 'Reject', isPrimary: false, isSmall: true, onPressed: () => _handleVerification(v['id'], 'Rejected'))),
+                Expanded(
+                  child: EcoPulseButton(
+                    label: 'Reject',
+                    variant: EcoButtonVariant.secondary,
+                    isSmall: true,
+                    onPressed: () => _handleVerification(v['id'], 'Rejected'),
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: EcoPulseButton(label: 'Verify', isSmall: true, onPressed: () => _handleVerification(v['id'], 'Verified'))),
+                Expanded(
+                  child: EcoPulseButton(
+                    label: 'Verify',
+                    isSmall: true,
+                    onPressed: () => _handleVerification(v['id'], 'Verified'),
+                  ),
+                ),
               ],
             ),
           ],
@@ -162,11 +220,17 @@ class _VolunteersTabState extends State<VolunteersTab> {
       child: ListTile(
         onTap: () => _showVolunteerActions(user, status),
         leading: CircleAvatar(
-          backgroundColor: isCheckedIn ? EcoColors.forest.withValues(alpha: 0.1) : (isCompleted ? Colors.orange.withValues(alpha: 0.1) : EcoColors.clay),
+          backgroundColor: isCheckedIn
+              ? EcoColors.forest.withValues(alpha: 0.1)
+              : (isCompleted
+                    ? Colors.orange.withValues(alpha: 0.1)
+                    : EcoColors.clay),
           child: Text(
             user['name'][0].toUpperCase(),
             style: TextStyle(
-              color: isCheckedIn ? EcoColors.forest : (isCompleted ? Colors.orange : EcoColors.ink),
+              color: isCheckedIn
+                  ? EcoColors.forest
+                  : (isCompleted ? Colors.orange : EcoColors.ink),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -185,7 +249,8 @@ class _VolunteersTabState extends State<VolunteersTab> {
             else ...[
               IconButton(
                 icon: const Icon(Icons.chat_bubble_outline_rounded, size: 20),
-                onPressed: () => _showIndividualNotifySheet(user['id'], user['name']),
+                onPressed: () =>
+                    _showIndividualNotifySheet(user['id'], user['name']),
               ),
               const Icon(Icons.chevron_right, size: 20, color: Colors.black26),
             ],
@@ -215,10 +280,13 @@ class _VolunteersTabState extends State<VolunteersTab> {
             const SizedBox(height: 8),
             Text('Current Status: $status', style: EcoText.bodySM(context)),
             const SizedBox(height: 24),
-            
+
             if (isRegistered)
               ListTile(
-                leading: const Icon(Icons.check_circle_outline, color: EcoColors.forest),
+                leading: const Icon(
+                  Icons.check_circle_outline,
+                  color: EcoColors.forest,
+                ),
                 title: const Text('Manual Check-in'),
                 subtitle: const Text('Mark as present without QR scan'),
                 onTap: () {
@@ -226,10 +294,13 @@ class _VolunteersTabState extends State<VolunteersTab> {
                   _handleManualAction(user['id'], 'check_in');
                 },
               ),
-            
+
             if (isCheckedIn)
               ListTile(
-                leading: const Icon(Icons.verified_outlined, color: Colors.orange),
+                leading: const Icon(
+                  Icons.verified_outlined,
+                  color: Colors.orange,
+                ),
                 title: const Text('Manual Complete'),
                 subtitle: const Text('Verify completion immediately'),
                 onTap: () {
@@ -239,7 +310,10 @@ class _VolunteersTabState extends State<VolunteersTab> {
               ),
 
             ListTile(
-              leading: const Icon(Icons.chat_bubble_outline_rounded, color: EcoColors.violet),
+              leading: const Icon(
+                Icons.chat_bubble_outline_rounded,
+                color: EcoColors.violet,
+              ),
               title: const Text('Send Message'),
               onTap: () {
                 Navigator.pop(context);
@@ -258,14 +332,22 @@ class _VolunteersTabState extends State<VolunteersTab> {
     final res = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: Text(action == 'check_in' ? 'Manual Check-in' : 'Manual Complete'),
+        title: Text(
+          action == 'check_in' ? 'Manual Check-in' : 'Manual Complete',
+        ),
         content: TextField(
           controller: reasonController,
           decoration: const InputDecoration(hintText: 'Reason for override...'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Confirm')),
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Confirm'),
+          ),
         ],
       ),
     );
@@ -275,16 +357,33 @@ class _VolunteersTabState extends State<VolunteersTab> {
       try {
         final provider = Provider.of<MissionProvider>(context, listen: false);
         if (action == 'check_in') {
-          await provider.manualCheckIn(widget.mission.id, userId, reasonController.text);
+          await provider.manualCheckIn(
+            widget.mission.id,
+            userId,
+            reasonController.text,
+          );
         } else {
-          await provider.manualComplete(widget.mission.id, userId, reasonController.text);
+          await provider.manualComplete(
+            widget.mission.id,
+            userId,
+            reasonController.text,
+          );
         }
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Action successful'), backgroundColor: EcoColors.forest));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Action successful'),
+              backgroundColor: EcoColors.forest,
+            ),
+          );
           _fetchRegistrations();
         }
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        }
       }
     }
   }
@@ -298,9 +397,11 @@ class _VolunteersTabState extends State<VolunteersTab> {
       icon: Icons.chat_bubble_outline_rounded,
       onSend: (message) async {
         if (!mounted) return;
-        await Provider.of<MissionProvider>(context, listen: false)
-            .contactVolunteer(widget.mission.id, userId, message);
-        
+        await Provider.of<MissionProvider>(
+          context,
+          listen: false,
+        ).contactVolunteer(widget.mission.id, userId, message);
+
         messenger.showSnackBar(
           SnackBar(
             content: Text('Message sent to $userName'),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
+import '../../widgets/atoms/eco_card.dart';
 
 class CoordinatorAnalyticsScreen extends StatelessWidget {
   const CoordinatorAnalyticsScreen({super.key});

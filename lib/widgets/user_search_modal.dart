@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 import '../services/user_service.dart';
 import '../providers/mission_provider.dart';
 import '../theme/app_theme.dart';
 import 'eco_pulse_widgets.dart';
+import 'atoms/eco_button.dart';
 
 class UserSearchModal extends StatefulWidget {
   final int missionId;
@@ -158,11 +160,9 @@ class _UserSearchModalState extends State<UserSearchModal> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator(color: EcoColors.forest))
                 : _searchResults.isEmpty
-                    ? Center(
-                        child: Text(
-                          _searchController.text.isEmpty ? 'Search for users' : 'No users found',
-                          style: EcoText.bodySM(context),
-                        ),
+                    ? EmptyState(
+                        icon: Icons.search,
+                        title: _searchController.text.isEmpty ? 'Search for users' : 'No users found',
                       )
                     : ListView.builder(
                         itemCount: _searchResults.length,

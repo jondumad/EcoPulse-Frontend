@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
+import '../../widgets/atoms/eco_button.dart';
+import '../../widgets/atoms/eco_card.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/badge_provider.dart';
 import '../../models/user_model.dart';
@@ -453,7 +455,9 @@ class _BadgesModalState extends State<BadgesModal> {
             const SizedBox(height: 40),
             EcoPulseButton(
               label: unlocked ? 'GOT IT' : 'CLOSE',
-              isPrimary: unlocked,
+              variant: unlocked
+                  ? EcoButtonVariant.primary
+                  : EcoButtonVariant.secondary,
               onPressed: () => Navigator.pop(context),
             ),
           ],

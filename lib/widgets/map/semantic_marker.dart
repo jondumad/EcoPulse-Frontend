@@ -1,10 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/eco_pulse_widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/mission_model.dart';
 import '../../theme/app_theme.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
-class SemanticMarker extends StatelessWidget {
+class SemanticMarker extends StatefulWidget {
   final Mission mission;
   final ValueNotifier<double> zoomNotifier;
 
@@ -13,6 +15,45 @@ class SemanticMarker extends StatelessWidget {
     required this.mission,
     required this.zoomNotifier,
   });
+
+  @override
+  State<SemanticMarker> createState() => _SemanticMarkerState();
+}
+
+class _SemanticMarkerState extends State<SemanticMarker>
+    with TickerProviderStateMixin {
+  late AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+    if (widget.mission.status == 'InProgress') {
+      _pulseController.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant SemanticMarker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.mission.status == 'InProgress' &&
+        oldWidget.mission.status != 'InProgress') {
+      _pulseController.repeat(reverse: true);
+    } else if (widget.mission.status != 'InProgress' &&
+        _pulseController.isAnimating) {
+      _pulseController.stop();
+      _pulseController.reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
 
   Color _getCategoryColor(String? category) {
     switch (category) {
@@ -32,20 +73,22 @@ class SemanticMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<double>(
-      valueListenable: zoomNotifier,
+      valueListenable: widget.zoomNotifier,
       builder: (context, zoom, _) {
         // Behavior Thresholds
         final bool isExpanded = zoom > 14.5;
         final bool isIconVisible = zoom > 12.0;
 
         // Overall visibility/scale t (10.0 -> 12.0)
-        double scaleT = Curves.easeOut.transform(
-          (zoom - 10.0).clamp(0.0, 1.0),
-        );
+        double scaleT = Curves.easeOut.transform((zoom - 10.0).clamp(0.0, 1.0));
 
-        final color = _getCategoryColor(mission.categories.firstOrNull?.name);
+        final color = _getCategoryColor(
+          widget.mission.categories.firstOrNull?.name,
+        );
         final bool isUrgent =
-            mission.priority == 'Urgent' || mission.priority == 'Emergency';
+            widget.mission.priority == 'Urgent' ||
+            widget.mission.priority == 'Emergency';
+        final bool isLive = widget.mission.status == 'InProgress';
 
         return Transform.scale(
           scale: 0.45 + (0.35 * scaleT),
@@ -55,6 +98,27 @@ class SemanticMarker extends StatelessWidget {
               clipBehavior: Clip.none,
               alignment: Alignment.center,
               children: [
+                // Live Pulse Effect
+                if (isLive)
+                  AnimatedBuilder(
+                    animation: _pulseController,
+                    builder: (context, child) {
+                      return Container(
+                        width: 50 + (10 * _pulseController.value),
+                        height: 50 + (10 * _pulseController.value),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: EcoColors.forest.withValues(
+                              alpha: 1.0 - _pulseController.value,
+                            ),
+                            width: 2,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -68,10 +132,7 @@ class SemanticMarker extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isUrgent ? Colors.red.shade700 : color,
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 1.5,
-                        ),
+                        border: Border.all(color: Colors.white, width: 1.5),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.2),
@@ -86,10 +147,9 @@ class SemanticMarker extends StatelessWidget {
                           // Category Icon (Visual Anchor)
                           if (isIconVisible)
                             Text(
-                              mission.categories.firstOrNull?.icon ?? '📍',
-                              style: TextStyle(
-                                fontSize: isExpanded ? 14 : 16,
-                              ),
+                              widget.mission.categories.firstOrNull?.icon ??
+                                  '📍',
+                              style: TextStyle(fontSize: isExpanded ? 14 : 16),
                             ),
 
                           // Stacked Info (Title & Points)
@@ -106,18 +166,24 @@ class SemanticMarker extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  mission.title.toUpperCase(),
-                                  style: GoogleFonts.inter(
-                                    color: Colors.white,
-                                    fontSize: 10, // Increased from 8.5
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.2,
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxWidth: isExpanded ? 140 : 100,
                                   ),
-                                  maxLines: 1,
+                                  child: Text(
+                                    widget.mission.title.toUpperCase(),
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.2,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                                 Text(
-                                  '${mission.pointsValue} POINTS',
+                                  '${widget.mission.pointsValue} POINTS',
                                   style: GoogleFonts.inter(
                                     color: Colors.white.withValues(alpha: 0.85),
                                     fontSize: 8, // Increased from 7

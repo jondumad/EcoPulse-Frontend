@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/widgets/coordinator_mission_card.dart';
+import 'package:frontend/widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
@@ -9,6 +10,8 @@ import '../../providers/attendance_provider.dart';
 import '../../providers/collaboration_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
+import '../../widgets/atoms/eco_button.dart';
+import '../../widgets/atoms/eco_card.dart';
 import '../../widgets/mission_filter_widgets.dart';
 import '../../widgets/volunteer_list_modal.dart';
 import '../../widgets/waitlist_management_modal.dart';
@@ -44,16 +47,22 @@ class _CoordinatorMissionListScreenState
         listen: false,
       ).fetchMissions(mine: true);
       _fetchPendingCounts();
-      
+
       // Start listening for live updates
-      Provider.of<CollaborationProvider>(context, listen: false).addListener(_handleLiveUpdate);
+      Provider.of<CollaborationProvider>(
+        context,
+        listen: false,
+      ).addListener(_handleLiveUpdate);
     });
   }
 
   void _handleLiveUpdate() {
     if (!mounted) return;
     // Refresh missions and pending counts when a live update happens
-    Provider.of<MissionProvider>(context, listen: false).fetchMissions(mine: true, forceRefresh: true);
+    Provider.of<MissionProvider>(
+      context,
+      listen: false,
+    ).fetchMissions(mine: true, forceRefresh: true);
     _fetchPendingCounts();
   }
 
@@ -61,23 +70,29 @@ class _CoordinatorMissionListScreenState
   void dispose() {
     // Clean up listener
     try {
-      Provider.of<CollaborationProvider>(context, listen: false).removeListener(_handleLiveUpdate);
+      Provider.of<CollaborationProvider>(
+        context,
+        listen: false,
+      ).removeListener(_handleLiveUpdate);
     } catch (_) {}
     super.dispose();
   }
 
   Future<void> _fetchPendingCounts() async {
     try {
-      final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+      final attendanceProvider = Provider.of<AttendanceProvider>(
+        context,
+        listen: false,
+      );
       final pending = await attendanceProvider.getPendingVerifications();
       if (!mounted) return;
-      
+
       final Map<int, int> counts = {};
       for (var v in pending) {
         final missionId = v['missionId'] as int;
         counts[missionId] = (counts[missionId] ?? 0) + 1;
       }
-      
+
       setState(() {
         _pendingCounts = counts;
       });
@@ -306,7 +321,21 @@ class _CoordinatorMissionListScreenState
                           else if (missions.isEmpty)
                             SliverFillRemaining(
                               hasScrollBody: false,
-                              child: _buildEmptyState(provider),
+                              child: EmptyState(
+                                icon: Icons.assignment_outlined,
+                                title: 'No missions found',
+                                description:
+                                    'Try adjusting your filters or search query.',
+                                action: EcoPulseButton(
+                                  label: 'Clear Filters',
+                                  onPressed: () {
+                                    provider.clearFilters();
+                                  },
+                                  isSmall: true,
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: AppTheme.ink,
+                                ),
+                              ),
                             )
                           else
                             ..._buildGroupedMissionSlivers(missions, provider),
@@ -478,24 +507,26 @@ class _CoordinatorMissionListScreenState
 
     // 2. PAST MISSIONS / ARCHIVE SECTION
     final sevenDaysAgo = now.subtract(const Duration(days: 7));
-    
-    slivers.add(_buildSectionHeader(
-      _showAllPast ? 'MISSION ARCHIVE' : 'RECENT PAST MISSIONS',
-      marginTop: 32,
-      trailing: _showAllPast
-          ? TextButton(
-              onPressed: () => setState(() => _showAllPast = false),
-              child: const Text(
-                'BACK TO RECENT',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
+
+    slivers.add(
+      _buildSectionHeader(
+        _showAllPast ? 'MISSION ARCHIVE' : 'RECENT PAST MISSIONS',
+        marginTop: 32,
+        trailing: _showAllPast
+            ? TextButton(
+                onPressed: () => setState(() => _showAllPast = false),
+                child: const Text(
+                  'BACK TO RECENT',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
                 ),
-              ),
-            )
-          : null,
-    ));
+              )
+            : null,
+      ),
+    );
 
     if (!_showAllPast) {
       // Show missions from the last 7 days
@@ -504,41 +535,45 @@ class _CoordinatorMissionListScreenState
           .toList();
 
       if (recentPastMissions.isEmpty) {
-        slivers.add(SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-            child: Center(
-              child: Text(
-                'No activity in the past 7 days.',
-                style: TextStyle(
-                  color: AppTheme.ink.withValues(alpha: 0.4),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+        slivers.add(
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+              child: Center(
+                child: Text(
+                  'No activity in the past 7 days.',
+                  style: TextStyle(
+                    color: AppTheme.ink.withValues(alpha: 0.4),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
           ),
-        ));
+        );
       } else {
         _addDateGroupedSlivers(slivers, recentPastMissions, provider);
       }
 
       // Show "View All" button if there are older missions
       if (allPastMissions.length > recentPastMissions.length) {
-        slivers.add(SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            child: EcoPulseButton(
-              label: 'VIEW ALL HISTORY',
-              icon: Icons.history_rounded,
-              isPrimary: false,
-              isSmall: true,
-              backgroundColor: Colors.white,
-              foregroundColor: AppTheme.violet,
-              onPressed: () => setState(() => _showAllPast = true),
+        slivers.add(
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              child: EcoPulseButton(
+                label: 'VIEW ALL HISTORY',
+                icon: Icons.history_rounded,
+                variant: EcoButtonVariant.secondary,
+                isSmall: true,
+                backgroundColor: Colors.white,
+                foregroundColor: AppTheme.violet,
+                onPressed: () => setState(() => _showAllPast = true),
+              ),
             ),
           ),
-        ));
+        );
       }
     } else {
       // ARCHIVE VIEW: Grouped by Year -> Month
@@ -554,59 +589,68 @@ class _CoordinatorMissionListScreenState
       }
 
       if (_activeYear != null) {
-        final months = grouped[_activeYear]!.keys.toList()..sort((a, b) => b.compareTo(a));
+        final months = grouped[_activeYear]!.keys.toList()
+          ..sort((a, b) => b.compareTo(a));
         if (_activeMonth == null || !months.contains(_activeMonth)) {
           _activeMonth = months.isNotEmpty ? months.first : null;
         }
 
         // Selection Tabs
-        slivers.add(SliverToBoxAdapter(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Year Selector
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: years.map((y) => Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: EcoFilterChip(
-                      label: '$y',
-                      isSelected: _activeYear == y,
-                      onTap: () => setState(() {
-                        _activeYear = y;
-                        _activeMonth = null; 
-                      }),
-                      color: AppTheme.forest,
-                    ),
-                  )).toList(),
+        slivers.add(
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Year Selector
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: years
+                        .map(
+                          (y) => Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: EcoFilterChip(
+                              label: '$y',
+                              isSelected: _activeYear == y,
+                              onTap: () => setState(() {
+                                _activeYear = y;
+                                _activeMonth = null;
+                              }),
+                              color: AppTheme.forest,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              // Month Selector
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: months.map((m) {
-                    final monthName = DateFormat.MMMM().format(DateTime(2024, m));
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: EcoFilterChip(
-                        label: monthName.toUpperCase(),
-                        isSelected: _activeMonth == m,
-                        onTap: () => setState(() => _activeMonth = m),
-                        color: AppTheme.violet,
-                      ),
-                    );
-                  }).toList(),
+                const SizedBox(height: 12),
+                // Month Selector
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: months.map((m) {
+                      final monthName = DateFormat.MMMM().format(
+                        DateTime(2024, m),
+                      );
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: EcoFilterChip(
+                          label: monthName.toUpperCase(),
+                          isSelected: _activeMonth == m,
+                          onTap: () => setState(() => _activeMonth = m),
+                          color: AppTheme.violet,
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
-        ));
+        );
 
         // Missions for selected month
         if (_activeMonth != null) {
@@ -639,7 +683,11 @@ class _CoordinatorMissionListScreenState
     }
   }
 
-  Widget _buildSectionHeader(String title, {double marginTop = 24, Widget? trailing}) {
+  Widget _buildSectionHeader(
+    String title, {
+    double marginTop = 24,
+    Widget? trailing,
+  }) {
     return SliverToBoxAdapter(
       child: Padding(
         padding: EdgeInsets.fromLTRB(16, marginTop, 16, 12),
@@ -735,9 +783,7 @@ class _CoordinatorMissionListScreenState
           Row(
             children: [
               Expanded(
-                child: MissionSearchBar(
-                  onChanged: provider.setSearchQuery,
-                ),
+                child: MissionSearchBar(onChanged: provider.setSearchQuery),
               ),
               const SizedBox(width: 12),
               MissionSortButton(
@@ -825,49 +871,6 @@ class _CoordinatorMissionListScreenState
     );
   }
 
-  Widget _buildEmptyState(MissionProvider provider) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.assignment_outlined,
-              size: 64,
-              color: AppTheme.ink.withValues(alpha: 0.2),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No missions found',
-              style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                color: AppTheme.ink.withValues(alpha: 0.5),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Try adjusting your filters or search query.',
-              textAlign: TextAlign.center,
-              style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                color: AppTheme.ink.withValues(alpha: 0.4),
-              ),
-            ),
-            const SizedBox(height: 24),
-            EcoPulseButton(
-              label: 'Clear Filters',
-              onPressed: () {
-                provider.clearFilters();
-              },
-              isSmall: true,
-              backgroundColor: Colors.white,
-              foregroundColor: AppTheme.ink,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   PopupMenuItem<String> _buildPopupItem(
     String value,
     IconData icon,
@@ -943,8 +946,12 @@ class _BatchConfirmationDialogState extends State<_BatchConfirmationDialog> {
       title: Row(
         children: [
           Icon(
-            isCancel ? Icons.delete_forever : (isEmergency ? Icons.warning : Icons.help_outline),
-            color: isCancel || isEmergency ? AppTheme.terracotta : AppTheme.forest,
+            isCancel
+                ? Icons.delete_forever
+                : (isEmergency ? Icons.warning : Icons.help_outline),
+            color: isCancel || isEmergency
+                ? AppTheme.terracotta
+                : AppTheme.forest,
           ),
           const SizedBox(width: 12),
           Expanded(child: Text('${widget.action} $count Missions?')),
@@ -964,20 +971,30 @@ class _BatchConfirmationDialogState extends State<_BatchConfirmationDialog> {
                   decoration: BoxDecoration(
                     color: AppTheme.terracotta.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.terracotta.withValues(alpha: 0.2)),
+                    border: Border.all(
+                      color: AppTheme.terracotta.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Text(
-                    isCancel 
-                      ? 'WARNING: This will permanently cancel these missions and notify all registered volunteers.'
-                      : 'WARNING: This will prioritize these missions as EMERGENCIES for all users.',
-                    style: TextStyle(color: AppTheme.terracotta, fontSize: 12, fontWeight: FontWeight.bold),
+                    isCancel
+                        ? 'WARNING: This will permanently cancel these missions and notify all registered volunteers.'
+                        : 'WARNING: This will prioritize these missions as EMERGENCIES for all users.',
+                    style: TextStyle(
+                      color: AppTheme.terracotta,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               Text(
                 widget.action == 'Duplicate'
                     ? 'Creating copies of:'
                     : 'Target missions:',
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.black38),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black38,
+                ),
               ),
               const SizedBox(height: 8),
               Container(
@@ -993,29 +1010,54 @@ class _BatchConfirmationDialogState extends State<_BatchConfirmationDialog> {
                   separatorBuilder: (ctx, idx) => const Divider(height: 8),
                   itemBuilder: (ctx, idx) => Text(
                     '• ${widget.missions[idx].title}',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
               if (isEmergency) ...[
                 const SizedBox(height: 20),
-                const Text('JUSTIFICATION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                const Text(
+                  'JUSTIFICATION',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _justificationController,
                   maxLines: 2,
-                  decoration: const InputDecoration(hintText: 'Explain why (min 20 chars)', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    hintText: 'Explain why (min 20 chars)',
+                    border: OutlineInputBorder(),
+                  ),
                   style: const TextStyle(fontSize: 13),
-                  validator: (v) => (v == null || v.length < 20) ? 'More detail needed' : null,
+                  validator: (v) => (v == null || v.length < 20)
+                      ? 'More detail needed'
+                      : null,
                 ),
               ],
               if (isCancel) ...[
                 const SizedBox(height: 20),
-                const Text('TYPE "CONFIRM" TO PROCEED', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                const Text(
+                  'TYPE "CONFIRM" TO PROCEED',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _confirmationController,
-                  decoration: const InputDecoration(hintText: 'CONFIRM', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    hintText: 'CONFIRM',
+                    border: OutlineInputBorder(),
+                  ),
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                   validator: (v) => v != 'CONFIRM' ? 'Required' : null,
@@ -1026,7 +1068,10 @@ class _BatchConfirmationDialogState extends State<_BatchConfirmationDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Go Back')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Go Back'),
+        ),
         ElevatedButton(
           onPressed: () {
             if (!_formKey.currentState!.validate()) return;
@@ -1036,7 +1081,9 @@ class _BatchConfirmationDialogState extends State<_BatchConfirmationDialog> {
             });
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: isCancel || isEmergency ? AppTheme.terracotta : AppTheme.forest,
+            backgroundColor: isCancel || isEmergency
+                ? AppTheme.terracotta
+                : AppTheme.forest,
             foregroundColor: Colors.white,
             elevation: 0,
           ),

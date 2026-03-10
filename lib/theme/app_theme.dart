@@ -9,6 +9,12 @@ class AppTheme {
   static const Color violet = Color(0xFF7F30FF); // Highlights, energy
   static const Color terracotta = Color(0xFFD66853); // Warnings, tags
   static const Color ink = Color(0xFF1A1C1E); // Text, dark cards
+  static const Color amber = Color(0xFFC9893A); // Strength meter, warnings
+
+  // Tints & Opacities
+  static const Color forestLight = Color(0xFFD6EFE1);
+  static const Color inkSecondary = Color(0x991A1C1E); // 60%
+  static const Color inkTertiary = Color(0x661A1C1E); // 40%
 
   static const Color glass = Color.fromRGBO(255, 255, 255, 0.6);
   static const Color paperShadow = Color.fromRGBO(0, 0, 0, 0.05);
@@ -25,6 +31,17 @@ class AppTheme {
     0xFF7F8C8D,
   ); // Keep original grey for now or map to ink.withAlpha
   static const Color textMedium = Color(0xFF95A5A6);
+
+  // Shadows
+  static const List<BoxShadow> shadowSoft = [
+    BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
+  ];
+  static const List<BoxShadow> shadowMedium = [
+    BoxShadow(color: Color(0x14000000), blurRadius: 16, offset: Offset(0, 4)),
+  ];
+  static const List<BoxShadow> shadowForest = [
+    BoxShadow(color: Color(0x331B4332), blurRadius: 8, offset: Offset(0, 2)),
+  ];
 
   static final ThemeData lightTheme = _buildLightTheme();
 

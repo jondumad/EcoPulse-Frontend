@@ -9,6 +9,8 @@ import '../providers/location_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/map_utils.dart';
 import 'eco_pulse_widgets.dart';
+import 'atoms/eco_button.dart';
+import 'atoms/eco_card.dart';
 
 class LocationPickerModal extends StatefulWidget {
   const LocationPickerModal({super.key});

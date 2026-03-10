@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 import '../models/notification_model.dart';
 import '../providers/mission_provider.dart';
@@ -8,6 +9,7 @@ import 'volunteer/mission_detail_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/eco_app_bar.dart';
 import '../widgets/eco_pulse_widgets.dart';
+import '../widgets/atoms/eco_button.dart';
 import 'package:intl/intl.dart';
 
 class NotificationInboxScreen extends StatefulWidget {
@@ -140,24 +142,10 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.notifications_none_outlined,
-                    size: 64,
-                    color: const Color(0xFF94A3B8),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No notifications yet',
-                    style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                      color: const Color(0xFF94A3B8),
-                    ),
-                  ),
-                ],
-              ),
+            return EmptyState(
+              icon: Icons.notifications_none_outlined,
+              title: 'No notifications yet',
+              description: 'Your notifications will appear here.',
             );
           }
 
@@ -269,7 +257,7 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
                     label: '',
                     icon: isRegistered ? Icons.check_circle_rounded : Icons.add_task_rounded,
                     isSmall: true,
-                    isPrimary: !isRegistered,
+                    variant: !isRegistered ? EcoButtonVariant.primary : EcoButtonVariant.secondary,
                     backgroundColor: isRegistered ? EcoColors.forest.withValues(alpha: 0.1) : null,
                     foregroundColor: isRegistered ? EcoColors.forest : null,
                     onPressed: isRegistered ? null : () => _handleRegisterFromNotification(notification),

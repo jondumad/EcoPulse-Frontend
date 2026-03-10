@@ -22,6 +22,9 @@ void main() {
 class EcoPulseApp extends StatelessWidget {
   const EcoPulseApp({super.key});
 
+  static final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -33,7 +36,12 @@ class EcoPulseApp extends StatelessWidget {
           update: (_, location, mission) =>
               mission!..updateUserLocation(location.currentPosition),
         ),
-        ChangeNotifierProvider(create: (_) => AttendanceProvider()),
+        ChangeNotifierProxyProvider<MissionProvider, AttendanceProvider>(
+          create: (_) => AttendanceProvider(),
+          update: (_, mission, attendance) =>
+              AttendanceProvider(missionProvider: mission)
+                ..currentAttendance = attendance?.currentAttendance,
+        ),
         ChangeNotifierProvider(create: (_) => NavProvider()),
         ChangeNotifierProvider(create: (_) => BadgeProvider()),
         ChangeNotifierProxyProvider<AuthProvider, CollaborationProvider>(
@@ -60,10 +68,9 @@ class _EcoPulseAppViewState extends State<EcoPulseAppView> {
   @override
   void initState() {
     super.initState();
-    // Initialize auth and attendance check after binding
+    // Initialize auth and base providers after binding
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AuthProvider>(context, listen: false).initAuth();
-      Provider.of<AttendanceProvider>(context, listen: false).refresh();
       Provider.of<LocationProvider>(context, listen: false).init();
     });
   }
@@ -71,6 +78,7 @@ class _EcoPulseAppViewState extends State<EcoPulseAppView> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      scaffoldMessengerKey: EcoPulseApp.scaffoldMessengerKey,
       title: 'EcoPulse',
       theme: AppTheme.lightTheme,
       themeMode: ThemeMode.light,

@@ -1,10 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/mission_provider.dart';
 import '../models/user_model.dart';
 import '../widgets/eco_pulse_widgets.dart';
+import '../widgets/atoms/eco_card.dart';
 import '../components/mission_list.dart';
 import './volunteer/mission_history_screen.dart';
 import 'volunteer/badges_modal.dart';
@@ -39,17 +41,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             return const Center(child: Text('Not logged in'));
           }
 
+          final now = DateTime.now();
           final activeMissions = missionProvider.missions
               .where(
-                (m) => m.isRegistered && m.registrationStatus != 'Completed',
+                (m) => m.isRegistered && m.registrationStatus != 'Completed' && m.endTime.isAfter(now),
               )
               .toList();
-
           final historyMissions = missionProvider.missions
               .where(
                 (m) =>
                     m.registrationStatus == 'Completed' ||
-                    m.registrationStatus == 'Cancelled',
+                    m.registrationStatus == 'Cancelled' ||
+                    (m.registrationStatus == 'Registered' &&
+                        m.endTime.isBefore(now)),
               )
               .toList();
 
@@ -244,23 +248,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (missionProvider.isLoading && activeMissions.isEmpty)
                     const Center(child: CircularProgressIndicator())
                   else if (activeMissions.isEmpty)
-                    _buildEmptyState(
-                      'No active missions.\nStart your journey in the missions tab!',
-                    )
+                    EmptyState(icon: Icons.assignment_outlined, title: 'No active missions', description: 'Start your journey in the missions tab!')
                   else
-                    MissionList(missions: activeMissions),
-
-                  if (historyMissions.isNotEmpty) ...[
-                    const SizedBox(height: 32),
-                    Text('Mission History', style: EcoText.displayMD(context)),
-                    const SizedBox(height: 16),
                     MissionList(
-                      missions: historyMissions
-                          .take(3)
-                          .toList(), // Show preview
-                      isHistory: true,
+                      missions: activeMissions,
+                      emptyMessage: 'No active missions right now',
                     ),
-                  ],
+
+                  if (missionProvider.isLoading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
                 ] else if (user.role == 'Coordinator') ...[
                   Text(
                     'Coordination Metrics',
@@ -321,8 +320,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   else if (missionProvider.missions
                       .where((m) => m.createdBy == user.id)
                       .isEmpty)
-                    _buildEmptyState(
-                      'You haven\'t created any missions yet.\nHead to the Mission Hub to start one!',
+                    EmptyState(
+                      icon: Icons.assignment_outlined,
+                      title: 'No missions created',
+                      description: 'You haven\'t created any missions yet.\nHead to the Mission Hub to start one!',
                     )
                   else
                     MissionList(
@@ -470,28 +471,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(day, style: EcoText.monoSM(context).copyWith(fontSize: 9)),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(String message) {
-    return EcoPulseCard(
-      child: Column(
-        children: [
-          Icon(
-            Icons.assignment_outlined,
-            size: 48,
-            color: EcoColors.ink.withValues(alpha: 0.2),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: EcoText.bodyMD(
-              context,
-            ).copyWith(color: EcoColors.ink.withValues(alpha: 0.5)),
-          ),
-        ],
       ),
     );
   }

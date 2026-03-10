@@ -6,6 +6,7 @@ import '../../models/mission_model.dart';
 import '../../providers/mission_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
+import '../../widgets/atoms/eco_button.dart';
 import '../../widgets/location_picker_modal.dart';
 import 'components/create_mission_sections.dart';
 
@@ -34,6 +35,14 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
   bool _isSaving = false;
   bool _isTemplate = false;
   bool _isEmergency = false;
+  bool _autoPromote = true;
+
+  // Recurrence State
+  String _frequency = 'daily';
+  List<int> _selectedDaysOfWeek = [];
+  int _selectedDayOfMonth = 1;
+  DateTime? _recurrenceEndDate;
+
   late DateTime _startDate;
   late TimeOfDay _startTime;
   late TimeOfDay _endTime;
@@ -50,17 +59,32 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
     _descriptionController = TextEditingController(text: m.description);
     _locationNameController = TextEditingController(text: m.locationName);
     _pointsController = TextEditingController(text: m.pointsValue.toString());
-    _maxVolunteersController = TextEditingController(text: m.maxVolunteers?.toString() ?? '');
-    _emergencyJustificationController = TextEditingController(text: m.emergencyJustification ?? '');
-    
+    _maxVolunteersController = TextEditingController(
+      text: m.maxVolunteers?.toString() ?? '',
+    );
+    _emergencyJustificationController = TextEditingController(
+      text: m.emergencyJustification ?? '',
+    );
+
     _isTemplate = m.isTemplate;
     _isEmergency = m.isEmergency;
+    _autoPromote = m.autoPromote;
+
+    if (m.recurringSettings != null) {
+      _frequency = m.recurringSettings!.frequency;
+      _selectedDaysOfWeek = m.recurringSettings!.dayOfWeek != null
+          ? [m.recurringSettings!.dayOfWeek!]
+          : [];
+      _selectedDayOfMonth = m.recurringSettings!.dayOfMonth ?? 1;
+      _recurrenceEndDate = m.recurringSettings!.endDate;
+    }
+
     _startDate = m.startTime;
     _startTime = TimeOfDay.fromDateTime(m.startTime);
     _endTime = TimeOfDay.fromDateTime(m.endTime);
     _priority = m.priority;
     _selectedCategoryIds = m.categories.map((c) => c.id).toList();
-    
+
     if (m.locationGps != null) {
       final parts = m.locationGps!.split(',');
       if (parts.length == 2) {
@@ -109,10 +133,17 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
   Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) {
       // Find the first field with an error and scroll to it
-      if (_titleController.text.isEmpty || _descriptionController.text.isEmpty) {
-        Scrollable.ensureVisible(_heroKey.currentContext!, duration: const Duration(milliseconds: 500));
+      if (_titleController.text.isEmpty ||
+          _descriptionController.text.isEmpty) {
+        Scrollable.ensureVisible(
+          _heroKey.currentContext!,
+          duration: const Duration(milliseconds: 500),
+        );
       } else if (_locationNameController.text.isEmpty) {
-        Scrollable.ensureVisible(_locationKey.currentContext!, duration: const Duration(milliseconds: 500));
+        Scrollable.ensureVisible(
+          _locationKey.currentContext!,
+          duration: const Duration(milliseconds: 500),
+        );
       }
       return;
     }
@@ -123,20 +154,26 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
 
     try {
       final startDateTime = DateTime(
-        _startDate.year, _startDate.month, _startDate.day,
-        _startTime.hour, _startTime.minute,
+        _startDate.year,
+        _startDate.month,
+        _startDate.day,
+        _startTime.hour,
+        _startTime.minute,
       );
       final endDateTime = DateTime(
-        _startDate.year, _startDate.month, _startDate.day,
-        _endTime.hour, _endTime.minute,
+        _startDate.year,
+        _startDate.month,
+        _startDate.day,
+        _endTime.hour,
+        _endTime.minute,
       );
 
       final updateData = {
         'title': _titleController.text,
         'description': _descriptionController.text,
         'locationName': _locationNameController.text,
-        'locationGps': _selectedLocation != null 
-            ? '${_selectedLocation!.latitude},${_selectedLocation!.longitude}' 
+        'locationGps': _selectedLocation != null
+            ? '${_selectedLocation!.latitude},${_selectedLocation!.longitude}'
             : widget.mission.locationGps,
         'startTime': startDateTime.toUtc().toIso8601String(),
         'endTime': endDateTime.toUtc().toIso8601String(),
@@ -146,7 +183,21 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
         'isEmergency': _isEmergency,
         'emergencyJustification': _emergencyJustificationController.text,
         'isTemplate': _isTemplate,
+        'autoPromote': _autoPromote,
         'categoryIds': _selectedCategoryIds,
+        if (_isTemplate)
+          'recurringMission': {
+            'frequency': _frequency,
+            'dayOfWeek': _frequency == 'weekly' || _frequency == 'biweekly'
+                ? _selectedDaysOfWeek.isNotEmpty
+                      ? _selectedDaysOfWeek[0]
+                      : null
+                : null,
+            'dayOfMonth': _frequency == 'monthly' ? _selectedDayOfMonth : null,
+            'timeOfDay':
+                '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
+            'endDate': _recurrenceEndDate?.toUtc().toIso8601String(),
+          },
       };
 
       await Provider.of<MissionProvider>(
@@ -156,14 +207,20 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Mission updated successfully'), backgroundColor: EcoColors.forest),
+          const SnackBar(
+            content: Text('Mission updated successfully'),
+            backgroundColor: EcoColors.forest,
+          ),
         );
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update: $e'), backgroundColor: AppTheme.terracotta),
+          SnackBar(
+            content: Text('Failed to update: $e'),
+            backgroundColor: AppTheme.terracotta,
+          ),
         );
       }
     } finally {
@@ -188,7 +245,9 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
         ),
         title: Text(
           'Edit Mission',
-          style: EcoText.displayMD(context).copyWith(fontSize: 20, fontWeight: FontWeight.w600),
+          style: EcoText.displayMD(
+            context,
+          ).copyWith(fontSize: 20, fontWeight: FontWeight.w600),
         ),
       ),
       body: Form(
@@ -234,7 +293,9 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
                       final d = await showDatePicker(
                         context: context,
                         initialDate: _startDate,
-                        firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                        firstDate: DateTime.now().subtract(
+                          const Duration(days: 30),
+                        ),
                         lastDate: DateTime.now().add(const Duration(days: 365)),
                       );
                       if (d != null) setState(() => _startDate = d);
@@ -243,11 +304,38 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
                     onPickEndTime: (t) => setState(() => _endTime = t),
                   ),
                   const SizedBox(height: 16),
+                  RecurrenceSection(
+                    isTemplate: _isTemplate,
+                    frequency: _frequency,
+                    selectedDaysOfWeek: _selectedDaysOfWeek,
+                    selectedDayOfMonth: _selectedDayOfMonth,
+                    endDate: _recurrenceEndDate,
+                    onFrequencyChanged: (v) => setState(() => _frequency = v),
+                    onDaysOfWeekChanged: (v) =>
+                        setState(() => _selectedDaysOfWeek = v),
+                    onDayOfMonthChanged: (v) =>
+                        setState(() => _selectedDayOfMonth = v),
+                    onPickEndDate: () async {
+                      final d = await showDatePicker(
+                        context: context,
+                        initialDate:
+                            _recurrenceEndDate ??
+                            DateTime.now().add(const Duration(days: 30)),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(
+                          const Duration(days: 365 * 2),
+                        ),
+                      );
+                      if (d != null) setState(() => _recurrenceEndDate = d);
+                    },
+                  ),
+                  const SizedBox(height: 16),
                   SettingsSection(
                     key: _settingsKey,
                     pointsController: _pointsController,
                     maxVolunteersController: _maxVolunteersController,
-                    emergencyJustificationController: _emergencyJustificationController,
+                    emergencyJustificationController:
+                        _emergencyJustificationController,
                     priority: _priority,
                     isEmergency: _isEmergency,
                     onPriorityChanged: (v) => setState(() => _priority = v),
@@ -256,11 +344,14 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
                   TogglesSection(
                     isEmergency: _isEmergency,
                     isTemplate: _isTemplate,
+                    autoPromote: _autoPromote,
                     onEmergencyChanged: (v) => setState(() {
                       _isEmergency = v;
                     }),
+                    onAutoPromoteChanged: (v) =>
+                        setState(() => _autoPromote = v),
                     // Template status is locked during editing
-                    onTemplateChanged: null, 
+                    onTemplateChanged: null,
                   ),
                 ],
               ),
@@ -282,10 +373,8 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
       duration: const Duration(milliseconds: 800),
       curve: Curves.easeOutBack,
       tween: Tween(begin: const Offset(0, 100), end: Offset.zero),
-      builder: (context, offset, child) => Transform.translate(
-        offset: offset,
-        child: child,
-      ),
+      builder: (context, offset, child) =>
+          Transform.translate(offset: offset, child: child),
       child: Container(
         margin: const EdgeInsets.all(24),
         padding: const EdgeInsets.all(12),

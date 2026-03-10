@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../providers/mission_provider.dart';
+import '../../providers/nav_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../components/mission_card.dart';
 import '../../widgets/mission_filter_widgets.dart';
-import '../../widgets/eco_pulse_widgets.dart'; // For EcoColors if needed, though used via AppTheme mostly
+import '../../widgets/eco_pulse_widgets.dart';
+import '../../widgets/atoms/eco_card.dart';
 
 class MissionListScreen extends StatefulWidget {
   const MissionListScreen({super.key});
@@ -121,8 +124,13 @@ class _MissionListScreenState extends State<MissionListScreen> {
                   ),
                   Consumer<MissionProvider>(
                     builder: (context, provider, _) {
+                      final now = DateTime.now();
                       final activeCount = provider.missions
-                          .where((m) => m.isRegistered)
+                          .where((m) => 
+                              m.isRegistered && 
+                              m.status != 'Completed' && 
+                              m.status != 'Cancelled' &&
+                              m.endTime.isAfter(now))
                           .length;
                       return Container(
                         padding: const EdgeInsets.symmetric(
@@ -159,18 +167,70 @@ class _MissionListScreenState extends State<MissionListScreen> {
                     return Center(child: Text('Error: ${provider.error}'));
                   }
 
-                  if (provider.missions.isEmpty) {
-                    return const Center(child: Text('No missions found.'));
+                  // Filter out ended missions (same criteria as MissionCard)
+                  final now = DateTime.now();
+                  final activeMissions = provider.missions.where((m) {
+                    final isEnded = 
+                        m.status == 'Completed' || 
+                        m.status == 'Cancelled' || 
+                        (m.endTime.isBefore(now) && m.status != 'InProgress');
+                    return !isEnded;
+                  }).toList();
+
+                  if (activeMissions.isEmpty) {
+                    return EcoPulseCard(
+                      variant: CardVariant.paper,
+                      onTap: () => context.read<NavProvider>().setIndex(0),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 32),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppTheme.clay,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.explore_outlined,
+                                size: 32,
+                                color: AppTheme.ink.withValues(alpha: 0.2),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              "NO ACTIVE MISSIONS",
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                                color: AppTheme.ink.withValues(alpha: 0.4),
+                                letterSpacing: 1,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Check back soon for new environmental missions in your area.',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: AppTheme.ink.withValues(alpha: 0.5),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
                   }
 
                   return ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: provider.missions.length,
+                    itemCount: activeMissions.length,
                     itemBuilder: (context, index) {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: MissionCard(mission: provider.missions[index]),
+                        child: MissionCard(mission: activeMissions[index]),
                       );
                     },
                   );

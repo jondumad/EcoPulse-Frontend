@@ -9,6 +9,8 @@ import '../theme/app_theme.dart';
 import '../screens/volunteer/mission_detail_screen.dart';
 import '../screens/volunteer/check_in_screen.dart';
 import '../widgets/eco_pulse_widgets.dart';
+import '../widgets/atoms/eco_button.dart';
+import '../widgets/atoms/eco_card.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class MissionCard extends StatelessWidget {
@@ -18,6 +20,7 @@ class MissionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
     final bool isEmergency =
         mission.isEmergency ||
         mission.priority == 'Critical' ||
@@ -25,7 +28,17 @@ class MissionCard extends StatelessWidget {
     final double progress = mission.maxVolunteers != null
         ? mission.currentVolunteers / mission.maxVolunteers!
         : 0.1;
-    final bool isEnded = mission.endTime.isBefore(DateTime.now());
+    final bool isCompleted = mission.status == 'Completed';
+    final bool isCancelled = mission.status == 'Cancelled';
+    final bool isEnded =
+        isCompleted ||
+        isCancelled ||
+        (mission.endTime.isBefore(now) && mission.status != 'InProgress');
+
+    // Don't show concluded missions in active lists
+    if (isEnded) {
+      return const SizedBox.shrink();
+    }
 
     return Stack(
       clipBehavior: Clip.none,
@@ -115,7 +128,7 @@ class MissionCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Impact Progress',
+                          'Volunteer Capacity',
                           style: AppTheme.lightTheme.textTheme.bodySmall
                               ?.copyWith(
                                 color: AppTheme.ink.withValues(alpha: 0.6),
@@ -175,7 +188,7 @@ class MissionCard extends StatelessWidget {
                                   ? Icons.lock_clock
                                   : Icons.play_arrow_rounded,
                               isLoading: provider.isLoading,
-                              isPrimary: !isEnded,
+                              variant: !isEnded ? EcoButtonVariant.primary : EcoButtonVariant.secondary,
                               onPressed: isEnded
                                   ? () {}
                                   : () async {
@@ -217,7 +230,7 @@ class MissionCard extends StatelessWidget {
                       child: EcoPulseButton(
                         label: '',
                         icon: Icons.map_outlined,
-                        isPrimary: false,
+                        variant: EcoButtonVariant.secondary,
                         onPressed: () async {
                           if (mission.locationGps != null &&
                               mission.locationGps!.contains(',')) {
@@ -268,11 +281,22 @@ class MissionCard extends StatelessWidget {
             top: -6,
             right: -6,
             child: EcoPulseTag(
-              label: mission.registrationStatus ?? 'Registered',
+              label: mission.registrationStatus == 'Waitlisted'
+                  ? 'Waitlisted'
+                  : (mission.registrationStatus == 'Rejected'
+                        ? 'Rejected'
+                        : (isCancelled
+                              ? 'Cancelled'
+                              : (mission.registrationStatus ?? 'Registered'))),
               isRotated: true,
+              color: mission.registrationStatus == 'Waitlisted'
+                  ? EcoColors.violet
+                  : ((mission.registrationStatus == 'Rejected' || isCancelled)
+                        ? EcoColors.terracotta
+                        : EcoColors.forest),
             ),
           ),
-        if (isEnded)
+        if (isEnded && !isCancelled)
           Positioned(
             top: -6,
             right: -6,
@@ -289,9 +313,9 @@ class MissionCard extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Text(
-                'MISSION ENDED',
-                style: TextStyle(
+              child: Text(
+                isCompleted ? 'MISSION CONCLUDED' : 'MISSION ENDED',
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 10,
@@ -310,15 +334,36 @@ class MissionCard extends StatelessWidget {
     final end = mission.endTime;
 
     double progress = 0.0;
-    String status = "Scheduled";
-    if (now.isAfter(end)) {
+    String statusLabel = "Scheduled";
+    Color statusColor = AppTheme.ink.withValues(alpha: 0.4);
+
+    if (mission.status == 'Completed') {
       progress = 1.0;
-      status = "Completed";
+      statusLabel = "Completed";
+      statusColor = AppTheme.forest;
+    } else if (mission.status == 'Cancelled') {
+      progress = 1.0;
+      statusLabel = "Cancelled";
+      statusColor = AppTheme.terracotta;
+    } else if (mission.status == 'InProgress') {
+      // Force visual progress for active missions even if time calc is weird
+      final effectiveStart = mission.actualStartTime ?? start;
+      final total = end.difference(effectiveStart).inSeconds;
+      final elapsed = now.difference(effectiveStart).inSeconds;
+      // Ensure at least 5% progress is shown if it just started
+      progress = total > 0 ? (elapsed / total).clamp(0.05, 0.95) : 0.05;
+      statusLabel = "In Progress";
+      statusColor = AppTheme.forest;
+    } else if (now.isAfter(end) && mission.status != 'InProgress') {
+      progress = 1.0;
+      statusLabel = "Ended";
     } else if (now.isAfter(start)) {
+      // Fallback for time-based progress if status sync lags
       final total = end.difference(start).inSeconds;
       final elapsed = now.difference(start).inSeconds;
       progress = (elapsed / total).clamp(0.0, 1.0);
-      status = "In Progress";
+      statusLabel = "In Progress";
+      statusColor = AppTheme.forest;
     } else if (mission.registeredAt != null) {
       final totalWait = start.difference(mission.registeredAt!).inSeconds;
       final elapsedWait = now.difference(mission.registeredAt!).inSeconds;
@@ -341,13 +386,11 @@ class MissionCard extends StatelessWidget {
               ),
             ),
             Text(
-              status.toUpperCase(),
+              statusLabel.toUpperCase(),
               style: GoogleFonts.jetBrainsMono(
                 fontSize: 9,
                 fontWeight: FontWeight.w800,
-                color: progress > 0 && progress < 1
-                    ? AppTheme.forest
-                    : AppTheme.ink.withValues(alpha: 0.4),
+                color: statusColor,
               ),
             ),
           ],
@@ -367,7 +410,7 @@ class MissionCard extends StatelessWidget {
                 widthFactor: progress,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppTheme.forest.withValues(alpha: 0.8),
+                    color: statusColor.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -380,8 +423,12 @@ class MissionCard extends StatelessWidget {
   }
 
   String _formatTimeLeft(DateTime start, DateTime end) {
+    if (mission.status == 'InProgress') return 'Live Now';
+    if (mission.status == 'Completed') return 'Ended';
+    if (mission.status == 'Cancelled') return 'Cancelled';
+
     final now = DateTime.now();
-    if (now.isAfter(end)) return 'Ended';
+    if (now.isAfter(end) && mission.status != 'InProgress') return 'Ended';
 
     final diff = start.difference(now);
     if (diff.isNegative) {
@@ -467,9 +514,12 @@ class CoordinatedActionButtonsState extends State<CoordinatedActionButtons> {
                 width: double.infinity, // Fill the animated container
                 label: isCheckInExpanded ? 'Check In' : '',
                 icon: Icons.qr_code_scanner,
-                isPrimary: true,
+                variant: EcoButtonVariant.primary,
                 onPressed: () {
                   if (isCheckInExpanded) {
+                    // Prevent double push
+                    if (ModalRoute.of(context)?.isCurrent != true) return;
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -503,7 +553,7 @@ class CoordinatedActionButtonsState extends State<CoordinatedActionButtons> {
                     backgroundColor: EcoColors.terracotta,
                     foregroundColor: Colors.white,
                     isLoading: provider.isLoading,
-                    isPrimary: false,
+                    variant: EcoButtonVariant.secondary,
                     onPressed: () async {
                       final messenger = ScaffoldMessenger.of(context);
                       if (isCancelExpanded) {

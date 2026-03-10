@@ -4,6 +4,7 @@ import '../providers/nav_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/attendance_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/eco_app_bar.dart';
 import '../widgets/active_mission_tracker.dart';
@@ -18,6 +19,7 @@ import 'coordinator/analytics_screen.dart';
 import 'notification_inbox_screen.dart';
 import '../components/coordinator_speed_dial.dart';
 import '../widgets/compass_calibration_overlay.dart';
+import '../widgets/eco_pulse_widgets.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -34,11 +36,22 @@ class _MainShellState extends State<MainShell> {
     super.didChangeDependencies();
     if (!_isInitialized) {
       final user = Provider.of<AuthProvider>(context, listen: false).user;
-      if (user != null && user.role == 'Volunteer') {
-        // Schedule the navigation update after the current build frame
+      if (user != null) {
+        // Refresh attendance status globally when entering the shell
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          Provider.of<NavProvider>(context, listen: false).setIndex(1);
+          if (mounted) {
+            Provider.of<AttendanceProvider>(context, listen: false).refresh();
+          }
         });
+
+        if (user.role == 'Volunteer') {
+          // Schedule the navigation update after the current build frame
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              Provider.of<NavProvider>(context, listen: false).setIndex(1);
+            }
+          });
+        }
       }
       _isInitialized = true;
     }
@@ -75,52 +88,57 @@ class _MainShellState extends State<MainShell> {
       navLabels = ['Hub', 'Verify', 'Analytics', 'Profile'];
     }
 
+    final String activeLabel = selectedIndex == navIcons.length - 1
+        ? 'My Profile'
+        : (user.role == 'Volunteer'
+              ? (selectedIndex == 1 ? 'Home' : 'Active Missions')
+              : (selectedIndex == 0
+                    ? 'Mission Hub'
+                    : selectedIndex == 1
+                    ? 'Verification'
+                    : 'Impact Analytics'));
+
     return Scaffold(
       extendBody: true,
-      backgroundColor: AppTheme.clay,
-      floatingActionButton: null,
+      backgroundColor: EcoColors.clay,
       appBar: EcoAppBar(
-        height: 100,
         showBack: false,
         titleWidget: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               DateFormat('EEEE, MMM d · HH:mm').format(DateTime.now()),
-              style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.ink.withValues(alpha: 0.6),
-                letterSpacing: 0.5,
+              style: EcoText.monoSM(context).copyWith(
+                color: EcoColors.ink.withValues(alpha: 0.4),
+                letterSpacing: 1.5,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
-              selectedIndex == navIcons.length - 1
-                  ? 'My Profile'
-                  : (user.role == 'Volunteer'
-                        ? (selectedIndex == 1 ? 'Home' : 'Active Missions')
-                        : (selectedIndex == 0
-                              ? 'Mission Hub'
-                              : selectedIndex == 1
-                              ? 'Verification'
-                              : 'Impact Analytics')),
-              style: AppTheme.lightTheme.textTheme.displayLarge,
+              activeLabel,
+              style: EcoText.displayLG(context).copyWith(
+                fontSize: 28,
+                color: EcoColors.ink,
+                letterSpacing: -1.0,
+                height: 1.1,
+              ),
             ),
           ],
         ),
         actions: [
           if (selectedIndex == navIcons.length - 1)
-            IconButton(
-              icon: const Icon(Icons.logout_outlined, color: AppTheme.ink),
-              onPressed: () {
+            EcoAppBarAction(
+              icon: Icons.logout_outlined,
+              tooltip: 'Logout',
+              onTap: () {
                 Provider.of<AuthProvider>(context, listen: false).logout();
               },
-              tooltip: 'Logout',
             ),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: AppTheme.ink),
-            onPressed: () {
+          EcoAppBarAction(
+            icon: Icons.notifications_outlined,
+            tooltip: 'Notifications',
+            onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -129,7 +147,6 @@ class _MainShellState extends State<MainShell> {
               );
             },
           ),
-          const SizedBox(width: 8),
         ],
       ),
       body: Stack(

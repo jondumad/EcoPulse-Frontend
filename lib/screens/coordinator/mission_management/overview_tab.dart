@@ -7,6 +7,8 @@ import '../../../../providers/collaboration_provider.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/eco_notify_widgets.dart';
 import '../../../../widgets/eco_pulse_widgets.dart';
+import '../../../../widgets/atoms/eco_button.dart';
+import '../../../../widgets/atoms/eco_card.dart';
 import '../../../../widgets/user_search_modal.dart';
 import '../edit_mission_screen.dart';
 
@@ -24,6 +26,16 @@ class _OverviewTabState extends State<OverviewTab> {
   bool _isUpdatingStatus = false;
   List<dynamic> _collaborators = [];
   bool _isLoadingCollaborators = false;
+  CollaborationProvider? _collaborationProvider;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _collaborationProvider = Provider.of<CollaborationProvider>(
+      context,
+      listen: false,
+    );
+  }
 
   @override
   void initState() {
@@ -38,11 +50,7 @@ class _OverviewTabState extends State<OverviewTab> {
 
   @override
   void dispose() {
-    final collaborationProvider = Provider.of<CollaborationProvider>(
-      context,
-      listen: false,
-    );
-    collaborationProvider.socket?.off('early_checkin_alert');
+    _collaborationProvider?.socket?.off('early_checkin_alert');
     super.dispose();
   }
 
@@ -318,7 +326,7 @@ class _OverviewTabState extends State<OverviewTab> {
           ],
         );
       },
-  );
+    );
   }
 
   Widget _buildMissionHeader(Mission mission) {

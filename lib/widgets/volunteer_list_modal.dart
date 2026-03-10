@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/mission_provider.dart';
 import '../theme/app_theme.dart';
 import 'eco_pulse_widgets.dart';
+import 'atoms/eco_button.dart';
+import 'atoms/eco_card.dart';
+import 'atoms/eco_text_field.dart';
 import 'user_search_modal.dart';
 
 class VolunteerListModal extends StatefulWidget {
@@ -146,26 +150,9 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
                   final volunteers = snapshot.data ?? [];
 
                   if (volunteers.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.group_outlined,
-                            size: 64,
-                            color: EcoColors.ink.withValues(alpha: 0.15),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No volunteers joined yet',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: EcoColors.ink.withValues(alpha: 0.4),
-                            ),
-                          ),
-                        ],
-                      ),
+                    return EmptyState(
+                      icon: Icons.group_outlined,
+                      title: 'No volunteers joined yet',
                     );
                   }
 

@@ -1,18 +1,26 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart' as ll;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../utils/formatters.dart';
 import '../../providers/mission_provider.dart';
-
+import '../../providers/attendance_provider.dart';
 import '../../models/mission_model.dart';
 import '../../providers/auth_provider.dart';
-
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
+import '../../widgets/atoms/eco_button.dart';
+import '../../widgets/eco_info_card.dart';
+// ── Componentised sub-widgets ───────────────────────────────────────────────
+import '../../widgets/mission_detail/mission_detail_hero.dart';
+import '../../widgets/mission_detail/mission_detail_stats.dart';
+import '../../widgets/mission_detail/mission_detail_actions.dart';
+import '../../widgets/mission_detail/mission_detail_map.dart';
 import 'check_in_screen.dart';
+import 'mission_success_summary.dart';
 import '../coordinator/qr_display.dart';
 
 class MissionDetailScreen extends StatefulWidget {
@@ -28,6 +36,9 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
     with TickerProviderStateMixin {
   bool _isDescriptionExpanded = false;
   late AnimationController _tiltController;
+  Timer? _timer;
+  Duration _elapsed = Duration.zero;
+  bool _isCheckingOut = false;
 
   @override
   void initState() {
@@ -36,10 +47,33 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final attendance = Provider.of<AttendanceProvider>(
+        context,
+        listen: false,
+      ).currentAttendance;
+
+      if (attendance != null &&
+          attendance['missionId'] == widget.mission.id &&
+          attendance['checkInTime'] != null) {
+        final checkInTime = DateTime.parse(attendance['checkInTime']);
+        if (mounted) {
+          setState(() {
+            _elapsed = DateTime.now().difference(checkInTime);
+          });
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
+    _timer?.cancel();
     _tiltController.dispose();
     super.dispose();
   }
@@ -60,17 +94,29 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
     final user = Provider.of<AuthProvider>(context).user;
     final missionProvider = context.watch<MissionProvider>();
 
-    // Try to get the latest mission data from the provider to ensure reactive updates
+    // Always pull the freshest copy from the provider for reactive updates
     final currentMission = missionProvider.missions.firstWhere(
       (m) => m.id == widget.mission.id,
       orElse: () => widget.mission,
     );
 
+    final attendanceProvider = context.watch<AttendanceProvider>();
+    final attendance = attendanceProvider.currentAttendance;
+    final isCheckedIn =
+        currentMission.registrationStatus == 'CheckedIn' ||
+        (attendance != null &&
+            attendance['missionId'] == currentMission.id &&
+            attendance['checkOutTime'] == null);
+
+    final isCompleted = currentMission.registrationStatus == 'Completed';
+
     final isFull =
         currentMission.maxVolunteers != null &&
         currentMission.currentVolunteers >= currentMission.maxVolunteers!;
 
-    final isEnded = currentMission.endTime.isBefore(DateTime.now());
+    final isEnded =
+        currentMission.status == 'Completed' ||
+        currentMission.status == 'Cancelled';
 
     return Scaffold(
       backgroundColor: AppTheme.clay,
@@ -79,7 +125,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
           SafeArea(
             child: Stack(
               children: [
-                // Scrollable Content
+                // ── Scrollable Content ────────────────────────────────────
                 Column(
                   children: [
                     Expanded(
@@ -108,7 +154,9 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Text(
-                                            'This mission has ended. Actions are no longer available.',
+                                            currentMission.status == 'Cancelled'
+                                                ? 'This mission has been cancelled.'
+                                                : 'This mission has ended. Actions are no longer available.',
                                             style: AppTheme
                                                 .lightTheme
                                                 .textTheme
@@ -144,37 +192,135 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
                               ],
                             ),
                           ),
+
+                          // ── Floating Action Buttons ───────────────────
                           Positioned(
                             right: 16,
                             bottom: 16,
-                            child: _ActionButtons(
+                            child: MissionDetailActions(
                               mission: currentMission,
                               userRole: user?.role,
                               isFull: isFull,
                               isEnded: isEnded,
+                              isCheckedIn: isCheckedIn,
+                              isCompleted: isCompleted,
+                              isCheckingOut: _isCheckingOut,
+                              onCheckout: () async {
+                                setState(() => _isCheckingOut = true);
+                                try {
+                                  final attendanceProvider =
+                                      Provider.of<AttendanceProvider>(
+                                        context,
+                                        listen: false,
+                                      );
+                                  await attendanceProvider.checkOut(
+                                    currentMission.id,
+                                  );
+                                  if (context.mounted) {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            MissionSuccessSummaryScreen(
+                                              missionTitle:
+                                                  currentMission.title,
+                                              duration: _elapsed,
+                                              pointsEarned:
+                                                  currentMission.pointsValue,
+                                            ),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Error: $e'),
+                                        backgroundColor: AppTheme.terracotta,
+                                      ),
+                                    );
+                                  }
+                                } finally {
+                                  if (mounted) {
+                                    setState(() => _isCheckingOut = false);
+                                  }
+                                }
+                              },
                             ),
                           ),
+
+                          // ── Live check-in timer badge ─────────────────
+                          if (currentMission.registrationStatus == 'CheckedIn')
+                            Positioned(
+                              top: 96,
+                              right: 24,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.violet,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppTheme.violet.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.timer_outlined,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      EcoFormatters.formatTimerDuration(
+                                        _elapsed,
+                                      ),
+                                      style: GoogleFonts.jetBrainsMono(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
                   ],
                 ),
 
-                // Floating Top Navigation Bar
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _TopButton(
-                        icon: Icons.arrow_back,
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      _TopButton(
-                        icon: Icons.share,
-                        onPressed: () => _shareMission(context),
-                      ),
-                    ],
+                // ── Floating Top Navigation Bar ───────────────────────────
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _TopButton(
+                          icon: Icons.arrow_back,
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        _TopButton(
+                          icon: Icons.share,
+                          onPressed: () => _shareMission(context),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -204,7 +350,10 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
   }
 }
 
-// Top Button Widget
+// ─────────────────────────────────────────────────────────────────────────────
+// Top Navigation Button
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _TopButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
@@ -216,7 +365,7 @@ class _TopButton extends StatelessWidget {
     return EcoPulseButton(
       label: '',
       icon: icon,
-      isPrimary: false,
+      variant: EcoButtonVariant.secondary,
       isSmall: true,
       onPressed: () {
         HapticFeedback.lightImpact();
@@ -226,7 +375,10 @@ class _TopButton extends StatelessWidget {
   }
 }
 
-// Main Mission Card
+// ─────────────────────────────────────────────────────────────────────────────
+// Mission Card (container for all sections)
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _MissionCard extends StatelessWidget {
   final Mission mission;
   final bool isDescriptionExpanded;
@@ -265,17 +417,36 @@ class _MissionCard extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // Hero Section
-              _HeroSection(icon: categoryIcon, title: mission.title),
+              // ── Extracted: Hero Section ─────────────────────────────
+              MissionDetailHero(icon: categoryIcon, title: mission.title),
 
-              // Quick Stats Grid
-              _QuickStatsGrid(mission: mission),
+              // ── Extracted: Quick Stats Grid ─────────────────────────
+              MissionDetailStats(mission: mission),
 
               // Info Items
               _InfoSection(mission: mission),
 
-              // Map Quick View
-              _MapQuickView(gps: mission.locationGps),
+              // ── Extracted: Map Quick View ───────────────────────────
+              MissionDetailMap(gps: mission.locationGps),
+
+              // Emergency Justification (if applicable)
+              if (mission.isEmergency &&
+                  mission.emergencyJustification != null &&
+                  mission.emergencyJustification!.isNotEmpty)
+                EcoInfoCard(
+                  title: 'EMERGENCY JUSTIFICATION',
+                  content: mission.emergencyJustification!,
+                  variant: InfoCardVariant.emergency,
+                ),
+
+              // Coordinator's Note (Manual Overrides)
+              if (mission.overrideReason != null &&
+                  mission.overrideReason!.isNotEmpty)
+                EcoInfoCard(
+                  title: "COORDINATOR'S NOTE",
+                  content: mission.overrideReason!,
+                  variant: InfoCardVariant.note,
+                ),
 
               // Description
               _ExpandableDescription(
@@ -287,7 +458,7 @@ class _MissionCard extends StatelessWidget {
           ),
         ),
 
-        // Emergency Indicator
+        // Emergency left-edge indicator
         if (isEmergency)
           Positioned(
             left: 0,
@@ -304,10 +475,10 @@ class _MissionCard extends StatelessWidget {
             ),
           ),
 
-        // Registered Status Stamp
+        // Registration status stamp
         if (mission.isRegistered)
           Positioned(
-            top: -20, // Slightly more offset for better "stamp" look
+            top: -20,
             right: -8,
             child: _StatusStamp(
               status: mission.registrationStatus ?? 'Registered',
@@ -318,44 +489,10 @@ class _MissionCard extends StatelessWidget {
   }
 }
 
-// Hero Section
-class _HeroSection extends StatelessWidget {
-  final String icon;
-  final String title;
-
-  const _HeroSection({required this.icon, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppTheme.forest, Color(0xFF153827)],
-        ),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 64)),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: AppTheme.lightTheme.textTheme.displayMedium?.copyWith(
-              color: Colors.white,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
+// ─────────────────────────────────────────────────────────────────────────────
 // Status Stamp
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _StatusStamp extends StatelessWidget {
   final String status;
   const _StatusStamp({required this.status});
@@ -374,6 +511,9 @@ class _StatusStamp extends StatelessWidget {
     } else if (status == 'Completed') {
       stampColor = Colors.orange;
       displayStatus = 'COMPLE-\nTED';
+    } else if (status == 'Cancelled') {
+      stampColor = AppTheme.terracotta;
+      displayStatus = 'CANCEL-\nLED';
     }
 
     return Transform.rotate(
@@ -410,400 +550,10 @@ class _StatusStamp extends StatelessWidget {
   }
 }
 
-// Action Buttons
-class _ExpandableActionButton extends StatefulWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback? onConfirm;
-  final bool isPrimary;
-  final bool isLoading;
-  final Color? backgroundColor;
-  final Color? foregroundColor;
-
-  const _ExpandableActionButton({
-    required this.icon,
-    required this.label,
-    this.onConfirm,
-    this.isPrimary = true,
-    this.isLoading = false,
-    this.backgroundColor,
-    this.foregroundColor,
-  });
-
-  @override
-  State<_ExpandableActionButton> createState() =>
-      _ExpandableActionButtonState();
-}
-
-class _ExpandableActionButtonState extends State<_ExpandableActionButton> {
-  bool _isExpanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return EcoPulseButton(
-      label: _isExpanded ? widget.label : '',
-      icon: widget.icon,
-      isPrimary: widget.isPrimary,
-      isLoading: widget.isLoading,
-      backgroundColor: widget.backgroundColor,
-      foregroundColor: widget.foregroundColor,
-      onPressed: () {
-        if (_isExpanded) {
-          if (widget.onConfirm != null) {
-            widget.onConfirm!();
-          }
-          setState(() => _isExpanded = false);
-        } else {
-          setState(() => _isExpanded = true);
-        }
-      },
-    );
-  }
-}
-
-class _ActionButtons extends StatelessWidget {
-  final Mission mission;
-  final String? userRole;
-  final bool isFull;
-  final bool isEnded;
-
-  const _ActionButtons({
-    required this.mission,
-    required this.userRole,
-    required this.isFull,
-    this.isEnded = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (userRole == 'Coordinator') {
-      return _ExpandableActionButton(
-        label: isEnded ? 'Mission Ended' : 'Confirm Show QR',
-        icon: isEnded ? Icons.lock : Icons.qr_code,
-        isPrimary: !isEnded,
-        onConfirm: isEnded
-            ? null
-            : () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => QRDisplayScreen(
-                      missionId: mission.id,
-                      missionTitle: mission.title,
-                      activeUntil: mission.endTime,
-                    ),
-                  ),
-                );
-              },
-      );
-    }
-
-    if (userRole == 'Volunteer') {
-      if (isEnded) {
-        return _ExpandableActionButton(
-          label: 'Mission Ended',
-          icon: Icons.lock_clock,
-          isPrimary: false,
-          onConfirm: null, // Disabled
-        );
-      }
-
-      if (mission.registrationStatus == 'Invited') {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            _ExpandableActionButton(
-              label: 'Accept Invite',
-              icon: Icons.check_circle_outline,
-              backgroundColor: EcoColors.forest,
-              foregroundColor: Colors.white,
-              onConfirm: () async {
-                final provider = Provider.of<MissionProvider>(context, listen: false);
-                try {
-                  await provider.toggleRegistration(mission.id, false);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Invitation accepted!'), backgroundColor: EcoColors.forest),
-                    );
-                    Navigator.pop(context);
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-                  }
-                }
-              },
-            ),
-            const SizedBox(height: 12),
-            _ExpandableActionButton(
-              label: 'Decline Invite',
-              icon: Icons.cancel_outlined,
-              isPrimary: false,
-              backgroundColor: EcoColors.terracotta,
-              foregroundColor: Colors.white,
-              onConfirm: () async {
-                final provider = Provider.of<MissionProvider>(context, listen: false);
-                try {
-                  await provider.declineInvitation(mission.id);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Invitation declined'), backgroundColor: EcoColors.terracotta),
-                    );
-                    Navigator.pop(context);
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-                  }
-                }
-              },
-            ),
-          ],
-        );
-      }
-
-      if (mission.isRegistered) {
-        final bool isCompleted = mission.registrationStatus == 'Completed';
-        final bool isCheckedIn = mission.registrationStatus == 'CheckedIn';
-
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            // Check In / Status Button
-            _ExpandableActionButton(
-              label: isCompleted
-                  ? 'Completed'
-                  : isCheckedIn
-                  ? 'Checked In'
-                  : 'Confirm Check In',
-              icon: isCompleted ? Icons.verified : Icons.check_circle_outline,
-              onConfirm: (isCompleted || isCheckedIn)
-                  ? null
-                  : () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CheckInScreen(
-                            missionId: mission.id,
-                            missionTitle: mission.title,
-                            missionGps: mission.locationGps ?? '',
-                          ),
-                        ),
-                      );
-                    },
-            ),
-            // Cancel Button
-            if (!isCompleted && !isCheckedIn) ...[
-              const SizedBox(height: 12),
-              _ExpandableActionButton(
-                label: 'Confirm Cancel',
-                icon: Icons.close_rounded,
-                isPrimary: false,
-                backgroundColor: AppTheme.terracotta,
-                foregroundColor: Colors.white,
-                onConfirm: () async {
-                  final missionProvider = Provider.of<MissionProvider>(
-                    context,
-                    listen: false,
-                  );
-                  
-                  try {
-                    await missionProvider.toggleRegistration(
-                      mission.id,
-                      true,
-                    );
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Error: $e')));
-                    }
-                  }
-                },
-              ),
-            ],
-
-            const SizedBox(height: 12),
-
-            // Map Button (Icon Only)
-            EcoPulseButton(
-              label: '',
-              icon: Icons.map_outlined,
-              isPrimary: false,
-              onPressed: () async {
-                if (mission.locationGps != null &&
-                    mission.locationGps!.contains(',')) {
-                  final coords = mission.locationGps!.split(',');
-                  final lat = coords[0].trim();
-                  final lng = coords[1].trim();
-                  final uri = Uri.parse(
-                    'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
-                  );
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri);
-                  }
-                }
-              },
-            ),
-          ],
-        );
-      } else {
-        // Not registered - show register or join waitlist button
-        return Consumer<MissionProvider>(
-          builder: (context, provider, _) {
-            final bool isWaitlisted =
-                mission.registrationStatus == 'Waitlisted';
-
-            if (isWaitlisted) {
-              // User is on waitlist
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _ExpandableActionButton(
-                    label: 'On Waitlist',
-                    icon: Icons.hourglass_empty,
-                    isPrimary: false,
-                    backgroundColor: AppTheme.violet,
-                    foregroundColor: Colors.white,
-                    onConfirm: null, // Just shows status
-                  ),
-                  const SizedBox(height: 12),
-                  _ExpandableActionButton(
-                    label: 'Confirm Leave Waitlist',
-                    icon: Icons.close_rounded,
-                    isPrimary: false,
-                    backgroundColor: AppTheme.terracotta,
-                    foregroundColor: Colors.white,
-                    onConfirm: () async {
-                      try {
-                        await provider.toggleRegistration(mission.id, true);
-                        if (context.mounted) {
-                          await provider.fetchMissions();
-                          if (context.mounted) {
-                            Navigator.pop(context);
-                          }
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text('Error: $e')));
-                        }
-                      }
-                    },
-                  ),
-                ],
-              );
-            }
-
-            return _ExpandableActionButton(
-              label: isFull ? 'Join Waitlist' : 'Confirm Register',
-              icon: isFull ? Icons.queue : Icons.add_task,
-              isLoading: provider.isLoading,
-              backgroundColor: isFull ? AppTheme.violet : null,
-              onConfirm: () async {
-                try {
-                  await provider.toggleRegistration(mission.id, false);
-                  if (context.mounted) {
-                    // Refresh missions to get updated data
-                    await provider.fetchMissions();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isFull
-                                ? 'Added to waitlist!'
-                                : 'Successfully registered!',
-                          ),
-                        ),
-                      );
-                      // Pop back to refresh the screen with updated data
-                      Navigator.pop(context);
-                    }
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
-                  }
-                }
-              },
-            );
-          },
-        );
-      }
-    }
-
-    return const SizedBox.shrink();
-  }
-}
-
-// Quick Stats Grid
-class _QuickStatsGrid extends StatelessWidget {
-  final Mission mission;
-
-  const _QuickStatsGrid({required this.mission});
-
-  @override
-  Widget build(BuildContext context) {
-    final duration = mission.endTime.toLocal().difference(
-      mission.startTime.toLocal(),
-    );
-    final hours = duration.inHours;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildStatItem('POINTS', '${mission.pointsValue}', Icons.star_border),
-          _buildStatItem('DURATION', '$hours hrs', Icons.access_time),
-          _buildStatItem(
-            'SPOTS',
-            '${mission.maxVolunteers != null ? mission.maxVolunteers! - mission.currentVolunteers : "Open"}',
-            Icons.people_outline,
-          ),
-          _buildStatItem('PRIORITY', mission.priority, Icons.flag_outlined),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, IconData icon) {
-    return Column(
-      children: [
-        Icon(icon, color: AppTheme.forest, size: 24),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.ink,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            color: AppTheme.ink.withValues(alpha: 0.5),
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
+// ─────────────────────────────────────────────────────────────────────────────
 // Info Section
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _InfoSection extends StatelessWidget {
   final Mission mission;
 
@@ -834,6 +584,22 @@ class _InfoSection extends StatelessWidget {
             Icons.person_outline,
             mission.creatorName ?? 'EcoPulse Team',
             'Organizer',
+            trailing: (mission.registrationStatus == 'CheckedIn')
+                ? IconButton(
+                    icon: const Icon(
+                      Icons.email_outlined,
+                      color: AppTheme.forest,
+                    ),
+                    onPressed: () async {
+                      final uri = Uri.parse(
+                        'mailto:?body=Support request for mission: ${mission.title}',
+                      );
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri);
+                      }
+                    },
+                  )
+                : null,
           ),
           const SizedBox(height: 16),
         ],
@@ -841,7 +607,12 @@ class _InfoSection extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String title, String subtitle) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String title,
+    String subtitle, {
+    Widget? trailing,
+  }) {
     return Row(
       children: [
         Container(
@@ -876,12 +647,16 @@ class _InfoSection extends StatelessWidget {
             ],
           ),
         ),
+        if (trailing != null) trailing,
       ],
     );
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Expandable Description
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _ExpandableDescription extends StatelessWidget {
   final String description;
   final bool isExpanded;
@@ -895,7 +670,6 @@ class _ExpandableDescription extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Simple heuristic for truncation: ~150 characters or multiple newlines
     final bool isLong =
         description.length > 150 || description.contains('\n\n');
 
@@ -963,62 +737,6 @@ class _ExpandableDescription extends StatelessWidget {
               ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-// Map Quick View
-class _MapQuickView extends StatelessWidget {
-  final String? gps;
-
-  const _MapQuickView({this.gps});
-
-  @override
-  Widget build(BuildContext context) {
-    if (gps == null || !gps!.contains(',')) return const SizedBox.shrink();
-
-    final coords = gps!.split(',');
-    final lat = double.tryParse(coords[0].trim()) ?? 0;
-    final lng = double.tryParse(coords[1].trim()) ?? 0;
-
-    return Container(
-      height: 180,
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black12),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: IgnorePointer(
-          child: FlutterMap(
-            options: MapOptions(
-              initialCenter: ll.LatLng(lat, lng),
-              initialZoom: 15,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.ecopulse.app',
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: ll.LatLng(lat, lng),
-                    width: 40,
-                    height: 40,
-                    child: const Icon(
-                      Icons.location_on,
-                      color: Colors.red,
-                      size: 40,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

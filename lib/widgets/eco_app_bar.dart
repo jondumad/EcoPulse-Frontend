@@ -1,79 +1,163 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
+import 'eco_pulse_widgets.dart';
 
 class EcoAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? title;
   final Widget? titleWidget;
   final bool showBack;
+  final bool isTransparent;
   final List<Widget>? actions;
-  final Color? backgroundColor;
-  final bool centerTitle;
-  final double height;
   final VoidCallback? onBackPressed;
-  final PreferredSizeWidget? bottom;
+  final double? height;
 
   const EcoAppBar({
     super.key,
     this.title,
     this.titleWidget,
     this.showBack = true,
+    this.isTransparent = false,
     this.actions,
-    this.backgroundColor,
-    this.centerTitle = false,
-    this.height = kToolbarHeight,
     this.onBackPressed,
-    this.bottom,
+    this.height,
   }) : assert(
          title == null || titleWidget == null,
          'Cannot provide both title and titleWidget',
        );
 
+  /// Standard AppBar for Authentication screens (transparent, back card, no title)
+  factory EcoAppBar.auth({
+    VoidCallback? onBackPressed,
+    List<Widget>? actions,
+  }) {
+    return EcoAppBar(
+      isTransparent: true,
+      showBack: true,
+      onBackPressed: onBackPressed,
+      actions: actions,
+    );
+  }
+
   @override
-  Size get preferredSize => Size.fromHeight(height);
+  Size get preferredSize => Size.fromHeight(height ?? (titleWidget != null ? 100 : 80));
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
-      toolbarHeight: height,
-      backgroundColor: backgroundColor ?? Colors.transparent,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      centerTitle: centerTitle,
-      automaticallyImplyLeading: false, // We handle leading manually
-      systemOverlayStyle:
-          SystemUiOverlayStyle.dark, // Keep status bar icons dark
-      leading: showBack
-          ? IconButton(
-              icon: Icon(Icons.arrow_back, color: AppTheme.ink),
-              onPressed: onBackPressed ?? () => Navigator.of(context).pop(),
-              tooltip: 'Back',
-            )
-          : null,
-      title:
-          titleWidget ??
-          (title != null
-              ? Text(
-                  title!,
-                  style: centerTitle
-                      ? const TextStyle(
-                          fontFamily: 'Fraunces',
-                          fontSize: 20, // Slightly smaller for centered
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.ink,
-                          letterSpacing: -0.5,
-                        )
-                      : const TextStyle(
-                          fontFamily: 'Fraunces',
-                          fontSize: 28, // Large flush left
-                          fontWeight: FontWeight.w900,
-                          color: AppTheme.ink,
-                          letterSpacing: -1.0,
-                        ),
-                )
-              : null),
-      actions: actions,
-      bottom: bottom,
+    return Container(
+      decoration: isTransparent
+          ? null
+          : const BoxDecoration(
+              color: EcoColors.clay,
+              border: Border(
+                bottom: BorderSide(color: Color.fromRGBO(0, 0, 0, 0.06), width: 1),
+              ),
+            ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+          child: Row(
+            children: [
+              // Slot 1: Back Action
+              if (showBack)
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: EcoAppBarAction(
+                    onTap: onBackPressed ?? () => Navigator.of(context).pop(),
+                    icon: Icons.arrow_back_ios_new_rounded,
+                    iconSize: 16,
+                  ),
+                ),
+
+              // Slot 2: Flexible Content Zone
+              Expanded(
+                child: titleWidget ??
+                    (title != null
+                        ? Text(
+                            title!,
+                            style: GoogleFonts.fraunces(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                              color: EcoColors.ink,
+                              letterSpacing: -1.0,
+                              height: 1.1,
+                            ),
+                          )
+                        : const SizedBox.shrink()),
+              ),
+
+              // Slot 3: Custom Actions Zone
+              if (actions != null && actions!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: actions!.map((action) {
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: action,
+                      );
+                    }).toList(),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Standardized Action Button for Header Zone
+class EcoAppBarAction extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final double iconSize;
+  final String? tooltip;
+
+  const EcoAppBarAction({
+    super.key,
+    required this.icon,
+    required this.onTap,
+    this.iconSize = 18,
+    this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip ?? '',
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color.fromRGBO(0, 0, 0, 0.06)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.04),
+              offset: Offset(0, 2),
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(10),
+            child: Center(
+              child: Icon(
+                icon,
+                size: iconSize,
+                color: EcoColors.ink,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

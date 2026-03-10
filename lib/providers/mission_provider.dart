@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/mission_model.dart';
 import '../services/mission_service.dart';
+import 'base_provider.dart';
 
-class MissionProvider with ChangeNotifier {
+class MissionProvider extends BaseProvider {
   final MissionService _missionService = MissionService();
 
   List<Mission> _missions = [];
@@ -22,7 +23,7 @@ class MissionProvider with ChangeNotifier {
 
   Future<void> fetchTemplates() async {
     _isLoading = true;
-    notifyListeners();
+    safeNotifyListeners();
     try {
       _templates = await _missionService.getTemplates();
       _error = null;
@@ -30,14 +31,14 @@ class MissionProvider with ChangeNotifier {
       _error = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
   void updateUserLocation(LatLng? location) {
     if (_userLocation != location) {
       _userLocation = location;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -57,7 +58,13 @@ class MissionProvider with ChangeNotifier {
   List<Mission> get upcomingMissions {
     if (_upcomingMissionsCache != null) return _upcomingMissionsCache!;
     _upcomingMissionsCache =
-        _missions.where((m) => m.isRegistered && m.status == 'Open').toList()
+        _missions
+            .where(
+              (m) =>
+                  m.isRegistered &&
+                  (m.status == 'Open' || m.status == 'InProgress'),
+            )
+            .toList()
           ..sort((a, b) => a.startTime.compareTo(b.startTime));
     return _upcomingMissionsCache!;
   }
@@ -65,7 +72,11 @@ class MissionProvider with ChangeNotifier {
   List<Mission> get recommendedMissions {
     if (_recommendedMissionsCache != null) return _recommendedMissionsCache!;
     _recommendedMissionsCache = _missions
-        .where((m) => m.status == 'Open' && !m.isRegistered)
+        .where(
+          (m) =>
+              (m.status == 'Open' || m.status == 'InProgress') &&
+              !m.isRegistered,
+        )
         .take(10)
         .toList();
     return _recommendedMissionsCache!;
@@ -168,12 +179,12 @@ class MissionProvider with ChangeNotifier {
 
   void setSearchQuery(String query) {
     _searchQuery = query;
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   void setSortOption(String option) {
     _sortOption = option;
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   void toggleFilter(String filter) {
@@ -192,14 +203,14 @@ class MissionProvider with ChangeNotifier {
         _activeFilters.add('All');
       }
     }
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   void clearFilters() {
     _searchQuery = '';
     _activeFilters.clear();
     _activeFilters.add('All');
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   bool isFilterActive(String filter) {
@@ -230,7 +241,7 @@ class MissionProvider with ChangeNotifier {
 
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    safeNotifyListeners();
 
     try {
       _missions = await _missionService.getMissions(
@@ -245,14 +256,14 @@ class MissionProvider with ChangeNotifier {
       _error = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
   Future<void> fetchCategories() async {
     try {
       _categories = await _missionService.getCategories();
-      notifyListeners();
+      safeNotifyListeners();
     } catch (e) {
       // Silently fail or log, as categories aren't critical to block everything
       debugPrint('Error fetching categories: $e');
@@ -264,7 +275,7 @@ class MissionProvider with ChangeNotifier {
     bool currentlyRegistered,
   ) async {
     _error = null;
-    notifyListeners();
+    safeNotifyListeners();
 
     try {
       bool success;
@@ -281,7 +292,7 @@ class MissionProvider with ChangeNotifier {
       }
     } catch (e) {
       _error = e.toString();
-      notifyListeners();
+      safeNotifyListeners();
       rethrow;
     }
   }
@@ -289,7 +300,7 @@ class MissionProvider with ChangeNotifier {
   Future<void> createMission(Map<String, dynamic> missionData) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    safeNotifyListeners();
 
     try {
       await _missionService.createMission(missionData);
@@ -299,7 +310,7 @@ class MissionProvider with ChangeNotifier {
       rethrow;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -320,7 +331,7 @@ class MissionProvider with ChangeNotifier {
   ) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    safeNotifyListeners();
 
     try {
       await _missionService.updateMission(missionId, updateData);
@@ -331,14 +342,14 @@ class MissionProvider with ChangeNotifier {
       rethrow;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
   Future<void> updateMissionStatus(int missionId, String status) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    safeNotifyListeners();
 
     try {
       await _missionService.updateMissionStatus(missionId, status);
@@ -348,7 +359,7 @@ class MissionProvider with ChangeNotifier {
       rethrow;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -377,7 +388,7 @@ class MissionProvider with ChangeNotifier {
   }) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    safeNotifyListeners();
 
     try {
       // If our service doesn't support justification yet, we should update it.
@@ -390,14 +401,14 @@ class MissionProvider with ChangeNotifier {
       rethrow;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
   Future<void> duplicateMission(int missionId) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    safeNotifyListeners();
 
     try {
       await _missionService.duplicateMission(missionId);
@@ -407,7 +418,7 @@ class MissionProvider with ChangeNotifier {
       rethrow;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -456,7 +467,11 @@ class MissionProvider with ChangeNotifier {
     }
   }
 
-  Future<void> contactVolunteer(int missionId, int userId, String message) async {
+  Future<void> contactVolunteer(
+    int missionId,
+    int userId,
+    String message,
+  ) async {
     try {
       await _missionService.contactVolunteer(missionId, userId, message);
     } catch (e) {

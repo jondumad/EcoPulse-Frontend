@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/empty_state.dart';
 import '../models/mission_model.dart';
 import '../screens/volunteer/mission_detail_screen.dart';
 import '../widgets/eco_pulse_widgets.dart';
@@ -65,7 +66,9 @@ class _MissionListState extends State<MissionList> {
           const SizedBox(height: 12),
         ],
         if (filtered.isEmpty)
-          _buildEmptyState()
+          EmptyState(icon: _searchQuery.isNotEmpty
+                ? Icons.search_off_rounded
+                : Icons.assignment_outlined, title: widget.emptyMessage ?? 'No missions found')
         else
           ListView.builder(
             shrinkWrap: widget.shrinkWrap,
@@ -147,55 +150,31 @@ class _MissionListState extends State<MissionList> {
       ),
     );
   }
-
-  Widget _buildEmptyState() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: EcoColors.ink.withValues(alpha: 0.02),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: EcoColors.ink.withValues(alpha: 0.05),
-          style: BorderStyle.solid,
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            _searchQuery.isNotEmpty
-                ? Icons.search_off_rounded
-                : Icons.assignment_outlined,
-            size: 48,
-            color: EcoColors.ink.withValues(alpha: 0.1),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _searchQuery.isNotEmpty
-                ? 'No missions match "$_searchQuery"'
-                : widget.emptyMessage ?? 'No missions available',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: EcoColors.ink.withValues(alpha: 0.4),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class MissionListItem extends StatelessWidget {
   final Mission mission;
   final bool isHistory;
 
-  const MissionListItem({super.key, required this.mission, required this.isHistory});
+  const MissionListItem({
+    super.key,
+    required this.mission,
+    required this.isHistory,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // Hide ended missions in active lists
+    if (!isHistory) {
+      final now = DateTime.now();
+      final isEnded = 
+          mission.status == 'Completed' || 
+          mission.status == 'Cancelled' || 
+          (mission.endTime.isBefore(now) && mission.status != 'InProgress');
+      if (isEnded) {
+        return const SizedBox.shrink();
+      }
+    }
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -337,10 +316,16 @@ class MissionListItem extends StatelessWidget {
                   color: EcoColors.terracotta,
                   size: 20,
                 )
-              else
+              else if (mission.registrationStatus == 'Completed')
                 const Icon(
                   Icons.check_circle_rounded,
                   color: EcoColors.forest,
+                  size: 20,
+                )
+              else
+                const Icon(
+                  Icons.pending_actions_rounded,
+                  color: EcoColors.violet,
                   size: 20,
                 ),
             ],

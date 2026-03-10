@@ -84,25 +84,18 @@ class MapAnimationHelper {
     );
     final zoomTween = Tween<double>(begin: startZoom, end: destZoom);
 
-    // Staggered intervals to avoid the "neurotic" simultaneous jump.
-    // Movement starts immediately and reaches 95% completion at 80% of the time.
-    final moveAnimation = CurvedAnimation(
+    // Unify animations into a single smooth curve to prevent the "two-stage" feel.
+    // We use a single CurvedAnimation for both movement and zoom.
+    final animation = CurvedAnimation(
       parent: _animationController!,
-      curve: const Interval(0.0, 0.8, curve: Curves.fastOutSlowIn),
-    );
-
-    // Zoom starts later (at 20% progress) and finishes at 100%.
-    // This creates the "Pan -> Zoom" feeling the user wants.
-    final zoomAnimation = CurvedAnimation(
-      parent: _animationController!,
-      curve: const Interval(0.2, 1.0, curve: Curves.fastOutSlowIn),
+      curve: Curves.fastOutSlowIn,
     );
 
     void updateMap() {
       if (_animationController == null) return;
-      final currentLat = latTween.evaluate(moveAnimation);
-      final currentLng = lngTween.evaluate(moveAnimation);
-      final currentZoom = zoomTween.evaluate(zoomAnimation);
+      final currentLat = latTween.evaluate(animation);
+      final currentLng = lngTween.evaluate(animation);
+      final currentZoom = zoomTween.evaluate(animation);
 
       mapController.move(ll.LatLng(currentLat, currentLng), currentZoom);
     }

@@ -16,14 +16,16 @@ class AttendanceService {
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
     }
-    final response = await http.post(
-      Uri.parse('$baseUrl/attendance/validate-location'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode({'missionId': missionId, 'userGps': userGps}),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/attendance/validate-location'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({'missionId': missionId, 'userGps': userGps}),
+        )
+        .timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -64,18 +66,20 @@ class AttendanceService {
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
     }
-    final response = await http.post(
-      Uri.parse('$baseUrl/attendance/check-in'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode({
-        'missionId': missionId,
-        'qrToken': qrToken,
-        'userGps': userGps,
-      }),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/attendance/check-in'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            'missionId': missionId,
+            'qrToken': qrToken,
+            'userGps': userGps,
+          }),
+        )
+        .timeout(const Duration(seconds: 15));
 
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -110,21 +114,23 @@ class AttendanceService {
 
   Future<Map<String, dynamic>?> getCurrentAttendance() async {
     final token = await _authService.getToken();
-    final headers = {'Content-Type': 'application/json'};
-    if (token != null) {
-      headers['Authorization'] = 'Bearer $token';
-    }
-    final response = await http.get(
-      Uri.parse('$baseUrl/attendance/current'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
+    if (token == null) return null;
+
+    final response = await http
+        .get(
+          Uri.parse('$baseUrl/attendance/current'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        )
+        .timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty || response.body == 'null') return null;
       return jsonDecode(response.body);
+    } else if (response.statusCode == 401 || response.statusCode == 403) {
+      return null; // Gracefully handle expired/invalid tokens
     } else {
       throw Exception('Failed to get current attendance');
     }
@@ -136,13 +142,15 @@ class AttendanceService {
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
     }
-    final response = await http.get(
-      Uri.parse('$baseUrl/attendance/pending'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
+    final response = await http
+        .get(
+          Uri.parse('$baseUrl/attendance/pending'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        )
+        .timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -172,7 +180,9 @@ class AttendanceService {
   Future<bool> manualCheckIn(int missionId, int userId, String reason) async {
     final token = await _authService.getToken();
     final response = await http.post(
-      Uri.parse('$baseUrl/attendance/missions/$missionId/users/$userId/manual-checkin'),
+      Uri.parse(
+        '$baseUrl/attendance/missions/$missionId/users/$userId/manual-checkin',
+      ),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -185,7 +195,9 @@ class AttendanceService {
   Future<bool> manualComplete(int missionId, int userId, String reason) async {
     final token = await _authService.getToken();
     final response = await http.post(
-      Uri.parse('$baseUrl/attendance/missions/$missionId/users/$userId/manual-complete'),
+      Uri.parse(
+        '$baseUrl/attendance/missions/$missionId/users/$userId/manual-complete',
+      ),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',

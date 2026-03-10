@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../providers/attendance_provider.dart';
 import '../../widgets/eco_pulse_widgets.dart';
+import '../../widgets/atoms/eco_button.dart';
+import '../../widgets/atoms/eco_card.dart';
 import '../../widgets/eco_app_bar.dart';
 import '../../theme/app_theme.dart';
 
@@ -53,7 +55,8 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
   }
 
   Future<void> _fetchQR() async {
-    if (!mounted) return;
+    if (!mounted || (_isLoading && _qrToken != null)) return;
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -68,6 +71,7 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
       if (mounted) {
         setState(() {
           _qrToken = result['qrToken'];
+          // Default to 60s refresh regardless of 5m validity for rotation security
           _secondsLeft = 60;
           _isLoading = false;
         });
@@ -76,7 +80,7 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = e.toString().replaceAll('Exception:', '').trim();
           _isLoading = false;
         });
       }
@@ -86,13 +90,18 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
       if (_secondsLeft > 0) {
-        if (mounted) {
-          setState(() {
-            _secondsLeft--;
-          });
-        }
+        setState(() {
+          _secondsLeft--;
+        });
       } else {
+        // Stop timer and fetch new one
+        timer.cancel();
         _fetchQR();
       }
     });

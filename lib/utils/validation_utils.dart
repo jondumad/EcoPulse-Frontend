@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/eco_pulse_widgets.dart';
 
-enum PasswordStrength { weak, medium, strong }
+enum PasswordStrength { weak, fair, good, strong }
 
 class ValidationUtils {
   // RFC 5322 Official Standard Email Regex
@@ -53,42 +53,37 @@ class ValidationUtils {
   }
 
   static PasswordStrength calculatePasswordStrength(String password) {
-    if (password.length < 8) return PasswordStrength.weak;
+    if (password.length < 6) return PasswordStrength.weak;
 
     bool hasUppercase = password.contains(RegExp(r'[A-Z]'));
+    bool hasLowercase = password.contains(RegExp(r'[a-z]'));
     bool hasDigits = password.contains(RegExp(r'[0-9]'));
     bool hasSpecialCharacters = password.contains(
       RegExp(r'[!@#$%^&*(),.?":{}|<>]'),
     );
 
     int score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
     if (hasUppercase) score++;
+    if (hasLowercase) score++;
     if (hasDigits) score++;
     if (hasSpecialCharacters) score++;
 
-    if (score == 3 && password.length >= 10) return PasswordStrength.strong;
-    if (score >= 2) return PasswordStrength.medium;
-    return PasswordStrength.weak;
-  }
-
-  static Color getStrengthColor(PasswordStrength strength) {
-    switch (strength) {
-      case PasswordStrength.weak:
-        return EcoColors.terracotta;
-      case PasswordStrength.medium:
-        // A middle ground color, similar to generic amber/orange
-        return const Color(0xFFF59E0B);
-      case PasswordStrength.strong:
-        return EcoColors.forest;
-    }
+    if (score <= 2) return PasswordStrength.weak;
+    if (score <= 4) return PasswordStrength.fair;
+    if (score <= 5) return PasswordStrength.good;
+    return PasswordStrength.strong;
   }
 
   static String getStrengthLabel(PasswordStrength strength) {
     switch (strength) {
       case PasswordStrength.weak:
         return 'Weak';
-      case PasswordStrength.medium:
-        return 'Medium';
+      case PasswordStrength.fair:
+        return 'Fair';
+      case PasswordStrength.good:
+        return 'Good';
       case PasswordStrength.strong:
         return 'Strong';
     }

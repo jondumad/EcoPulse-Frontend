@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
 import '../services/attendance_service.dart';
+import 'mission_provider.dart';
+import 'base_provider.dart';
 
-class AttendanceProvider with ChangeNotifier {
+class AttendanceProvider extends BaseProvider {
   final AttendanceService _service = AttendanceService();
-  Map<String, dynamic>? _currentAttendance;
+  final MissionProvider? missionProvider;
+  Map<String, dynamic>? currentAttendance;
   bool _isLoading = false;
 
-  Map<String, dynamic>? get currentAttendance => _currentAttendance;
+  AttendanceProvider({this.missionProvider});
+
   bool get isLoading => _isLoading;
 
   Future<void> refresh() async {
     _isLoading = true;
-    notifyListeners();
+    safeNotifyListeners();
     try {
-      _currentAttendance = await _service.getCurrentAttendance();
+      currentAttendance = await _service.getCurrentAttendance();
     } catch (e) {
-      _currentAttendance = null;
+      currentAttendance = null;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -28,27 +32,38 @@ class AttendanceProvider with ChangeNotifier {
     String userGps,
   ) async {
     _isLoading = true;
-    notifyListeners();
+    safeNotifyListeners();
     try {
       final result = await _service.checkIn(missionId, qrToken, userGps);
-      _currentAttendance = result['attendance'];
-      await refresh(); // To get mission details
+      currentAttendance = result['attendance'];
+
+      // Refresh both providers for global sync
+      await refresh();
+      if (missionProvider != null) {
+        await missionProvider!.fetchMissions(forceRefresh: true);
+      }
+
       return result;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
   Future<void> checkOut(int missionId) async {
     _isLoading = true;
-    notifyListeners();
+    safeNotifyListeners();
     try {
       await _service.checkOut(missionId);
-      _currentAttendance = null;
+      currentAttendance = null;
+
+      // Ensure mission list reflects checkout (points, status)
+      if (missionProvider != null) {
+        await missionProvider!.fetchMissions(forceRefresh: true);
+      }
     } finally {
       _isLoading = false;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 

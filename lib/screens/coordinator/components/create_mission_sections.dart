@@ -30,23 +30,22 @@ class HeroCard extends StatelessWidget {
     String categoryIcon = '🌱';
     if (selectedCategoryIds.isNotEmpty) {
       try {
-        final cat = provider.categories.firstWhere((c) => c.id == selectedCategoryIds.first);
+        final cat = provider.categories.firstWhere(
+          (c) => c.id == selectedCategoryIds.first,
+        );
         categoryIcon = cat.icon;
       } catch (_) {}
     }
 
-    final accentColor = isEmergency 
-        ? AppTheme.terracotta 
+    final accentColor = isEmergency
+        ? AppTheme.terracotta
         : (isTemplate ? AppTheme.violet : AppTheme.forest);
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: accentColor.withValues(alpha: 0.2), 
-          width: 2,
-        ),
+        border: Border.all(color: accentColor.withValues(alpha: 0.2), width: 2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -109,17 +108,21 @@ class HeroCard extends StatelessWidget {
                             Row(
                               children: [
                                 Icon(
-                                  isEmergency 
-                                      ? Icons.warning_amber_rounded 
-                                      : (isTemplate ? Icons.copy_all_rounded : Icons.add_circle_outline),
+                                  isEmergency
+                                      ? Icons.warning_amber_rounded
+                                      : (isTemplate
+                                            ? Icons.copy_all_rounded
+                                            : Icons.add_circle_outline),
                                   size: 14,
                                   color: accentColor,
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  isEmergency 
-                                      ? 'EMERGENCY MISSION' 
-                                      : (isTemplate ? 'MISSION TEMPLATE' : 'NEW MISSION'),
+                                  isEmergency
+                                      ? 'EMERGENCY MISSION'
+                                      : (isTemplate
+                                            ? 'MISSION TEMPLATE'
+                                            : 'NEW MISSION'),
                                   style: EcoText.monoSM(context).copyWith(
                                     color: accentColor,
                                     fontWeight: FontWeight.w900,
@@ -129,13 +132,17 @@ class HeroCard extends StatelessWidget {
                               ],
                             ),
                             Text(
-                              titleController.text.isEmpty ? 'Untitled Mission' : titleController.text,
+                              titleController.text.isEmpty
+                                  ? 'Untitled Mission'
+                                  : titleController.text,
                               style: EcoText.displayMD(context).copyWith(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w800,
-                                color: isEmergency 
-                                    ? AppTheme.terracotta 
-                                    : (isTemplate ? AppTheme.violet : EcoColors.ink),
+                                color: isEmergency
+                                    ? AppTheme.terracotta
+                                    : (isTemplate
+                                          ? AppTheme.violet
+                                          : EcoColors.ink),
                               ),
                             ),
                           ],
@@ -144,7 +151,11 @@ class HeroCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  const _FieldLabel(label: 'Mission Title', icon: Icons.title, isRequired: true),
+                  const _FieldLabel(
+                    label: 'Mission Title',
+                    icon: Icons.title,
+                    isRequired: true,
+                  ),
                   TextFormField(
                     controller: titleController,
                     style: AppTheme.lightTheme.textTheme.displaySmall?.copyWith(
@@ -167,7 +178,11 @@ class HeroCard extends StatelessWidget {
                     validator: (v) => v == null || v.isEmpty ? '' : null,
                   ),
                   const SizedBox(height: 20),
-                  const _FieldLabel(label: 'Description', icon: Icons.description_outlined, isRequired: true),
+                  const _FieldLabel(
+                    label: 'Description',
+                    icon: Icons.description_outlined,
+                    isRequired: true,
+                  ),
                   TextFormField(
                     controller: descriptionController,
                     maxLines: 4,
@@ -213,13 +228,18 @@ class CategoryPickerSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _FieldLabel(label: 'Mission Category', icon: Icons.category_outlined),
+          const _FieldLabel(
+            label: 'Mission Category',
+            icon: Icons.category_outlined,
+          ),
           const SizedBox(height: 8),
           if (provider.categories.isEmpty)
-            const Center(child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ))
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
           else
             Wrap(
               spacing: 8,
@@ -231,12 +251,17 @@ class CategoryPickerSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: isSelected ? AppTheme.forest : AppTheme.clay,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isSelected ? AppTheme.forest : Colors.black.withValues(alpha: 0.05),
+                        color: isSelected
+                            ? AppTheme.forest
+                            : Colors.black.withValues(alpha: 0.05),
                       ),
                     ),
                     child: Row(
@@ -248,7 +273,9 @@ class CategoryPickerSection extends StatelessWidget {
                           cat.name,
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.w500,
                             color: isSelected ? Colors.white : EcoColors.ink,
                           ),
                         ),
@@ -311,15 +338,18 @@ class LocationScheduleSection extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 'Location & Schedule',
-                style: EcoText.displayMD(context).copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: EcoText.displayMD(
+                  context,
+                ).copyWith(fontSize: 18, fontWeight: FontWeight.w700),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          const _FieldLabel(label: 'Where', icon: Icons.location_on_outlined, isRequired: true),
+          const _FieldLabel(
+            label: 'Where',
+            icon: Icons.location_on_outlined,
+            isRequired: true,
+          ),
           Row(
             children: [
               Expanded(
@@ -329,7 +359,10 @@ class LocationScheduleSection extends StatelessWidget {
                     hintText: 'Enter location name',
                     filled: true,
                     fillColor: AppTheme.clay,
-                    prefixIcon: const Icon(Icons.edit_location_outlined, size: 20),
+                    prefixIcon: const Icon(
+                      Icons.edit_location_outlined,
+                      size: 20,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
@@ -378,7 +411,11 @@ class LocationScheduleSection extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle, color: AppTheme.forest, size: 18),
+                  const Icon(
+                    Icons.check_circle,
+                    color: AppTheme.forest,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -432,7 +469,11 @@ class LocationScheduleSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const _FieldLabel(label: 'Start', icon: Icons.access_time),
-                    _TimePickerButton(time: startTime, onPick: onPickStartTime, isStart: true),
+                    _TimePickerButton(
+                      time: startTime,
+                      onPick: onPickStartTime,
+                      isStart: true,
+                    ),
                   ],
                 ),
               ),
@@ -441,8 +482,15 @@ class LocationScheduleSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _FieldLabel(label: 'End', icon: Icons.access_time_filled),
-                    _TimePickerButton(time: endTime, onPick: onPickEndTime, isStart: false),
+                    const _FieldLabel(
+                      label: 'End',
+                      icon: Icons.access_time_filled,
+                    ),
+                    _TimePickerButton(
+                      time: endTime,
+                      onPick: onPickEndTime,
+                      isStart: false,
+                    ),
                   ],
                 ),
               ),
@@ -478,29 +526,10 @@ class SettingsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppTheme.violet.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.tune_outlined,
-                  color: AppTheme.violet,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Mission Settings',
-                style: EcoText.displayMD(context).copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+          const _SectionHeader(
+            title: 'Mission Settings',
+            icon: Icons.tune_outlined,
+            color: AppTheme.violet,
           ),
           const SizedBox(height: 20),
           Row(
@@ -536,7 +565,10 @@ class SettingsSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 16,
+              ),
             ),
             icon: const Icon(Icons.arrow_drop_down),
             items: [
@@ -547,43 +579,47 @@ class SettingsSection extends StatelessWidget {
             ],
             onChanged: (v) => onPriorityChanged(v!),
           ),
-          
+
           AnimatedSize(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
-            child: isEmergency 
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 20),
-                    const _FieldLabel(
-                      label: 'Emergency Justification',
-                      icon: Icons.warning_amber_outlined,
-                    ),
-                    TextFormField(
-                      controller: emergencyJustificationController,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText: 'Why is this mission an emergency?',
-                        filled: true,
-                        fillColor: AppTheme.clay,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.all(16),
+            child: isEmergency
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+                      const _FieldLabel(
+                        label: 'Emergency Justification',
+                        icon: Icons.warning_amber_outlined,
                       ),
-                      validator: (v) {
-                        if (isEmergency) {
-                          if (v == null || v.isEmpty) return 'Required for emergency';
-                          if (v.length < 20) return 'Minimum 20 characters required';
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
-                )
-              : const SizedBox(width: double.infinity),
+                      TextFormField(
+                        controller: emergencyJustificationController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          hintText: 'Why is this mission an emergency?',
+                          filled: true,
+                          fillColor: AppTheme.clay,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.all(16),
+                        ),
+                        validator: (v) {
+                          if (isEmergency) {
+                            if (v == null || v.isEmpty) {
+                              return 'Required for emergency';
+                            }
+                            if (v.length < 20) {
+                              return 'Minimum 20 characters required';
+                            }
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  )
+                : const SizedBox(width: double.infinity),
           ),
         ],
       ),
@@ -591,7 +627,10 @@ class SettingsSection extends StatelessWidget {
   }
 
   DropdownMenuItem<String> _buildPriorityItem(
-      String label, IconData icon, Color color) {
+    String label,
+    IconData icon,
+    Color color,
+  ) {
     return DropdownMenuItem(
       value: label,
       child: Row(
@@ -608,17 +647,183 @@ class SettingsSection extends StatelessWidget {
   }
 }
 
+class RecurrenceSection extends StatelessWidget {
+  final bool isTemplate;
+  final String frequency;
+  final List<int> selectedDaysOfWeek;
+  final int selectedDayOfMonth;
+  final DateTime? endDate;
+  final ValueChanged<String> onFrequencyChanged;
+  final ValueChanged<List<int>> onDaysOfWeekChanged;
+  final ValueChanged<int> onDayOfMonthChanged;
+  final VoidCallback onPickEndDate;
+
+  const RecurrenceSection({
+    super.key,
+    required this.isTemplate,
+    required this.frequency,
+    required this.selectedDaysOfWeek,
+    required this.selectedDayOfMonth,
+    this.endDate,
+    required this.onFrequencyChanged,
+    required this.onDaysOfWeekChanged,
+    required this.onDayOfMonthChanged,
+    required this.onPickEndDate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isTemplate) return const SizedBox.shrink();
+
+    return _SectionWrapper(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionHeader(
+            title: 'RECURRENCE RULES',
+            icon: Icons.sync_rounded,
+            color: AppTheme.violet,
+          ),
+          const SizedBox(height: 20),
+          const _FieldLabel(label: 'Frequency', icon: Icons.repeat_rounded),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: AppTheme.clay,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: frequency,
+                isExpanded: true,
+                borderRadius: BorderRadius.circular(16),
+                items: ['daily', 'weekly', 'biweekly', 'monthly']
+                    .map(
+                      (f) => DropdownMenuItem(
+                        value: f,
+                        child: Text(
+                          f.substring(0, 1).toUpperCase() + f.substring(1),
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) => onFrequencyChanged(v ?? 'daily'),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          if (frequency == 'weekly' || frequency == 'biweekly') ...[
+            const _FieldLabel(
+              label: 'Days of Week',
+              icon: Icons.calendar_view_week_rounded,
+            ),
+            Wrap(
+              spacing: 8,
+              children: List.generate(7, (index) {
+                final days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+                final isSelected = selectedDaysOfWeek.contains(index);
+                return FilterChip(
+                  label: Text(days[index]),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    final newList = List<int>.from(selectedDaysOfWeek);
+                    if (selected) {
+                      newList.add(index);
+                    } else {
+                      newList.remove(index);
+                    }
+                    onDaysOfWeekChanged(newList);
+                  },
+                  selectedColor: AppTheme.violet.withValues(alpha: 0.2),
+                  checkmarkColor: AppTheme.violet,
+                  labelStyle: TextStyle(
+                    color: isSelected ? AppTheme.violet : AppTheme.ink,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 20),
+          ],
+          if (frequency == 'monthly') ...[
+            const _FieldLabel(
+              label: 'Day of Month',
+              icon: Icons.calendar_today_rounded,
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.clay,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<int>(
+                  value: selectedDayOfMonth,
+                  isExpanded: true,
+                  items: List.generate(31, (i) => i + 1)
+                      .map(
+                        (d) =>
+                            DropdownMenuItem(value: d, child: Text('Day $d')),
+                      )
+                      .toList(),
+                  onChanged: (v) => onDayOfMonthChanged(v ?? 1),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+          const _FieldLabel(label: 'Ending On', icon: Icons.event_busy_rounded),
+          InkWell(
+            onTap: onPickEndDate,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.clay,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_month,
+                    size: 18,
+                    color: AppTheme.violet,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    endDate != null
+                        ? DateFormat('MMM d, yyyy').format(endDate!)
+                        : 'No End Date (Continuous)',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class TogglesSection extends StatelessWidget {
   final bool isEmergency;
   final bool isTemplate;
+  final bool autoPromote;
   final ValueChanged<bool> onEmergencyChanged;
   final ValueChanged<bool>? onTemplateChanged;
+  final ValueChanged<bool> onAutoPromoteChanged;
 
   const TogglesSection({
     super.key,
     required this.isEmergency,
     required this.isTemplate,
+    required this.autoPromote,
     required this.onEmergencyChanged,
+    required this.onAutoPromoteChanged,
     this.onTemplateChanged,
   });
 
@@ -633,6 +838,15 @@ class TogglesSection extends StatelessWidget {
           value: isEmergency,
           color: AppTheme.terracotta,
           onChanged: onEmergencyChanged,
+        ),
+        const SizedBox(height: 12),
+        _ToggleCard(
+          title: 'Waitlist Auto-Promote',
+          subtitle: 'Promote first in line when spots open',
+          icon: Icons.auto_awesome_rounded,
+          value: autoPromote,
+          color: AppTheme.forest,
+          onChanged: onAutoPromoteChanged,
         ),
         if (onTemplateChanged != null) ...[
           const SizedBox(height: 12),
@@ -680,7 +894,11 @@ class _FieldLabel extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool isRequired;
-  const _FieldLabel({required this.label, required this.icon, this.isRequired = false});
+  const _FieldLabel({
+    required this.label,
+    required this.icon,
+    this.isRequired = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -714,7 +932,11 @@ class _TimePickerButton extends StatelessWidget {
   final Function(TimeOfDay) onPick;
   final bool isStart;
 
-  const _TimePickerButton({required this.time, required this.onPick, required this.isStart});
+  const _TimePickerButton({
+    required this.time,
+    required this.onPick,
+    required this.isStart,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -741,10 +963,7 @@ class _TimePickerButton extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               time.format(context),
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-              ),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
             ),
           ],
         ),
@@ -790,10 +1009,7 @@ class _CompactField extends StatelessWidget {
           controller: controller,
           keyboardType: TextInputType.number,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           decoration: InputDecoration(
             filled: true,
             fillColor: AppTheme.clay,
@@ -881,13 +1097,44 @@ class _ToggleCard extends StatelessWidget {
               ],
             ),
           ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: color,
-          ),
+          Switch(value: value, onChanged: onChanged, activeThumbColor: color),
         ],
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+
+  const _SectionHeader({
+    required this.title,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: color, size: 22),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: EcoText.displayMD(
+            context,
+          ).copyWith(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+      ],
     );
   }
 }

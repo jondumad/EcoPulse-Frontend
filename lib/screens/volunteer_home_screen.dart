@@ -7,6 +7,8 @@ import '../providers/mission_provider.dart';
 import '../providers/nav_provider.dart';
 import '../models/mission_model.dart';
 import '../widgets/eco_pulse_widgets.dart';
+import '../widgets/atoms/eco_card.dart';
+import '../widgets/empty_state.dart';
 import '../components/mission_card.dart';
 import 'volunteer/mission_detail_screen.dart';
 import 'volunteer/badges_modal.dart';
@@ -387,23 +389,47 @@ class _VolunteerHomeScreenState extends State<VolunteerHomeScreen> {
 
                   if (data.missions.isEmpty) {
                     return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.explore_outlined,
-                            size: 40,
-                            color: AppTheme.ink.withValues(alpha: 0.1),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            "No missions available nearby",
-                            style: AppTheme.lightTheme.textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: AppTheme.ink.withValues(alpha: 0.4),
+                      child: EcoPulseCard(
+                        variant: CardVariant.paper,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 32),
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.clay,
+                                  shape: BoxShape.circle,
                                 ),
+                                child: Icon(
+                                  Icons.explore_outlined,
+                                  size: 32,
+                                  color: AppTheme.ink.withValues(alpha: 0.2),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                "NO MISSIONS AVAILABLE",
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppTheme.ink.withValues(alpha: 0.4),
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Check back soon for new opportunities nearby",
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  color: AppTheme.ink.withValues(alpha: 0.5),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     );
                   }

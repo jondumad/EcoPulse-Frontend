@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 import '../providers/mission_provider.dart';
 import '../models/mission_model.dart';
 import '../theme/app_theme.dart';
 import 'eco_pulse_widgets.dart';
+import 'atoms/eco_button.dart';
+import 'atoms/eco_card.dart';
 
 class WaitlistManagementModal extends StatefulWidget {
   final int missionId;
@@ -94,7 +97,7 @@ class _WaitlistManagementModalState extends State<WaitlistManagementModal> {
             child: _isLoading 
               ? const Center(child: CircularProgressIndicator())
               : waitlisted.isEmpty && registered.isEmpty
-                ? _buildEmptyState()
+                ? EmptyState(icon: Icons.group_outlined, title: 'No volunteers registered yet.',description: 'Register volunteers to get started.',)
                 : ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     children: [
@@ -185,9 +188,5 @@ class _WaitlistManagementModalState extends State<WaitlistManagementModal> {
         ),
       ),
     );
-  }
-
-  Widget _buildEmptyState() {
-    return const Center(child: Text('No volunteers registered yet.'));
   }
 }

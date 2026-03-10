@@ -10,6 +10,7 @@ import '../../providers/location_provider.dart';
 import '../../providers/mission_provider.dart';
 import '../../models/mission_model.dart';
 import '../../widgets/eco_pulse_widgets.dart';
+import '../../widgets/atoms/eco_card.dart';
 import '../../utils/map_utils.dart';
 import '../../widgets/map/user_location_marker.dart';
 import '../../widgets/map/semantic_marker.dart';
@@ -21,6 +22,12 @@ class MissionMap extends StatefulWidget {
   final bool showRegisteredOnly;
   final List<Mission>? missionsOverride;
   final bool centerOnMission;
+  final double topPadding;
+  final double bottomPadding;
+  final double leftPadding;
+  final double rightPadding;
+  final List<Rect>? obstructions;
+
   const MissionMap({
     super.key,
     this.selectedMission,
@@ -28,6 +35,11 @@ class MissionMap extends StatefulWidget {
     this.showRegisteredOnly = false,
     this.missionsOverride,
     this.centerOnMission = false,
+    this.topPadding = 40.0,
+    this.bottomPadding = 40.0,
+    this.leftPadding = 45.0,
+    this.rightPadding = 45.0,
+    this.obstructions,
   });
   @override
   State<MissionMap> createState() => MissionMapState();
@@ -40,24 +52,57 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
   final ValueNotifier<double> _rotationNotifier = ValueNotifier(0.0);
   bool _mapReady = false;
 
+  // Animation Guard
+  ll.LatLng? _lastMoveTarget;
+  double? _lastMoveZoom;
+  DateTime? _lastMoveTime;
+
   void stopAnimation() {
     _mapAnimationHelper.stop();
   }
 
   void animatedMapMove(ll.LatLng destLocation, [double? destZoom]) {
+    final now = DateTime.now();
+    const double epsilon = 0.000001;
+
+    // Determine if this is the same target as the previous request
+    bool isSameTarget =
+        _lastMoveTarget != null &&
+        (destLocation.latitude - _lastMoveTarget!.latitude).abs() < epsilon &&
+        (destLocation.longitude - _lastMoveTarget!.longitude).abs() < epsilon;
+
     double targetZoom;
     if (destZoom != null) {
       targetZoom = destZoom;
     } else {
-      final currentZoom = _mapController.camera.zoom;
-      if (currentZoom > 17.0) {
-        targetZoom = 16.0;
-      } else if (currentZoom < 14.0) {
-        targetZoom = 15.5;
+      // If we are already animating to this target, maintain the previous target zoom
+      // to prevent fluctuations (and guard bypass) while currentZoom is mid-transition.
+      if (isSameTarget && _lastMoveZoom != null) {
+        targetZoom = _lastMoveZoom!;
       } else {
-        targetZoom = currentZoom;
+        final currentZoom = _mapController.camera.zoom;
+        if (currentZoom > 17.0) {
+          targetZoom = 16.0;
+        } else if (currentZoom < 14.0) {
+          targetZoom = 15.5;
+        } else {
+          targetZoom = currentZoom;
+        }
       }
     }
+
+    // Guard against identical animations in short succession (prevents restart stutter)
+    if (isSameTarget &&
+        _lastMoveZoom == targetZoom &&
+        _lastMoveTime != null &&
+        now.difference(_lastMoveTime!).inMilliseconds < 800) {
+      return;
+    }
+
+    _lastMoveTarget = destLocation;
+    _lastMoveZoom = targetZoom;
+    _lastMoveTime = now;
+
     _mapAnimationHelper.move(destLocation, targetZoom);
   }
 
@@ -113,16 +158,17 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
   Widget _buildOffScreenIndicators(
     BoxConstraints constraints,
     List<Mission> missions,
-    ll.LatLng? userLatLng,
-  ) {
+    ll.LatLng? userLatLng, {
+    double topPadding = 40.0,
+    double bottomPadding = 40.0,
+    double leftPadding = 45.0,
+    double rightPadding = 45.0,
+    List<Rect>? obstructions,
+  }) {
     if (!_mapReady) return const SizedBox.shrink();
     if (_zoomNotifier.value < 4) return const SizedBox.shrink();
 
     final camera = _mapController.camera;
-    double bottomPadding = 150.0;
-    if (widget.selectedMission != null) {
-      bottomPadding = 230.0;
-    }
 
     List<Widget> indicators = [];
 
@@ -134,7 +180,11 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
           icon: Icons.person,
           camera: camera,
           constraints: constraints,
+          topPadding: topPadding,
           bottomPadding: bottomPadding,
+          leftPadding: leftPadding,
+          rightPadding: rightPadding,
+          obstructions: obstructions,
           onTap: () => animatedMapMove(userLatLng, 16.0),
         ),
       );
@@ -152,7 +202,11 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
             icon: Icons.flag,
             camera: camera,
             constraints: constraints,
+            topPadding: topPadding,
             bottomPadding: bottomPadding,
+            leftPadding: leftPadding,
+            rightPadding: rightPadding,
+            obstructions: obstructions,
             index: missionIdx++,
             offsetIfOverlapping: true,
             onTap: () => animatedMapMove(missionLatLng, 16.0),
@@ -178,27 +232,33 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                   final sourceMissions =
                       widget.missionsOverride ?? missionProvider.missions;
 
-                  final displayMissions = widget.showRegisteredOnly
-                      ? sourceMissions.where((m) => m.isRegistered).toList()
-                      : sourceMissions;
+                  final now = DateTime.now();
+                  final displayMissions =
+                      (widget.showRegisteredOnly
+                              ? sourceMissions
+                                    .where((m) => m.isRegistered)
+                                    .toList()
+                              : sourceMissions)
+                          .where(
+                            (m) =>
+                                m.status != 'Completed' &&
+                                m.status != 'Cancelled' &&
+                                m.endTime.isAfter(now),
+                          )
+                          .toList();
 
                   final markers = displayMissions.map((mission) {
                     final point = _parseGps(mission.locationGps);
                     return Marker(
                       key: ValueKey(mission.id),
                       point: point,
-                      width: 160,
+                      width: 200,
                       height: 80,
                       alignment: Alignment.center,
                       rotate: true,
-                      child: Container(
-                        color: EcoColors.terracotta.withValues(
-                          alpha: 0.15,
-                        ), // Visualized Hitbox
-                        child: SemanticMarker(
-                          mission: mission,
-                          zoomNotifier: _zoomNotifier,
-                        ),
+                      child: SemanticMarker(
+                        mission: mission,
+                        zoomNotifier: _zoomNotifier,
                       ),
                     );
                   }).toList();
@@ -225,7 +285,6 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                             flags: InteractiveFlag.all,
                           ),
                           onTap: (tapPosition, point) {
-                            debugPrint('DEBUG: Map tapped at $point');
                             if (widget.onMissionSelected != null) {
                               widget.onMissionSelected!(null);
                             }
@@ -280,34 +339,24 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                           MarkerClusterLayerWidget(
                             options: MarkerClusterLayerOptions(
                               maxClusterRadius: 45,
-                              size: const Size(
-                                60,
-                                60,
-                              ), // Increased hitbox to 60x60
                               alignment: Alignment.center,
                               padding: const EdgeInsets.all(50),
                               maxZoom: 15,
+                              centerMarkerOnClick:
+                                  false, // Prevent library's instant jump fighting our custom animation
+                              zoomToBoundsOnClick:
+                                  false, // We handle centering/viewing clusters through our own summary popup
                               markers: markers,
                               onMarkerTap: (marker) {
                                 final key = marker.key;
-                                debugPrint('DEBUG: Marker clicked. Key: $key');
                                 if (key is ValueKey<int>) {
-                                  try {
-                                    final mission = displayMissions.firstWhere(
-                                      (m) => m.id == key.value,
-                                    );
-                                    debugPrint(
-                                      'DEBUG: Found mission ID ${mission.id}. Calling selector.',
-                                    );
-                                    if (widget.onMissionSelected != null) {
-                                      widget.onMissionSelected!(mission);
-                                    }
-                                    animatedMapMove(marker.point);
-                                  } catch (e) {
-                                    debugPrint(
-                                      'Map Error: Mission ${key.value} not found in display list',
-                                    );
+                                  final mission = displayMissions.firstWhere(
+                                    (m) => m.id == key.value,
+                                  );
+                                  if (widget.onMissionSelected != null) {
+                                    widget.onMissionSelected!(mission);
                                   }
+                                  animatedMapMove(marker.point);
                                 }
                               },
                               builder: (context, markers) {
@@ -350,9 +399,6 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                                 );
                               },
                               onClusterTap: (cluster) {
-                                debugPrint(
-                                  'DEBUG: Cluster clicked. Markers count: ${cluster.markers.length}',
-                                );
                                 final missionIds = cluster.markers
                                     .map((m) {
                                       final key = m.key;
@@ -363,19 +409,11 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                                     })
                                     .whereType<int>()
                                     .toSet();
-
-                                debugPrint(
-                                  'DEBUG: Extracted mission IDs: $missionIds',
-                                );
                                 if (missionIds.isEmpty) return;
 
                                 final clusterMissions = displayMissions
                                     .where((m) => missionIds.contains(m.id))
                                     .toList();
-
-                                debugPrint(
-                                  'DEBUG: Found ${clusterMissions.length} valid missions. Showing summary.',
-                                );
                                 _showClusterSummary(context, clusterMissions);
                               },
                             ),
@@ -387,8 +425,13 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                         builder: (context, _) {
                           return _buildOffScreenIndicators(
                             constraints,
-                            missionProvider.missions,
+                            displayMissions,
                             loc.currentPosition,
+                            topPadding: widget.topPadding,
+                            bottomPadding: widget.bottomPadding,
+                            leftPadding: widget.leftPadding,
+                            rightPadding: widget.rightPadding,
+                            obstructions: widget.obstructions,
                           );
                         },
                       ),

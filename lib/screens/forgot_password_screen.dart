@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/eco_pulse_widgets.dart';
+import '../widgets/atoms/eco_button.dart';
+import '../widgets/atoms/eco_card.dart';
+import '../widgets/atoms/eco_text_field.dart';
 import '../widgets/auth_error_message.dart';
 import '../utils/validation_utils.dart';
+import '../widgets/eco_app_bar.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -62,14 +66,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return EcoPulseLayout(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: EcoColors.forest),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
+        appBar: EcoAppBar.auth(),
         body: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),

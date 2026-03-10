@@ -8,6 +8,8 @@ import '../../../../models/mission_model.dart';
 import '../../../../providers/attendance_provider.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/eco_pulse_widgets.dart';
+import '../../../../widgets/atoms/eco_button.dart';
+import '../../../../widgets/atoms/eco_card.dart';
 import '../../../../providers/mission_provider.dart';
 import 'mission_map_preview_screen.dart';
 import 'components/timeline_visuals.dart'; // Import the new component

@@ -1,3 +1,5 @@
+import 'recurring_model.dart';
+
 class Mission {
   final int id;
   final String title;
@@ -13,6 +15,9 @@ class Mission {
   final bool isEmergency;
   final String? emergencyJustification;
   final bool isTemplate;
+  final bool autoPromote;
+  final String? overrideReason;
+  final RecurringSettings? recurringSettings;
   final String status; // 'Open', 'InProgress', 'Completed', 'Cancelled'
   final DateTime? actualStartTime;
   final DateTime? actualEndTime;
@@ -39,6 +44,9 @@ class Mission {
     required this.isEmergency,
     this.emergencyJustification,
     this.isTemplate = false,
+    this.autoPromote = true,
+    this.overrideReason,
+    this.recurringSettings,
     required this.status,
     this.actualStartTime,
     this.actualEndTime,
@@ -53,6 +61,7 @@ class Mission {
   factory Mission.fromJson(Map<String, dynamic> json) {
     String? regStatus;
     DateTime? regAt;
+    String? overrideReason;
     if (json['registrations'] != null &&
         (json['registrations'] as List).isNotEmpty) {
       regStatus = json['registrations'][0]['status'];
@@ -60,6 +69,20 @@ class Mission {
       if (regDate != null) {
         regAt = DateTime.parse(regDate);
       }
+    }
+
+    if (json['attendance'] != null && (json['attendance'] as List).isNotEmpty) {
+      final attStatus = json['attendance'][0]['status'];
+      if (attStatus == 'Rejected') {
+        regStatus = 'Rejected';
+      } else if (attStatus == 'Verified') {
+        regStatus = 'Completed';
+      } else if (json['attendance'][0]['checkOutTime'] != null) {
+        regStatus = 'Completed';
+      } else {
+        regStatus = 'CheckedIn';
+      }
+      overrideReason = json['attendance'][0]['overrideReason'];
     }
 
     return Mission(
@@ -77,6 +100,11 @@ class Mission {
       isEmergency: json['isEmergency'] ?? false,
       emergencyJustification: json['emergencyJustification'],
       isTemplate: json['isTemplate'] ?? false,
+      autoPromote: json['autoPromote'] ?? true,
+      overrideReason: overrideReason,
+      recurringSettings: json['recurringMission'] != null
+          ? RecurringSettings.fromJson(json['recurringMission'])
+          : null,
       status: json['status'] ?? 'Open',
       actualStartTime: json['actualStartTime'] != null
           ? DateTime.parse(json['actualStartTime']).toLocal()

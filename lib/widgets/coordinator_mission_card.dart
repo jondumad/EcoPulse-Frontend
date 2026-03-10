@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:frontend/models/mission_model.dart';
 import 'eco_pulse_widgets.dart';
+import 'atoms/eco_card.dart';
 
 class CoordinatorMissionCard extends StatefulWidget {
   final Mission mission;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/attendance_provider.dart';
@@ -7,6 +8,8 @@ import '../../providers/mission_provider.dart';
 import '../../models/mission_model.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
+import '../../widgets/atoms/eco_button.dart';
+import '../../widgets/atoms/eco_card.dart';
 
 class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key});
@@ -62,8 +65,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Attendance $status'),
-              backgroundColor:
-                  status == 'Verified' ? AppTheme.forest : AppTheme.terracotta,
+              backgroundColor: status == 'Verified'
+                  ? AppTheme.forest
+                  : AppTheme.terracotta,
             ),
           );
           Provider.of<AuthProvider>(context, listen: false).refreshProfile();
@@ -83,8 +87,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
   }
 
   void _showManualActionDialog() {
-    final missions = Provider.of<MissionProvider>(context, listen: false).missions;
-    
+    final missions = Provider.of<MissionProvider>(
+      context,
+      listen: false,
+    ).missions;
+
     showDialog(
       context: context,
       builder: (context) => _ManualActionDialog(missions: missions),
@@ -100,11 +107,16 @@ class _VerificationScreenState extends State<VerificationScreen> {
         elevation: 0,
         title: Text(
           'Attendance Review',
-          style: AppTheme.lightTheme.textTheme.displaySmall?.copyWith(fontSize: 20),
+          style: AppTheme.lightTheme.textTheme.displaySmall?.copyWith(
+            fontSize: 20,
+          ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person_add_alt_1_outlined, color: AppTheme.forest),
+            icon: const Icon(
+              Icons.person_add_alt_1_outlined,
+              color: AppTheme.forest,
+            ),
             onPressed: _showManualActionDialog,
             tooltip: 'Manual Check-in',
           ),
@@ -119,7 +131,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.forest.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -139,40 +154,33 @@ class _VerificationScreenState extends State<VerificationScreen> {
             ),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppTheme.forest))
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppTheme.forest),
+                  )
                 : _pending.isEmpty
-                    ? _buildEmptyState()
-                    : RefreshIndicator(
-                        onRefresh: _loadPending,
-                        color: AppTheme.forest,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                          itemCount: _pending.length,
-                          itemBuilder: (context, index) => _VerificationCard(
-                            data: _pending[index],
-                            onVerify: (id) => _handleVerify(id, 'Verified'),
-                            onReject: (id) => _handleVerify(id, 'Rejected'),
-                          ),
-                        ),
+                ? EmptyState(
+                    icon: Icons.verified_user_outlined,
+                    title: 'No pending verifications',
+                    description:
+                        'There are no attendance records waiting for review.',
+                  )
+                : RefreshIndicator(
+                    onRefresh: _loadPending,
+                    color: AppTheme.forest,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
                       ),
+                      itemCount: _pending.length,
+                      itemBuilder: (context, index) => _VerificationCard(
+                        data: _pending[index],
+                        onVerify: (id) => _handleVerify(id, 'Verified'),
+                        onReject: (id) => _handleVerify(id, 'Rejected'),
+                      ),
+                    ),
+                  ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.verified_user_outlined, size: 64, color: Colors.black12),
-          const SizedBox(height: 16),
-          Text(
-            'Clear Skies!',
-            style: AppTheme.lightTheme.textTheme.displaySmall?.copyWith(color: Colors.black26),
-          ),
-          const Text('No pending verifications to review.', style: TextStyle(color: Colors.black38)),
         ],
       ),
     );
@@ -195,8 +203,8 @@ class _VerificationCard extends StatelessWidget {
     final user = data['user'];
     final mission = data['mission'];
     final checkIn = DateTime.parse(data['checkInTime']).toLocal();
-    final checkOut = data['checkOutTime'] != null 
-        ? DateTime.parse(data['checkOutTime']).toLocal() 
+    final checkOut = data['checkOutTime'] != null
+        ? DateTime.parse(data['checkOutTime']).toLocal()
         : null;
     final hours = data['totalHours'] ?? 0.0;
     final gps = data['gpsProof'] ?? 'No GPS data';
@@ -212,27 +220,52 @@ class _VerificationCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   backgroundColor: AppTheme.forest.withValues(alpha: 0.1),
-                  child: Text(user['name'][0], 
-                    style: const TextStyle(color: AppTheme.forest, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    user['name'][0],
+                    style: const TextStyle(
+                      color: AppTheme.forest,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(user['name'], style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-                      Text(user['email'], style: const TextStyle(color: Colors.black38, fontSize: 12)),
+                      Text(
+                        user['name'],
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        user['email'],
+                        style: const TextStyle(
+                          color: Colors.black38,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.clay,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text('${hours.toStringAsFixed(1)} HRS', 
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900)),
+                  child: Text(
+                    '${hours.toStringAsFixed(1)} HRS',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -240,19 +273,31 @@ class _VerificationCard extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Divider(height: 1),
             ),
-            _buildDetail(Icons.assignment_outlined, 'Mission', mission['title']),
+            _buildDetail(
+              Icons.assignment_outlined,
+              'Mission',
+              mission['title'],
+            ),
             const SizedBox(height: 12),
-            _buildDetail(Icons.access_time, 'Time', 
-              '${DateFormat('HH:mm').format(checkIn)} - ${checkOut != null ? DateFormat('HH:mm').format(checkOut) : 'Active'}'),
+            _buildDetail(
+              Icons.access_time,
+              'Time',
+              '${DateFormat('HH:mm').format(checkIn)} - ${checkOut != null ? DateFormat('HH:mm').format(checkOut) : 'Active'}',
+            ),
             const SizedBox(height: 12),
-            _buildDetail(Icons.location_on_outlined, 'GPS Proof', gps, isMono: true),
+            _buildDetail(
+              Icons.location_on_outlined,
+              'GPS Proof',
+              gps,
+              isMono: true,
+            ),
             const SizedBox(height: 24),
             Row(
               children: [
                 Expanded(
                   child: EcoPulseButton(
                     label: 'REJECT',
-                    isPrimary: false,
+                    variant: EcoButtonVariant.secondary,
                     onPressed: () => onReject(data['id']),
                   ),
                 ),
@@ -272,13 +317,25 @@ class _VerificationCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDetail(IconData icon, String label, String value, {bool isMono = false}) {
+  Widget _buildDetail(
+    IconData icon,
+    String label,
+    String value, {
+    bool isMono = false,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, size: 14, color: AppTheme.forest.withValues(alpha: 0.5)),
         const SizedBox(width: 8),
-        Text('$label: ', style: const TextStyle(fontSize: 11, color: Colors.black45, fontWeight: FontWeight.w600)),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            fontSize: 11,
+            color: Colors.black45,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         Expanded(
           child: Text(
             value,
@@ -312,62 +369,111 @@ class _ManualActionDialogState extends State<_ManualActionDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Manual Verification', style: TextStyle(fontWeight: FontWeight.w900)),
+      title: const Text(
+        'Manual Verification',
+        style: TextStyle(fontWeight: FontWeight.w900),
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Manually record participation for a volunteer.', 
-              style: TextStyle(fontSize: 12, color: Colors.black54)),
+            const Text(
+              'Manually record participation for a volunteer.',
+              style: TextStyle(fontSize: 12, color: Colors.black54),
+            ),
             const SizedBox(height: 20),
             DropdownButtonFormField<Mission>(
-              decoration: const InputDecoration(labelText: 'Select Mission', border: OutlineInputBorder()),
-              items: widget.missions.map((m) => DropdownMenuItem(value: m, child: Text(m.title, overflow: TextOverflow.ellipsis))).toList(),
+              decoration: const InputDecoration(
+                labelText: 'Select Mission',
+                border: OutlineInputBorder(),
+              ),
+              items: widget.missions
+                  .map(
+                    (m) => DropdownMenuItem(
+                      value: m,
+                      child: Text(m.title, overflow: TextOverflow.ellipsis),
+                    ),
+                  )
+                  .toList(),
               onChanged: (val) => setState(() => _selectedMission = val),
             ),
             const SizedBox(height: 16),
             TextField(
-              decoration: const InputDecoration(labelText: 'User ID', hintText: 'Enter numerical ID', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'User ID',
+                hintText: 'Enter numerical ID',
+                border: OutlineInputBorder(),
+              ),
               keyboardType: TextInputType.number,
               onChanged: (val) => _userId = int.tryParse(val),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _reasonController,
-              decoration: const InputDecoration(labelText: 'Reason for Override', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'Reason for Override',
+                border: OutlineInputBorder(),
+              ),
               maxLines: 2,
             ),
           ],
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
-          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.forest, foregroundColor: Colors.white),
-          child: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Complete Mission'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.forest,
+            foregroundColor: Colors.white,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Complete Mission'),
         ),
       ],
     );
   }
 
   Future<void> _submit() async {
-    if (_selectedMission == null || _userId == null || _reasonController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
+    if (_selectedMission == null ||
+        _userId == null ||
+        _reasonController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
       return;
     }
 
     setState(() => _isLoading = true);
     try {
       final provider = Provider.of<AttendanceProvider>(context, listen: false);
-      final success = await provider.manualComplete(_selectedMission!.id, _userId!, _reasonController.text);
+      final success = await provider.manualComplete(
+        _selectedMission!.id,
+        _userId!,
+        _reasonController.text,
+      );
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Manual verification successful')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Manual verification successful')),
+          );
           Navigator.pop(context);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Manual verification failed')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Manual verification failed')),
+          );
         }
       }
     } finally {

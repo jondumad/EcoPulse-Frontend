@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import 'base_provider.dart';
 
-class BadgeProvider with ChangeNotifier {
+class BadgeProvider extends BaseProvider {
   List<BadgeInfo> _allBadges = [];
   bool _isLoading = false;
 
@@ -15,7 +16,7 @@ class BadgeProvider with ChangeNotifier {
 
   Future<void> fetchAllBadges() async {
     _isLoading = true;
-    notifyListeners();
+    safeNotifyListeners();
 
     try {
       final token = await _authService.getToken();
@@ -39,7 +40,7 @@ class BadgeProvider with ChangeNotifier {
       debugPrint('Error fetching badges: $e');
     } finally {
       _isLoading = false;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
+import 'base_provider.dart';
 import '../services/collaboration_service.dart';
 import '../models/user_model.dart';
 import '../models/mission_model.dart';
@@ -66,7 +67,7 @@ class MissionChecklistItem {
   }
 }
 
-class CollaborationProvider with ChangeNotifier {
+class CollaborationProvider extends BaseProvider {
   final CollaborationService _service = CollaborationService();
 
   // Expose socket for direct usage
@@ -107,42 +108,42 @@ class CollaborationProvider with ChangeNotifier {
           );
           _service.joinMission(currentMissionId!);
         }
-        notifyListeners();
+        safeNotifyListeners();
         break;
       case 'connection_error':
         isConnected = false;
         lastError = event['error'];
         debugPrint('CollaborationProvider: Connection error: $lastError');
-        notifyListeners();
+        safeNotifyListeners();
         break;
       case 'presence_update':
         activeUsers = List<Map<String, dynamic>>.from(event['data']);
-        notifyListeners();
+        safeNotifyListeners();
         break;
       case 'new_comment':
         debugPrint('CollaborationProvider: New comment received');
         comments.insert(0, MissionComment.fromJson(event['data']));
-        notifyListeners();
+        safeNotifyListeners();
         break;
       case 'comment_updated':
         final updatedComment = MissionComment.fromJson(event['data']);
         final index = comments.indexWhere((c) => c.id == updatedComment.id);
         if (index != -1) {
           comments[index] = updatedComment;
-          notifyListeners();
+          safeNotifyListeners();
         }
         break;
       case 'checklist_item_added':
         debugPrint('CollaborationProvider: New checklist item received');
         checklist.add(MissionChecklistItem.fromJson(event['data']));
-        notifyListeners();
+        safeNotifyListeners();
         break;
       case 'checklist_item_updated':
         final updatedItem = MissionChecklistItem.fromJson(event['data']);
         final index = checklist.indexWhere((i) => i.id == updatedItem.id);
         if (index != -1) {
           checklist[index] = updatedItem;
-          notifyListeners();
+          safeNotifyListeners();
         }
         break;
       case 'live_update':
@@ -151,7 +152,7 @@ class CollaborationProvider with ChangeNotifier {
         );
         // We can choose to store this in a separate list for a "Live Feed"
         // For now, we'll just notify that something changed.
-        notifyListeners();
+        safeNotifyListeners();
         break;
     }
   }
@@ -211,7 +212,7 @@ class CollaborationProvider with ChangeNotifier {
 
     debugPrint('CollaborationProvider: Joining mission room $missionId');
     _service.joinMission(missionId);
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   void leaveBoard() {

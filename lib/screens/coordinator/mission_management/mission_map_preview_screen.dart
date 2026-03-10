@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/mission_model.dart';
 import '../../volunteer/mission_map.dart';
 import '../../../widgets/eco_pulse_widgets.dart';
+import '../../../widgets/atoms/eco_card.dart';
 import '../../../theme/app_theme.dart';
 
 class MissionMapPreviewScreen extends StatelessWidget {
@@ -21,7 +22,11 @@ class MissionMapPreviewScreen extends StatelessWidget {
           child: CircleAvatar(
             backgroundColor: Colors.white,
             child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: EcoColors.ink),
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 18,
+                color: EcoColors.ink,
+              ),
               onPressed: () => Navigator.pop(context),
             ),
           ),
@@ -34,7 +39,7 @@ class MissionMapPreviewScreen extends StatelessWidget {
             centerOnMission: true,
             missionsOverride: [mission],
           ),
-          
+
           // Floating Mission Info Card
           Positioned(
             bottom: 40,
@@ -66,7 +71,9 @@ class MissionMapPreviewScreen extends StatelessWidget {
                           children: [
                             Text(
                               mission.title,
-                              style: EcoText.bodyBoldMD(context).copyWith(fontSize: 18),
+                              style: EcoText.bodyBoldMD(
+                                context,
+                              ).copyWith(fontSize: 18),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -85,9 +92,47 @@ class MissionMapPreviewScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      _buildMeta(context, Icons.gps_fixed_rounded, 'Coordinates', mission.locationGps ?? 'N/A'),
-                      const Spacer(),
-                      const EcoPulseTag(label: 'MEETING POINT'),
+                      Expanded(
+                        child: _buildMeta(
+                          context,
+                          Icons.gps_fixed_rounded,
+                          'Coordinates',
+                          mission.locationGps ?? 'N/A',
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: EcoColors.forest.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(100),
+                          border: Border.all(
+                            color: EcoColors.forest.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.location_on,
+                              size: 10,
+                              color: EcoColors.forest,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'MEETING POINT',
+                              style: EcoText.monoSM(context).copyWith(
+                                color: EcoColors.forest,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -99,23 +144,33 @@ class MissionMapPreviewScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMeta(BuildContext context, IconData icon, String label, String value) {
+  Widget _buildMeta(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) {
     return Row(
       children: [
         Icon(icon, size: 14, color: EcoColors.ink.withValues(alpha: 0.4)),
         const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label.toUpperCase(),
-              style: EcoText.monoSM(context).copyWith(fontSize: 8, letterSpacing: 0.5),
-            ),
-            Text(
-              value,
-              style: EcoText.bodyBoldMD(context).copyWith(fontSize: 12),
-            ),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: EcoText.monoSM(
+                  context,
+                ).copyWith(fontSize: 8, letterSpacing: 0.5),
+              ),
+              Text(
+                value,
+                style: EcoText.bodyBoldMD(context).copyWith(fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ],
     );

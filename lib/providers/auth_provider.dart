@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import 'base_provider.dart';
 
-class AuthProvider with ChangeNotifier {
+class AuthProvider extends BaseProvider {
   User? _user;
   Map<String, dynamic>? _userStats;
   bool _isLoading = false;
@@ -28,14 +29,14 @@ class AuthProvider with ChangeNotifier {
     final user = await _authService.getProfile();
     if (user != null) {
       _user = user;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
   Future<void> fetchUserStats() async {
     if (_user == null) return;
     _userStats = await _authService.getUserStats();
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   Future<Map<String, dynamic>> login(
@@ -53,7 +54,7 @@ class AuthProvider with ChangeNotifier {
 
       if (result['success']) {
         _user = User.fromJson(result['user']);
-        notifyListeners();
+        safeNotifyListeners();
       }
       return result;
     } finally {
@@ -73,7 +74,7 @@ class AuthProvider with ChangeNotifier {
 
       if (result['success']) {
         _user = User.fromJson(result['user']);
-        notifyListeners();
+        safeNotifyListeners();
       }
       return result;
     } finally {
@@ -84,7 +85,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     await _authService.logout();
     _user = null;
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   Future<Map<String, dynamic>> forgotPassword(String email) async {
@@ -110,6 +111,6 @@ class AuthProvider with ChangeNotifier {
 
   void _setLoading(bool value) {
     _isLoading = value;
-    notifyListeners();
+    safeNotifyListeners();
   }
 }

@@ -6,23 +6,25 @@ import 'package:latlong2/latlong.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import '../utils/heading_utils.dart';
+import 'base_provider.dart';
 
-class LocationProvider with ChangeNotifier {
+class LocationProvider extends BaseProvider {
   LatLng? _currentPosition;
   bool _isLoading = false;
   String? _error;
   StreamSubscription<Position>? _positionSubscription;
-  
+
   // Sensors & Fusion State
   double? _rawMagnetometerHeading;
   double? _headingAccuracy;
-  double _fusedHeading = 0.0;
+  double _baseHeading = 0.0;
+  double _gyroHeading = 0.0;
+  DateTime? _lastGyroTime;
   double _currentSpeed = 0.0;
-  
+
   // Buffers & History
   final ListQueue<Position> _trajectoryBuffer = ListQueue<Position>(5);
-  final AngularBuffer _headingBuffer = AngularBuffer(size: 8);
-  
+
   // Subscriptions
   StreamSubscription<CompassEvent>? _compassSubscription;
   StreamSubscription<GyroscopeEvent>? _gyroSubscription;
@@ -30,7 +32,7 @@ class LocationProvider with ChangeNotifier {
   LatLng? get currentPosition => _currentPosition;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  double get heading => _fusedHeading;
+  double get heading => (_baseHeading + _gyroHeading) % 360;
   double? get headingAccuracy => _headingAccuracy;
   double get speed => _currentSpeed;
 
@@ -52,18 +54,23 @@ class LocationProvider with ChangeNotifier {
 
   void startGyroListening() {
     _gyroSubscription?.cancel();
+    _lastGyroTime = DateTime.now();
     // Gyroscope helps with rapid updates between GPS/Magnetometer samples
     _gyroSubscription = gyroscopeEventStream().listen((event) {
+      final now = DateTime.now();
+      final dt = now.difference(_lastGyroTime!).inMicroseconds / 1000000.0;
+      _lastGyroTime = now;
+
       // event.z is rotational velocity around vertical axis on most phones
-      // This is a simplified "dead reckoning" update
-      double deltaZ = event.z * (180 / 3.14159) * 0.02; // degrees per 20ms sample
-      _fusedHeading = (_fusedHeading - deltaZ + 360) % 360;
-      notifyListeners();
+      double deltaZ = event.z * (180 / 3.14159) * dt;
+      _gyroHeading = (_gyroHeading - deltaZ + 360) % 360;
+      safeNotifyListeners();
     });
   }
 
   void _updateFusion() {
-    double targetHeading = _fusedHeading;
+    double currentHeading = (_baseHeading + _gyroHeading) % 360;
+    double targetHeading = currentHeading;
 
     // RULE 1: GPS Bearing takes priority at speed (> 1.5 m/s)
     if (_currentSpeed > 1.5 && _trajectoryBuffer.length >= 2) {
@@ -73,46 +80,56 @@ class LocationProvider with ChangeNotifier {
         LatLng(prev.latitude, prev.longitude),
         LatLng(last.latitude, last.longitude),
       );
-    } 
+    }
     // RULE 2: Use calibrated Magnetometer when slow or stationary
     else if (_rawMagnetometerHeading != null) {
       // Only trust magnetometer if accuracy is "acceptable" (< 45)
-      if (_headingAccuracy != null && _headingAccuracy! > 0 && _headingAccuracy! < 45) {
+      if (_headingAccuracy != null &&
+          _headingAccuracy! > 0 &&
+          _headingAccuracy! < 45) {
         targetHeading = _rawMagnetometerHeading!;
       } else {
         // If uncalibrated, we blend very slowly with the raw compass
-        targetHeading = HeadingUtils.lerpAngle(_fusedHeading, _rawMagnetometerHeading!, 0.05);
+        targetHeading = HeadingUtils.lerpAngle(
+          currentHeading,
+          _rawMagnetometerHeading!,
+          0.05,
+        );
       }
     }
 
-    _headingBuffer.add(targetHeading);
-    
-    // Low-pass filter for final output
-    _fusedHeading = HeadingUtils.lerpAngle(_fusedHeading, _headingBuffer.average, 0.2);
-    notifyListeners();
+    // Low-pass filter for final output: correct currentHeading towards targetHeading
+    double newHeading = HeadingUtils.lerpAngle(
+      currentHeading,
+      targetHeading,
+      0.2,
+    );
+
+    _baseHeading = (newHeading - _gyroHeading + 360) % 360;
+    safeNotifyListeners();
   }
 
   Future<void> determinePosition() async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    safeNotifyListeners();
 
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         _error = 'Location services are disabled.';
         _isLoading = false;
-        notifyListeners();
+        safeNotifyListeners();
         return;
       }
-  
+
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           _error = 'Location permissions are denied.';
           _isLoading = false;
-          notifyListeners();
+          safeNotifyListeners();
           return;
         }
       }
@@ -120,7 +137,7 @@ class LocationProvider with ChangeNotifier {
       if (permission == LocationPermission.deniedForever) {
         _error = 'Location permissions are permanently denied.';
         _isLoading = false;
-        notifyListeners();
+        safeNotifyListeners();
         return;
       }
 
@@ -142,13 +159,13 @@ class LocationProvider with ChangeNotifier {
       if (_currentPosition == null) _error = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
   void _updateTrajectory(Position position) {
     _currentSpeed = position.speed;
-    
+
     _trajectoryBuffer.addLast(position);
     if (_trajectoryBuffer.length > 5) {
       _trajectoryBuffer.removeFirst();
@@ -158,16 +175,17 @@ class LocationProvider with ChangeNotifier {
 
   void startListening() {
     _positionSubscription?.cancel();
-    _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
-      ),
-    ).listen((Position position) {
-      _currentPosition = LatLng(position.latitude, position.longitude);
-      _updateTrajectory(position);
-      notifyListeners();
-    });
+    _positionSubscription =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10,
+          ),
+        ).listen((Position position) {
+          _currentPosition = LatLng(position.latitude, position.longitude);
+          _updateTrajectory(position);
+          safeNotifyListeners();
+        });
   }
 
   void stopListening() {

@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart' as ll;
 import '../../providers/mission_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
+import '../../widgets/atoms/eco_button.dart';
 import '../../widgets/location_picker_modal.dart';
 import '../../widgets/mission_template_picker.dart';
 import 'components/create_mission_sections.dart';
@@ -28,9 +29,17 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
   final _pointsController = TextEditingController(text: '100');
   final _maxVolunteersController = TextEditingController(text: '10');
   final _emergencyJustificationController = TextEditingController();
-
+  bool _isSaving = false;
   bool _isTemplate = false;
   bool _isEmergency = false;
+  bool _autoPromote = true;
+
+  // Recurrence State
+  String _frequency = 'daily';
+  List<int> _selectedDaysOfWeek = [];
+  int _selectedDayOfMonth = 1;
+  DateTime? _recurrenceEndDate;
+
   DateTime _startDate = DateTime.now().add(const Duration(days: 1));
   TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 11, minute: 0);
@@ -45,7 +54,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
     Future.microtask(() {
       if (!mounted) return;
       Provider.of<MissionProvider>(context, listen: false).fetchCategories();
-      
+
       if (widget.template != null) {
         _applyTemplate(widget.template!);
       }
@@ -134,6 +143,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
       _endTime.hour,
       _endTime.minute,
     );
+    if (_isSaving) return;
 
     if (endDateTime.isBefore(startDateTime)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -146,6 +156,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
     }
 
     final provider = Provider.of<MissionProvider>(context, listen: false);
+    setState(() => _isSaving = true);
     try {
       await provider.createMission({
         'title': _titleController.text,
@@ -161,8 +172,22 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
         'isEmergency': _isEmergency,
         'emergencyJustification': _emergencyJustificationController.text,
         'isTemplate': _isTemplate,
+        'autoPromote': _autoPromote,
         'categoryIds': _selectedCategoryIds,
         'status': publish ? null : 'Draft',
+        if (_isTemplate)
+          'recurringMission': {
+            'frequency': _frequency,
+            'dayOfWeek': _frequency == 'weekly' || _frequency == 'biweekly'
+                ? _selectedDaysOfWeek.isNotEmpty
+                      ? _selectedDaysOfWeek[0]
+                      : null
+                : null,
+            'dayOfMonth': _frequency == 'monthly' ? _selectedDayOfMonth : null,
+            'timeOfDay':
+                '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
+            'endDate': _recurrenceEndDate?.toUtc().toIso8601String(),
+          },
       });
       if (mounted) Navigator.pop(context);
     } catch (e) {
@@ -171,6 +196,8 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
           SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -265,13 +292,42 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
                     onPriorityChanged: (v) => setState(() => _priority = v),
                   ),
                   const SizedBox(height: 16),
+                  RecurrenceSection(
+                    isTemplate: _isTemplate,
+                    frequency: _frequency,
+                    selectedDaysOfWeek: _selectedDaysOfWeek,
+                    selectedDayOfMonth: _selectedDayOfMonth,
+                    endDate: _recurrenceEndDate,
+                    onFrequencyChanged: (v) => setState(() => _frequency = v),
+                    onDaysOfWeekChanged: (v) =>
+                        setState(() => _selectedDaysOfWeek = v),
+                    onDayOfMonthChanged: (v) =>
+                        setState(() => _selectedDayOfMonth = v),
+                    onPickEndDate: () async {
+                      final d = await showDatePicker(
+                        context: context,
+                        initialDate:
+                            _recurrenceEndDate ??
+                            DateTime.now().add(const Duration(days: 30)),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(
+                          const Duration(days: 365 * 2),
+                        ),
+                      );
+                      if (d != null) setState(() => _recurrenceEndDate = d);
+                    },
+                  ),
+                  const SizedBox(height: 16),
                   TogglesSection(
                     isEmergency: _isEmergency,
                     isTemplate: _isTemplate,
+                    autoPromote: _autoPromote,
                     onEmergencyChanged: (v) => setState(() {
                       _isEmergency = v;
                       if (v) _isTemplate = false;
                     }),
+                    onAutoPromoteChanged: (v) =>
+                        setState(() => _autoPromote = v),
                     onTemplateChanged: (v) => setState(() {
                       _isTemplate = v;
                       if (v) {
@@ -301,10 +357,8 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
       duration: const Duration(milliseconds: 800),
       curve: Curves.easeOutBack,
       tween: Tween(begin: const Offset(0, 100), end: Offset.zero),
-      builder: (context, offset, child) => Transform.translate(
-        offset: offset,
-        child: child,
-      ),
+      builder: (context, offset, child) =>
+          Transform.translate(offset: offset, child: child),
       child: Container(
         margin: const EdgeInsets.all(24),
         padding: const EdgeInsets.all(12),
@@ -326,7 +380,8 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
             final double totalWidth = constraints.maxWidth;
             const double gap = 12.0;
             final int buttonCount = _isTemplate ? 3 : 2;
-            final double availableWidth = totalWidth - (gap * (buttonCount - 1));
+            final double availableWidth =
+                totalWidth - (gap * (buttonCount - 1));
 
             double saveWidth = 0;
             double publishWidth = 0;
@@ -363,6 +418,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
                       child: EcoPulseButton(
                         width: saveWidth,
                         label: activeAction == 'save' ? 'Save Template' : '',
+                        isLoading: _isSaving && activeAction == 'save',
                         icon: Icons.save_outlined,
                         backgroundColor: AppTheme.violet,
                         onPressed: () {
@@ -388,9 +444,10 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
                   width: publishWidth,
                   child: EcoPulseButton(
                     width: publishWidth,
-                    label: activeAction == 'publish' 
-                      ? (_isTemplate ? 'Publish & Save' : 'Publish Mission') 
-                      : '',
+                    label: activeAction == 'publish'
+                        ? (_isTemplate ? 'Publish & Save' : 'Publish Mission')
+                        : '',
+                    isLoading: _isSaving && activeAction == 'publish',
                     icon: Icons.rocket_launch_outlined,
                     onPressed: () {
                       if (activeAction == 'publish') {
@@ -437,7 +494,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
       _priority = t.priority;
       _pointsController.text = t.pointsValue.toString();
       _maxVolunteersController.text = (t.maxVolunteers ?? 10).toString();
-      
+
       if (t.categories.isNotEmpty) {
         _selectedCategoryIds.clear();
         _selectedCategoryIds.addAll(t.categories.map((c) => c.id));

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 import '../models/mission_model.dart';
 import '../providers/mission_provider.dart';
@@ -100,7 +101,7 @@ class _MissionTemplatePickerState extends State<MissionTemplatePicker> {
             child: provider.isLoading 
               ? const Center(child: CircularProgressIndicator(color: AppTheme.violet))
               : provider.templates.isEmpty 
-                ? _buildEmptyState()
+                ? EmptyState(icon: Icons.dashboard_customize_outlined, title: 'No templates yet', description: 'Save your first mission as a template to see it here.')
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                     itemCount: provider.templates.length,
@@ -112,34 +113,6 @@ class _MissionTemplatePickerState extends State<MissionTemplatePicker> {
                       },
                     ),
                   ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.dashboard_customize_outlined, size: 64, color: Colors.black.withValues(alpha: 0.1)),
-          const SizedBox(height: 16),
-          Text(
-            'No templates yet',
-            style: EcoText.displayMD(context).copyWith(
-              color: EcoColors.ink.withValues(alpha: 0.4),
-              fontSize: 18,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 48),
-            child: Text(
-              'Save your first mission as a template to see it here.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: EcoColors.ink.withValues(alpha: 0.3), fontSize: 14),
-            ),
           ),
         ],
       ),

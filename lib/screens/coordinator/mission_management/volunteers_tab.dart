@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../../models/mission_model.dart';
 import '../../../../providers/attendance_provider.dart';
@@ -8,6 +9,8 @@ import '../../../../widgets/eco_notify_widgets.dart';
 import '../../../../widgets/eco_pulse_widgets.dart';
 import '../../../../widgets/atoms/eco_button.dart';
 import '../../../../widgets/atoms/eco_card.dart';
+import '../../../../models/evaluation_model.dart';
+import '../evaluation/evaluation_modal.dart';
 
 class VolunteersTab extends StatefulWidget {
   final Mission mission;
@@ -209,60 +212,181 @@ class _VolunteersTabState extends State<VolunteersTab> {
     final status = reg['status'];
     final bool isCheckedIn = status == 'CheckedIn';
     final bool isCompleted = status == 'Completed';
+    
+    // Extract attendance info if available
+    final List<dynamic> attendances = user['attendance'] ?? [];
+    final Map<String, dynamic>? attendance = attendances.isNotEmpty ? attendances.first : null;
+    
+    // Check if already evaluated for this mission
+    final List<dynamic> evaluations = user['evaluationsReceived'] ?? [];
+    final bool isEvaluated = evaluations.isNotEmpty;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
       ),
-      child: ListTile(
+      child: InkWell(
         onTap: () => _showVolunteerActions(user, status),
-        leading: CircleAvatar(
-          backgroundColor: isCheckedIn
-              ? EcoColors.forest.withValues(alpha: 0.1)
-              : (isCompleted
-                    ? Colors.orange.withValues(alpha: 0.1)
-                    : EcoColors.clay),
-          child: Text(
-            user['name'][0].toUpperCase(),
-            style: TextStyle(
-              color: isCheckedIn
-                  ? EcoColors.forest
-                  : (isCompleted ? Colors.orange : EcoColors.ink),
-              fontWeight: FontWeight.bold,
-            ),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: isCheckedIn
+                            ? EcoColors.forest.withValues(alpha: 0.1)
+                            : (isCompleted
+                                  ? Colors.orange.withValues(alpha: 0.1)
+                                  : EcoColors.clay),
+                        child: Text(
+                          user['name'][0].toUpperCase(),
+                          style: TextStyle(
+                            color: isCheckedIn
+                                ? EcoColors.forest
+                                : (isCompleted ? Colors.orange : EcoColors.ink),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      if (isEvaluated)
+                        Positioned(
+                          right: -2,
+                          bottom: -2,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.star_rounded,
+                              size: 14,
+                              color: AppTheme.amber,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(user['name'], style: EcoText.bodyBoldMD(context)),
+                            const SizedBox(width: 8),
+                            if (status == 'Waitlisted')
+                              const EcoPulseTag(label: 'Waitlist', color: EcoColors.violet)
+                            else
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: isCheckedIn ? EcoColors.forest : (isCompleted ? Colors.orange : EcoColors.clay),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  status.toUpperCase(),
+                                  style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: Colors.white),
+                                ),
+                              ),
+                          ],
+                        ),
+                        Text(
+                          user['email'],
+                          style: EcoText.bodySM(context).copyWith(fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${user['totalPoints']} PTS',
+                        style: EcoText.bodyBoldMD(context),
+                      ),
+                      if (isEvaluated)
+                        Text(
+                          'RATED',
+                          style: EcoText.bodyBoldSM(context).copyWith(color: AppTheme.amber),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+              if (attendance != null && (isCheckedIn || isCompleted)) ...[
+                const SizedBox(height: 12),
+                const Divider(height: 1),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildTimeInfo('Check-in', attendance['checkInTime']),
+                    if (attendance['checkOutTime'] != null)
+                      _buildTimeInfo('Check-out', attendance['checkOutTime']),
+                    if (attendance['totalHours'] != null)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'TOTAL TIME',
+                            style: EcoText.bodyBoldSM(context),
+                          ),
+                          Text(
+                            '${attendance['totalHours'].toStringAsFixed(1)}h',
+                            style: EcoText.bodyBoldMD(context).copyWith(color: EcoColors.forest),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ],
+              if (status == 'Waitlisted') ...[
+                const SizedBox(height: 12),
+                EcoPulseButton(
+                  label: 'Promote from Waitlist',
+                  isSmall: true,
+                  onPressed: () => _promoteUser(reg['id']),
+                ),
+              ],
+            ],
           ),
         ),
-        title: Text(user['name'], style: EcoText.bodyBoldMD(context)),
-        subtitle: Text(status),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (status == 'Waitlisted')
-              EcoPulseButton(
-                label: 'Promote',
-                isSmall: true,
-                onPressed: () => _promoteUser(reg['id']),
-              )
-            else ...[
-              IconButton(
-                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 20),
-                onPressed: () =>
-                    _showIndividualNotifySheet(user['id'], user['name']),
-              ),
-              const Icon(Icons.chevron_right, size: 20, color: Colors.black26),
-            ],
-          ],
-        ),
       ),
+    );
+  }
+
+  Widget _buildTimeInfo(String label, String? isoTime) {
+    if (isoTime == null) return const SizedBox.shrink();
+    final time = DateTime.parse(isoTime);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: EcoText.bodyBoldSM(context),
+        ),
+        Text(
+          DateFormat('HH:mm').format(time),
+          style: EcoText.bodyBoldMD(context).copyWith(color: EcoColors.ink),
+        ),
+      ],
     );
   }
 
   Future<void> _showVolunteerActions(dynamic user, String status) async {
     final bool isCheckedIn = status == 'CheckedIn';
     final bool isRegistered = status == 'Registered';
+    final bool isCompleted = status == 'Completed';
 
     showModalBottomSheet(
       context: context,
@@ -306,6 +430,29 @@ class _VolunteersTabState extends State<VolunteersTab> {
                 onTap: () {
                   Navigator.pop(context);
                   _handleManualAction(user['id'], 'complete');
+                },
+              ),
+
+            if (isCompleted || isCheckedIn)
+              ListTile(
+                leading: const Icon(
+                  Icons.star_outline_rounded,
+                  color: AppTheme.amber,
+                ),
+                title: const Text('Evaluate Performance'),
+                subtitle: const Text('Rate volunteer contribution for this mission'),
+                onTap: () {
+                  Navigator.pop(context);
+                  EvaluationModal.show(
+                    context,
+                    VolunteerSummary(
+                      id: user['id'],
+                      name: user['name'],
+                      email: user['email'] ?? '',
+                      totalPoints: user['totalPoints'] ?? 0,
+                    ),
+                    widget.mission.id,
+                  );
                 },
               ),
 

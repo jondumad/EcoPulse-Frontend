@@ -55,6 +55,7 @@ dependencies:
   socket_io_client: ^2.0.2
   flutter_compass: ^0.8.1
   sensors_plus: ^7.0.0
+  fl_chart: ^1.1.1
 
 dev_dependencies:
   flutter_test:

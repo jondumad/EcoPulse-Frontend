@@ -10,6 +10,8 @@ class AppTheme {
   static const Color terracotta = Color(0xFFD66853); // Warnings, tags
   static const Color ink = Color(0xFF1A1C1E); // Text, dark cards
   static const Color amber = Color(0xFFC9893A); // Strength meter, warnings
+  static const Color sun = Color(0xFFFFD23F); // Energy, achievements
+  static const Color sand = Color(0xFFE5E0DA); // Secondary background
 
   // Tints & Opacities
   static const Color forestLight = Color(0xFFD6EFE1);

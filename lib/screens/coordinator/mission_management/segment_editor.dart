@@ -40,11 +40,10 @@ class _SegmentEditorState extends State<SegmentEditor> {
       });
       widget.onSegmentsUpdated();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error refreshing segments: $e'), backgroundColor: AppTheme.terracotta),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error refreshing segments: $e'), backgroundColor: AppTheme.terracotta),
+      );
     } finally {
       // Logic for loading state removed as it was unused
     }
@@ -55,11 +54,10 @@ class _SegmentEditorState extends State<SegmentEditor> {
       await _missionService.deleteMissionSegment(widget.mission.id, segmentId);
       await _refreshSegments();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error deleting segment: $e'), backgroundColor: AppTheme.terracotta),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting segment: $e'), backgroundColor: AppTheme.terracotta),
+      );
     }
   }
 
@@ -77,11 +75,10 @@ class _SegmentEditorState extends State<SegmentEditor> {
       );
       widget.onSegmentsUpdated();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error reordering segments: $e'), backgroundColor: AppTheme.terracotta),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error reordering segments: $e'), backgroundColor: AppTheme.terracotta),
+      );
       _refreshSegments(); // Rollback
     }
   }
@@ -93,6 +90,8 @@ class _SegmentEditorState extends State<SegmentEditor> {
         mission: widget.mission,
         segment: segment,
         onSave: (data) async {
+          final messenger = ScaffoldMessenger.of(context);
+          final navigator = Navigator.of(context);
           try {
             if (segment == null) {
               await _missionService.createMissionSegment(widget.mission.id, data);
@@ -100,11 +99,11 @@ class _SegmentEditorState extends State<SegmentEditor> {
               await _missionService.updateMissionSegment(widget.mission.id, segment.id, data);
             }
             if (!mounted) return;
-            Navigator.pop(context);
+            navigator.pop();
             _refreshSegments();
           } catch (e) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
+            messenger.showSnackBar(
               SnackBar(content: Text('Error saving segment: $e'), backgroundColor: AppTheme.terracotta),
             );
           }

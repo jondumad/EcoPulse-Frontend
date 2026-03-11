@@ -8,6 +8,7 @@ import '../../widgets/atoms/eco_button.dart';
 import '../../widgets/eco_pulse_widgets.dart';
 import '../../screens/volunteer/check_in_screen.dart';
 import '../../screens/coordinator/qr_display.dart';
+import '../../screens/coordinator/evaluation/volunteer_list_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Expandable Action Button
@@ -104,24 +105,47 @@ class MissionDetailActions extends StatelessWidget {
   }
 
   Widget _buildCoordinatorActions(BuildContext context) {
-    return MissionExpandableActionButton(
-      label: isEnded ? 'Mission Ended' : 'Confirm Show QR',
-      icon: isEnded ? Icons.lock : Icons.qr_code,
-      variant: !isEnded ? EcoButtonVariant.primary : EcoButtonVariant.secondary,
-      onConfirm: isEnded
-          ? null
-          : () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => QRDisplayScreen(
-                    missionId: mission.id,
-                    missionTitle: mission.title,
-                    activeUntil: mission.endTime,
-                  ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        MissionExpandableActionButton(
+          label: isEnded ? 'Mission Ended' : 'Confirm Show QR',
+          icon: isEnded ? Icons.lock : Icons.qr_code,
+          variant: !isEnded ? EcoButtonVariant.primary : EcoButtonVariant.secondary,
+          onConfirm: isEnded
+              ? null
+              : () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => QRDisplayScreen(
+                        missionId: mission.id,
+                        missionTitle: mission.title,
+                        activeUntil: mission.endTime,
+                      ),
+                    ),
+                  );
+                },
+        ),
+        const SizedBox(height: 12),
+        EcoPulseButton(
+          label: 'Evaluate Volunteers',
+          icon: Icons.rate_review_outlined,
+          variant: EcoButtonVariant.secondary,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => VolunteerListScreen(
+                  missionId: mission.id,
+                  missionTitle: mission.title,
                 ),
-              );
-            },
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 

@@ -51,7 +51,18 @@ class _MissionHubState extends State<MissionHub> {
             
             // --- Precise Safe Area Refactor: Obstruction Rects ---
             final List<Rect> mapObstructions = [];
-            
+
+            // 0. Navigation Bar Obstruction (Bottom Center)
+            // Matches CustomNavigationBar: margin 16, maxWidth 420
+            final double navWidth = screenWidth > 452 ? 420.0 : screenWidth - 32;
+            final double navLeft = (screenWidth - navWidth) / 2;
+            mapObstructions.add(Rect.fromLTRB(
+              navLeft,
+              screenHeight - 94, // Approx top of nav (24 margin + ~70 height)
+              navLeft + navWidth,
+              screenHeight - 12, // Bottom of nav area
+            ));
+
             // 1. Unified Right-side obstruction (Buttons + Toggle)
             // Both are 52px wide and positioned at right: 20
             final double buttonsRight = screenWidth - 20;

@@ -35,10 +35,6 @@ class _RegisterScreenState extends State<RegisterScreen>
   PasswordStrength _passwordStrength = PasswordStrength.weak;
   Timer? _throttleTimer;
 
-  // ── [PLACEHOLDER] Avatar/photo picker ───────────────────────
-  // TODO: wire up image_picker package
-  // ImageProvider? _avatarImage;
-
   static const _roles = [
     _Role(
       name: 'Volunteer',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/models/mission_model.dart';
 import 'package:provider/provider.dart';
 import 'package:latlong2/latlong.dart' as ll;
+import 'package:intl/intl.dart';
 import '../../providers/mission_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
@@ -48,6 +49,8 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
   ll.LatLng? _selectedLocation;
   String? _expandedAction;
 
+  final List<Map<String, dynamic>> _localSegments = [];
+
   @override
   void initState() {
     super.initState();
@@ -90,6 +93,23 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
         }
       });
     }
+  }
+
+  void _addLocalSegment() {
+    showDialog(
+      context: context,
+      builder: (context) => _LocalSegmentDialog(
+        missionDate: _startDate,
+        missionStartTime: _startTime,
+        missionEndTime: _endTime,
+        onSave: (data) {
+          setState(() {
+            _localSegments.add(data);
+          });
+          Navigator.pop(context);
+        },
+      ),
+    );
   }
 
   Future<void> _submit({bool publish = true}) async {
@@ -175,6 +195,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
         'autoPromote': _autoPromote,
         'categoryIds': _selectedCategoryIds,
         'status': publish ? null : 'Draft',
+        'segments': _localSegments, // Add nested segments
         if (_isTemplate)
           'recurringMission': {
             'frequency': _frequency,
@@ -281,17 +302,6 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
                     onPickEndTime: (t) => setState(() => _endTime = t),
                   ),
                   const SizedBox(height: 16),
-                  SettingsSection(
-                    key: _settingsKey,
-                    pointsController: _pointsController,
-                    maxVolunteersController: _maxVolunteersController,
-                    emergencyJustificationController:
-                        _emergencyJustificationController,
-                    priority: _priority,
-                    isEmergency: _isEmergency,
-                    onPriorityChanged: (v) => setState(() => _priority = v),
-                  ),
-                  const SizedBox(height: 16),
                   RecurrenceSection(
                     isTemplate: _isTemplate,
                     frequency: _frequency,
@@ -318,6 +328,17 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
+                  SettingsSection(
+                    key: _settingsKey,
+                    pointsController: _pointsController,
+                    maxVolunteersController: _maxVolunteersController,
+                    emergencyJustificationController:
+                        _emergencyJustificationController,
+                    priority: _priority,
+                    isEmergency: _isEmergency,
+                    onPriorityChanged: (v) => setState(() => _priority = v),
+                  ),
+                  const SizedBox(height: 16),
                   TogglesSection(
                     isEmergency: _isEmergency,
                     isTemplate: _isTemplate,
@@ -335,6 +356,19 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
                         _expandedAction = 'save';
                       }
                     }),
+                  ),
+                  const SizedBox(height: 24),
+                  _LocalSegmentList(
+                    segments: _localSegments,
+                    onAdd: _addLocalSegment,
+                    onRemove: (idx) => setState(() => _localSegments.removeAt(idx)),
+                    onReorder: (oldIdx, newIdx) {
+                      setState(() {
+                        if (newIdx > oldIdx) newIdx -= 1;
+                        final item = _localSegments.removeAt(oldIdx);
+                        _localSegments.insert(newIdx, item);
+                      });
+                    },
                   ),
                 ],
               ),
@@ -500,5 +534,239 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
         _selectedCategoryIds.addAll(t.categories.map((c) => c.id));
       }
     });
+  }
+}
+
+class _LocalSegmentList extends StatelessWidget {
+  final List<Map<String, dynamic>> segments;
+  final VoidCallback onAdd;
+  final Function(int) onRemove;
+  final Function(int, int) onReorder;
+
+  const _LocalSegmentList({
+    required this.segments,
+    required this.onAdd,
+    required this.onRemove,
+    required this.onReorder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final timeFormat = DateFormat('h:mm a');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Mission Timeline (Segments)', style: EcoText.bodyBoldMD(context).copyWith(fontSize: 18)),
+            EcoPulseButton(
+              label: 'Add',
+              icon: Icons.add,
+              isSmall: true,
+              onPressed: onAdd,
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (segments.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(24),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppTheme.clay.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.ink.withValues(alpha: 0.05)),
+            ),
+            child: const Center(
+              child: Text(
+                'No segments added. Timeline will be empty.',
+                style: TextStyle(fontStyle: FontStyle.italic, color: AppTheme.ink),
+              ),
+            ),
+          )
+        else
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: segments.length,
+            onReorder: onReorder,
+            itemBuilder: (context, index) {
+              final s = segments[index];
+              final start = DateTime.parse(s['startTime']);
+              final end = DateTime.parse(s['endTime']);
+              return Container(
+                key: ValueKey('local_$index'),
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.ink.withValues(alpha: 0.1)),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  leading: const Icon(Icons.drag_indicator, color: AppTheme.ink),
+                  title: Text(s['title'], style: EcoText.bodyBoldSM(context)),
+                  subtitle: Text(
+                    '${timeFormat.format(start)} - ${timeFormat.format(end)}',
+                    style: TextStyle(color: AppTheme.forest, fontSize: 12),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.remove_circle_outline, color: AppTheme.terracotta),
+                    onPressed: () => onRemove(index),
+                  ),
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+}
+
+class _LocalSegmentDialog extends StatefulWidget {
+  final DateTime missionDate;
+  final TimeOfDay missionStartTime;
+  final TimeOfDay missionEndTime;
+  final Function(Map<String, dynamic>) onSave;
+
+  const _LocalSegmentDialog({
+    required this.missionDate,
+    required this.missionStartTime,
+    required this.missionEndTime,
+    required this.onSave,
+  });
+
+  @override
+  State<_LocalSegmentDialog> createState() => _LocalSegmentDialogState();
+}
+
+class _LocalSegmentDialogState extends State<_LocalSegmentDialog> {
+  final _titleController = TextEditingController();
+  late DateTime _start;
+  late DateTime _end;
+
+  @override
+  void initState() {
+    super.initState();
+    _start = DateTime(
+      widget.missionDate.year,
+      widget.missionDate.month,
+      widget.missionDate.day,
+      widget.missionStartTime.hour,
+      widget.missionStartTime.minute,
+    );
+    _end = DateTime(
+      widget.missionDate.year,
+      widget.missionDate.month,
+      widget.missionDate.day,
+      widget.missionEndTime.hour,
+      widget.missionEndTime.minute,
+    );
+  }
+
+  Future<void> _pickTime(bool isStart) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(isStart ? _start : _end),
+    );
+    if (picked != null) {
+      setState(() {
+        final d = DateTime(widget.missionDate.year, widget.missionDate.month, widget.missionDate.day, picked.hour, picked.minute);
+        if (isStart) {
+          _start = d;
+        } else {
+          _end = d;
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final timeFormat = DateFormat('h:mm a');
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Text('Add Timeline Segment', style: EcoText.h3(context)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _titleController,
+            decoration: const InputDecoration(
+              labelText: 'Segment Title',
+              hintText: 'e.g. Introduction',
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => _pickTime(true),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppTheme.ink.withValues(alpha: 0.1)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Starts at', style: TextStyle(fontSize: 10)),
+                        Text(timeFormat.format(_start), style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: InkWell(
+                  onTap: () => _pickTime(false),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppTheme.ink.withValues(alpha: 0.1)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Ends at', style: TextStyle(fontSize: 10)),
+                        Text(timeFormat.format(_end), style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        EcoPulseButton(
+          label: 'Add Segment',
+          isSmall: true,
+          onPressed: () {
+            if (_titleController.text.isNotEmpty) {
+              if (_start.isAfter(_end)) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Start time must be before end time')),
+                );
+                return;
+              }
+              widget.onSave({
+                'title': _titleController.text,
+                'startTime': _start.toIso8601String(),
+                'endTime': _end.toIso8601String(),
+                'order': 0,
+              });
+            }
+          },
+        ),
+      ],
+    );
   }
 }

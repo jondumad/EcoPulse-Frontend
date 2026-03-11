@@ -55,6 +55,14 @@ class EcoText {
     color: EcoColors.ink,
   );
 
+  static TextStyle bodyBoldSM(BuildContext context) => GoogleFonts.inter(
+    fontSize: 12,
+    fontWeight: FontWeight.w700,
+    color: EcoColors.ink,
+  );
+
+  static TextStyle h3(BuildContext context) => displayMD(context);
+
   static TextStyle monoSM(BuildContext context) => GoogleFonts.inter(
     fontSize: 10,
     fontWeight: FontWeight.w700,

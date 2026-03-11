@@ -1,5 +1,37 @@
 import 'recurring_model.dart';
 
+class MissionSegment {
+  final int id;
+  final int missionId;
+  final String title;
+  final String? description;
+  final DateTime startTime;
+  final DateTime endTime;
+  final int order;
+
+  MissionSegment({
+    required this.id,
+    required this.missionId,
+    required this.title,
+    this.description,
+    required this.startTime,
+    required this.endTime,
+    required this.order,
+  });
+
+  factory MissionSegment.fromJson(Map<String, dynamic> json) {
+    return MissionSegment(
+      id: json['id'],
+      missionId: json['missionId'],
+      title: json['title'],
+      description: json['description'],
+      startTime: DateTime.parse(json['startTime']).toLocal(),
+      endTime: DateTime.parse(json['endTime']).toLocal(),
+      order: json['order'] ?? 0,
+    );
+  }
+}
+
 class Mission {
   final int id;
   final String title;
@@ -22,6 +54,7 @@ class Mission {
   final DateTime? actualStartTime;
   final DateTime? actualEndTime;
   final List<Category> categories;
+  final List<MissionSegment> segments;
   final bool isRegistered; // Helper for UI state
   final String?
   registrationStatus; // 'Registered', 'CheckedIn', 'Completed', 'Cancelled'
@@ -51,6 +84,7 @@ class Mission {
     this.actualStartTime,
     this.actualEndTime,
     required this.categories,
+    required this.segments,
     this.isRegistered = false,
     this.registrationStatus,
     this.registeredAt,
@@ -115,6 +149,10 @@ class Mission {
       categories:
           (json['missionCategories'] as List?)
               ?.map((mc) => Category.fromJson(mc['category']))
+              .toList() ??
+          [],
+      segments: (json['segments'] as List?)
+              ?.map((s) => MissionSegment.fromJson(s))
               .toList() ??
           [],
       isRegistered: regStatus != null && regStatus != 'Cancelled',

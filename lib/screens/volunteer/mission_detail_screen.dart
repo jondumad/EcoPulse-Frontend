@@ -426,6 +426,10 @@ class _MissionCard extends StatelessWidget {
               // Info Items
               _InfoSection(mission: mission),
 
+              // Timeline (Segments)
+              if (mission.segments.isNotEmpty)
+                _TimelineSection(segments: mission.segments),
+
               // ── Extracted: Map Quick View ───────────────────────────
               MissionDetailMap(gps: mission.locationGps),
 
@@ -736,6 +740,197 @@ class _ExpandableDescription extends StatelessWidget {
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Timeline Section (Segments)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _TimelineSection extends StatelessWidget {
+  final List<MissionSegment> segments;
+
+  const _TimelineSection({required this.segments});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.clay,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.timeline_outlined,
+                  color: AppTheme.forest,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Mission Timeline',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.ink,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: segments.length,
+            padding: EdgeInsets.zero,
+            itemBuilder: (context, index) {
+              return _TimelineItem(
+                segment: segments[index],
+                isLast: index == segments.length - 1,
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimelineItem extends StatelessWidget {
+  final MissionSegment segment;
+  final bool isLast;
+
+  const _TimelineItem({required this.segment, required this.isLast});
+
+  @override
+  Widget build(BuildContext context) {
+    final timeFormat = DateFormat('h:mm a');
+    final now = DateTime.now();
+    final bool isLive = now.isAfter(segment.startTime) && now.isBefore(segment.endTime);
+    final bool isPast = now.isAfter(segment.endTime);
+
+    return IntrinsicHeight(
+      child: Row(
+        children: [
+          // Timeline indicator
+          Column(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 500),
+                width: isLive ? 16 : 12,
+                height: isLive ? 16 : 12,
+                decoration: BoxDecoration(
+                  color: isLive 
+                    ? AppTheme.forest 
+                    : (isPast ? AppTheme.forest.withValues(alpha: 0.4) : AppTheme.clay),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isLive ? Colors.white : AppTheme.forest.withValues(alpha: 0.2), 
+                    width: isLive ? 3 : 2
+                  ),
+                  boxShadow: isLive ? [
+                    BoxShadow(
+                      color: AppTheme.forest.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      spreadRadius: 2
+                    )
+                  ] : null,
+                ),
+                child: isLive ? const Center(
+                  child: Icon(Icons.play_arrow, size: 8, color: Colors.white),
+                ) : null,
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                    width: 2,
+                    color: isPast 
+                      ? AppTheme.forest.withValues(alpha: 0.4) 
+                      : AppTheme.forest.withValues(alpha: 0.1),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          // Content
+          Expanded(
+            child: Opacity(
+              opacity: isPast ? 0.5 : 1.0,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            segment.title,
+                            style: TextStyle(
+                              fontWeight: isLive ? FontWeight.w900 : FontWeight.bold,
+                              fontSize: 15,
+                              color: isLive ? AppTheme.forest : AppTheme.ink,
+                            ),
+                          ),
+                          if (isLive) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppTheme.forest,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'LIVE',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      Text(
+                        '${timeFormat.format(segment.startTime)} - ${timeFormat.format(segment.endTime)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isLive ? FontWeight.w800 : FontWeight.w600,
+                          color: isLive ? AppTheme.forest : AppTheme.forest.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (segment.description != null &&
+                      segment.description!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      segment.description!,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.ink.withValues(alpha: 0.6),
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

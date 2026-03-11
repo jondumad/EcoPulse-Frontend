@@ -4,11 +4,13 @@ import 'package:latlong2/latlong.dart' as ll;
 import 'package:intl/intl.dart';
 import '../../models/mission_model.dart';
 import '../../providers/mission_provider.dart';
+import '../../services/mission_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
 import '../../widgets/atoms/eco_button.dart';
 import '../../widgets/location_picker_modal.dart';
 import 'components/create_mission_sections.dart';
+import 'mission_management/segment_editor.dart';
 
 class EditMissionScreen extends StatefulWidget {
   final Mission mission;
@@ -50,11 +52,13 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
   late List<int> _selectedCategoryIds;
   ll.LatLng? _selectedLocation;
   String? _expandedAction;
+  late Mission _currentMission;
 
   @override
   void initState() {
     super.initState();
-    final m = widget.mission;
+    _currentMission = widget.mission;
+    final m = _currentMission;
     _titleController = TextEditingController(text: m.title);
     _descriptionController = TextEditingController(text: m.description);
     _locationNameController = TextEditingController(text: m.locationName);
@@ -99,6 +103,17 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
       if (!mounted) return;
       Provider.of<MissionProvider>(context, listen: false).fetchCategories();
     });
+  }
+
+  Future<void> _refreshMission() async {
+    try {
+      final updated = await MissionService().getMissionById(_currentMission.id);
+      setState(() {
+        _currentMission = updated;
+      });
+    } catch (e) {
+      debugPrint('Error refreshing mission: $e');
+    }
   }
 
   @override
@@ -174,7 +189,7 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
         'locationName': _locationNameController.text,
         'locationGps': _selectedLocation != null
             ? '${_selectedLocation!.latitude},${_selectedLocation!.longitude}'
-            : widget.mission.locationGps,
+            : _currentMission.locationGps,
         'startTime': startDateTime.toUtc().toIso8601String(),
         'endTime': endDateTime.toUtc().toIso8601String(),
         'pointsValue': int.tryParse(_pointsController.text) ?? 50,
@@ -203,7 +218,7 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
       await Provider.of<MissionProvider>(
         context,
         listen: false,
-      ).updateMission(widget.mission.id, updateData);
+      ).updateMission(_currentMission.id, updateData);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -352,6 +367,11 @@ class _EditMissionScreenState extends State<EditMissionScreen> {
                         setState(() => _autoPromote = v),
                     // Template status is locked during editing
                     onTemplateChanged: null,
+                  ),
+                  const SizedBox(height: 24),
+                  SegmentEditor(
+                    mission: _currentMission,
+                    onSegmentsUpdated: _refreshMission,
                   ),
                 ],
               ),

@@ -552,4 +552,99 @@ class MissionService {
       throw Exception(errorData['error'] ?? 'Failed to set priority');
     }
   }
+
+  // --- MISSION SEGMENTS ---
+
+  Future<List<MissionSegment>> getMissionSegments(int missionId) async {
+    final token = await _authService.getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/missions/$missionId/segments'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => MissionSegment.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load mission segments');
+    }
+  }
+
+  Future<MissionSegment> createMissionSegment(int missionId, Map<String, dynamic> segmentData) async {
+    final token = await _authService.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/missions/$missionId/segments'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(segmentData),
+    );
+
+    if (response.statusCode == 201) {
+      return MissionSegment.fromJson(jsonDecode(response.body));
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Failed to create segment');
+    }
+  }
+
+  Future<MissionSegment> updateMissionSegment(int missionId, int segmentId, Map<String, dynamic> segmentData) async {
+    final token = await _authService.getToken();
+    final response = await http.put(
+      Uri.parse('$baseUrl/missions/$missionId/segments/$segmentId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(segmentData),
+    );
+
+    if (response.statusCode == 200) {
+      return MissionSegment.fromJson(jsonDecode(response.body));
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Failed to update segment');
+    }
+  }
+
+  Future<bool> deleteMissionSegment(int missionId, int segmentId) async {
+    final token = await _authService.getToken();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/missions/$missionId/segments/$segmentId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Failed to delete segment');
+    }
+  }
+
+  Future<bool> reorderMissionSegments(int missionId, List<int> segmentIds) async {
+    final token = await _authService.getToken();
+    final response = await http.put(
+      Uri.parse('$baseUrl/missions/$missionId/segments/reorder'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'segmentIds': segmentIds}),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Failed to reorder segments');
+    }
+  }
 }

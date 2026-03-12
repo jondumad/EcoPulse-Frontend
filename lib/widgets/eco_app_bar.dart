@@ -48,7 +48,7 @@ class EcoAppBar extends StatelessWidget implements PreferredSizeWidget {
       decoration: isTransparent
           ? null
           : const BoxDecoration(
-              color: EcoColors.clay,
+              color: AppTheme.clay,
               border: Border(
                 bottom: BorderSide(color: Color.fromRGBO(0, 0, 0, 0.06), width: 1),
               ),
@@ -79,7 +79,7 @@ class EcoAppBar extends StatelessWidget implements PreferredSizeWidget {
                             style: GoogleFonts.fraunces(
                               fontSize: 26,
                               fontWeight: FontWeight.w900,
-                              color: EcoColors.ink,
+                              color: AppTheme.ink,
                               letterSpacing: -1.0,
                               height: 1.1,
                             ),
@@ -152,7 +152,7 @@ class EcoAppBarAction extends StatelessWidget {
               child: Icon(
                 icon,
                 size: iconSize,
-                color: EcoColors.ink,
+                color: AppTheme.ink,
               ),
             ),
           ),

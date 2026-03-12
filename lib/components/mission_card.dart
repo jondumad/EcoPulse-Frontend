@@ -290,10 +290,10 @@ class MissionCard extends StatelessWidget {
                               : (mission.registrationStatus ?? 'Registered'))),
               isRotated: true,
               color: mission.registrationStatus == 'Waitlisted'
-                  ? EcoColors.violet
+                  ? AppTheme.violet
                   : ((mission.registrationStatus == 'Rejected' || isCancelled)
-                        ? EcoColors.terracotta
-                        : EcoColors.forest),
+                        ? AppTheme.terracotta
+                        : AppTheme.forest),
             ),
           ),
         if (isEnded && !isCancelled)
@@ -550,7 +550,7 @@ class CoordinatedActionButtonsState extends State<CoordinatedActionButtons> {
                     width: double.infinity, // Fill the animated container
                     label: isCancelExpanded ? 'Cancel' : '',
                     icon: Icons.close,
-                    backgroundColor: EcoColors.terracotta,
+                    backgroundColor: AppTheme.terracotta,
                     foregroundColor: Colors.white,
                     isLoading: provider.isLoading,
                     variant: EcoButtonVariant.secondary,

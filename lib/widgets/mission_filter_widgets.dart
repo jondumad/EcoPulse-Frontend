@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'eco_pulse_widgets.dart';
+import 'package:frontend/theme/app_theme.dart';
 
 /// A reusable search bar component for mission lists.
 class MissionSearchBar extends StatefulWidget {
@@ -89,7 +90,7 @@ class _MissionSearchBarState extends State<MissionSearchBar> {
             borderRadius: BorderRadius.circular(30),
             borderSide: BorderSide.none,
           ),
-          hintStyle: TextStyle(color: EcoColors.ink.withValues(alpha: 0.4)),
+          hintStyle: TextStyle(color: AppTheme.ink.withValues(alpha: 0.4)),
         ),
       ),
     );
@@ -149,7 +150,7 @@ class EcoFilterChip extends StatelessWidget {
             fontWeight: FontWeight.w600,
             color: isSelected
                 ? Colors.white
-                : EcoColors.ink.withValues(alpha: 0.8),
+                : AppTheme.ink.withValues(alpha: 0.8),
           ),
         ),
       ),
@@ -178,7 +179,7 @@ class MissionSortButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.sort, color: EcoColors.ink),
+      icon: const Icon(Icons.sort, color: AppTheme.ink),
       tooltip: 'Sort by',
       onSelected: onSelected,
       itemBuilder: (context) => sortOptions
@@ -190,7 +191,7 @@ class MissionSortButton extends StatelessWidget {
                   Text(option),
                   if (currentSort == option) ...[
                     const SizedBox(width: 8),
-                    const Icon(Icons.check, size: 16, color: EcoColors.forest),
+                    const Icon(Icons.check, size: 16, color: AppTheme.forest),
                   ],
                 ],
               ),

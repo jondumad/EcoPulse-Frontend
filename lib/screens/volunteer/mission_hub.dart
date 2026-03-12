@@ -49,30 +49,24 @@ class _MissionHubState extends State<MissionHub> {
           builder: (context, attendanceProvider, _) {
             final hasActiveMission = attendanceProvider.currentAttendance != null;
             
-            // --- Precise Safe Area Refactor: Obstruction Rects ---
             final List<Rect> mapObstructions = [];
 
-            // 0. Navigation Bar Obstruction (Bottom Center)
-            // Matches CustomNavigationBar: margin 16, maxWidth 420
             final double navWidth = screenWidth > 452 ? 420.0 : screenWidth - 32;
             final double navLeft = (screenWidth - navWidth) / 2;
             mapObstructions.add(Rect.fromLTRB(
               navLeft,
-              screenHeight - 94, // Approx top of nav (24 margin + ~70 height)
+              screenHeight - 94, 
               navLeft + navWidth,
-              screenHeight - 12, // Bottom of nav area
+              screenHeight - 12, 
             ));
 
             // 1. Unified Right-side obstruction (Buttons + Toggle)
-            // Both are 52px wide and positioned at right: 20
             final double buttonsRight = screenWidth - 20;
             final double buttonsLeft = buttonsRight - 52;
             
             final double toggleBottom = hasActiveMission ? 180.0 : 100.0;
             final double fabBottom = hasActiveMission ? 280.0 : 200.0;
 
-            // Group them into one single vertical rectangle to prevent indicators 
-            // from trying to squeeze into the tiny gap between them.
             mapObstructions.add(Rect.fromLTRB(
               buttonsLeft, 
               screenHeight - fabBottom - 112, // Top of FABs
@@ -83,10 +77,9 @@ class _MissionHubState extends State<MissionHub> {
             // 2. Selected Mission Card (if any)
             if (_selectedMission != null && _showMap) {
               final double cardBottom = hasActiveMission ? 180.0 : 100.0;
-              // Card is from left: 20 to right: 90
               mapObstructions.add(Rect.fromLTRB(
                 20, 
-                screenHeight - cardBottom - 100, // Approx height
+                screenHeight - cardBottom - 100, 
                 screenWidth - 90, 
                 screenHeight - cardBottom
               ));
@@ -109,8 +102,8 @@ class _MissionHubState extends State<MissionHub> {
                             selectedMission: _selectedMission,
                             onMissionSelected: _onMissionSelected,
                             showRegisteredOnly: _showRegisteredOnly,
-                            bottomPadding: 40.0, // Default minimal padding
-                            rightPadding: 45.0,  // Default minimal padding
+                            bottomPadding: 40.0, 
+                            rightPadding: 45.0,  
                             obstructions: mapObstructions,
                           ),
                         ),
@@ -132,8 +125,8 @@ class _MissionHubState extends State<MissionHub> {
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 400),
                   curve: Curves.easeOutCubic,
-                  right: _showMap ? 20 : -80, // Slide in/out from right
-                  bottom: hasActiveMission ? 280 : 200, // Above the toggle
+                  right: _showMap ? 20 : -80, 
+                  bottom: hasActiveMission ? 280 : 200, 
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(4),
@@ -158,7 +151,7 @@ class _MissionHubState extends State<MissionHub> {
                           height: 44,
                           decoration: BoxDecoration(
                             color: _isLocating
-                                ? EcoColors.forest
+                                ? AppTheme.forest
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -198,7 +191,7 @@ class _MissionHubState extends State<MissionHub> {
                                           key: const ValueKey('icon'),
                                           Icons.my_location,
                                           size: 20,
-                                          color: EcoColors.forest.withValues(
+                                          color: AppTheme.forest.withValues(
                                             alpha: 0.7,
                                           ),
                                         ),
@@ -216,7 +209,7 @@ class _MissionHubState extends State<MissionHub> {
                           height: 44,
                           decoration: BoxDecoration(
                             color: _showRegisteredOnly
-                                ? EcoColors.forest
+                                ? AppTheme.forest
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -249,7 +242,7 @@ class _MissionHubState extends State<MissionHub> {
                                     size: 20,
                                     color: _showRegisteredOnly
                                         ? Colors.white
-                                        : EcoColors.forest.withValues(alpha: 0.7),
+                                        : AppTheme.forest.withValues(alpha: 0.7),
                                   ),
                                 ),
                               ),
@@ -301,7 +294,7 @@ class _MissionHubState extends State<MissionHub> {
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: EcoColors.forest.withValues(alpha: 0.1),
+                                color: AppTheme.forest.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Center(
@@ -335,7 +328,7 @@ class _MissionHubState extends State<MissionHub> {
                                       Icon(
                                         Icons.location_on_outlined,
                                         size: 10,
-                                        color: EcoColors.ink.withValues(alpha: 0.4),
+                                        color: AppTheme.ink.withValues(alpha: 0.4),
                                       ),
                                       const SizedBox(width: 2),
                                       Expanded(
@@ -343,7 +336,7 @@ class _MissionHubState extends State<MissionHub> {
                                           _selectedMission!.locationName,
                                           style: EcoText.bodySM(context).copyWith(
                                             fontSize: 10,
-                                            color: EcoColors.ink.withValues(
+                                            color: AppTheme.ink.withValues(
                                               alpha: 0.6,
                                             ),
                                           ),
@@ -364,7 +357,7 @@ class _MissionHubState extends State<MissionHub> {
                                           vertical: 1.5,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: EcoColors.forest,
+                                          color: AppTheme.forest,
                                           borderRadius: BorderRadius.circular(4),
                                         ),
                                         child: Text(
@@ -381,7 +374,7 @@ class _MissionHubState extends State<MissionHub> {
                                       Icon(
                                         Icons.people_outline_rounded,
                                         size: 11,
-                                        color: EcoColors.ink.withValues(alpha: 0.4),
+                                        color: AppTheme.ink.withValues(alpha: 0.4),
                                       ),
                                       const SizedBox(width: 2),
                                       Text(
@@ -396,7 +389,7 @@ class _MissionHubState extends State<MissionHub> {
                                       Icon(
                                         Icons.calendar_today_outlined,
                                         size: 10,
-                                        color: EcoColors.ink.withValues(alpha: 0.4),
+                                        color: AppTheme.ink.withValues(alpha: 0.4),
                                       ),
                                       const SizedBox(width: 2),
                                       Text(
@@ -427,7 +420,7 @@ class _MissionHubState extends State<MissionHub> {
                                 Icon(
                                   Icons.arrow_forward_ios_rounded,
                                   size: 12,
-                                  color: EcoColors.ink.withValues(alpha: 0.2),
+                                  color: AppTheme.ink.withValues(alpha: 0.2),
                                 ),
                               ],
                             ),

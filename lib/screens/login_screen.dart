@@ -1,15 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/eco_pulse_widgets.dart';
 import '../widgets/auth_error_message.dart';
 import '../utils/validation_utils.dart';
 import '../theme/app_theme.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
 // LOGIN SCREEN
-// ─────────────────────────────────────────────────────────────────────────────
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,30 +19,23 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
-  // ── Controllers ────────────────────────────────────────────
+  // Controllers 
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
 
-  // ── State ───────────────────────────────────────────────────
+  // State 
   bool _rememberMe = false;
   bool _obscurePassword = true;
   bool _isThrottled = false;
   String? _errorMessage;
   Timer? _throttleTimer;
-
-  // ── [PLACEHOLDER] Biometric auth flag ──────────────────────
-  // TODO: wire up local_auth package; check availability on init
-  final bool _biometricAvailable = true;
-
-  // ── [PLACEHOLDER] Social login loading states ───────────────
-  // TODO: wire up google_sign_in / Sign in with Apple packages
+  // Social login loading state 
   bool _googleLoading = false;
-  bool _appleLoading = false;
 
-  // ── Entrance animation ──────────────────────────────────────
+  // Entrance animation 
   late final AnimationController _animCtrl = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 520),
@@ -74,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  // ── Submit ──────────────────────────────────────────────────
+  // Submit 
   void _throttledSubmit() {
     if (_isThrottled) return;
     _isThrottled = true;
@@ -117,46 +109,62 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  // ── [PLACEHOLDER] Biometric login ──────────────────────────
-  // TODO: replace body with local_auth authenticate() call
-  Future<void> _biometricLogin() async {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(_buildSnackBar('Biometric login coming soon.'));
-  }
-
-  // ── [PLACEHOLDER] Google login ──────────────────────────────
+  // Google login
   Future<void> _googleLogin() async {
-    setState(() => _googleLoading = true);
-    await Future.delayed(
-      const Duration(milliseconds: 800),
-    ); // remove when wired
-    if (mounted) setState(() => _googleLoading = false);
-    // TODO: GoogleSignIn().signIn() → send token to backend
+    setState(() {
+      _googleLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+      final account = await googleSignIn.signIn();
+
+      if (account == null) {
+        // User cancelled the sign-in flow
+        if (mounted) setState(() => _googleLoading = false);
+        return;
+      }
+
+      final googleAuth = await account.authentication;
+      final idToken = googleAuth.idToken ?? googleAuth.accessToken ?? '';
+
+      if (idToken.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _googleLoading = false;
+            _errorMessage = 'Failed to obtain Google credentials.';
+          });
+        }
+        return;
+      }
+
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final result = await auth.socialLogin(
+        provider: 'google',
+        idToken: idToken,
+        email: account.email,
+        name: account.displayName,
+        avatarUrl: account.photoUrl,
+      );
+
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      } else {
+        setState(() => _errorMessage = result['message']);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(
+          () => _errorMessage = 'Google sign-in failed. Please try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _googleLoading = false);
+    }
   }
-
-  // ── [PLACEHOLDER] Apple login ───────────────────────────────
-  Future<void> _appleLogin() async {
-    setState(() => _appleLoading = true);
-    await Future.delayed(
-      const Duration(milliseconds: 800),
-    ); // remove when wired
-    if (mounted) setState(() => _appleLoading = false);
-    // TODO: SignInWithApple.getAppleIDCredential() → send to backend
-  }
-
-  // ── Helpers ─────────────────────────────────────────────────
-  SnackBar _buildSnackBar(String message) => SnackBar(
-    content: Text(message, style: const TextStyle(fontFamily: 'Inter')),
-    backgroundColor: AppTheme.forest,
-    behavior: SnackBarBehavior.floating,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    margin: const EdgeInsets.all(16),
-  );
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // BUILD
-  // ─────────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -185,11 +193,11 @@ class _LoginScreenState extends State<LoginScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // ── Wordmark ────────────────────────────────────
+                      // Wordmark 
                       _Wordmark(),
                       const SizedBox(height: 36),
 
-                      // ── Main card ───────────────────────────────────
+                      // Main card 
                       _LoginCard(
                         formKey: _formKey,
                         emailController: _emailController,
@@ -213,51 +221,26 @@ class _LoginScreenState extends State<LoginScreen>
 
                       const SizedBox(height: 20),
 
-                      // ── [PLACEHOLDER] Social divider + buttons ──────
+                      // Social divider + Google button 
                       _SocialDivider(),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _SocialButton(
-                              label: 'Google',
-                              isLoading: _googleLoading,
-                              icon: _GoogleIcon(),
-                              onTap: _googleLogin,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _SocialButton(
-                              label: 'Apple',
-                              isLoading: _appleLoading,
-                              icon: const Icon(
-                                Icons.apple,
-                                size: 18,
-                                color: AppTheme.ink,
-                              ),
-                              onTap: _appleLogin,
-                            ),
-                          ),
-                        ],
+                      _SocialButton(
+                        label: 'Continue with Google',
+                        isLoading: _googleLoading,
+                        icon: _GoogleIcon(),
+                        onTap: _googleLogin,
                       ),
-
-                      // ── [PLACEHOLDER] Biometric shortcut ────────────
-                      if (_biometricAvailable) ...[
-                        const SizedBox(height: 16),
-                        _BiometricButton(onTap: _biometricLogin),
-                      ],
 
                       const SizedBox(height: 28),
 
-                      // ── Register CTA ────────────────────────────────
+                      // Register CTA 
                       _RegisterCta(
                         onTap: () => Navigator.pushNamed(context, '/register'),
                       ),
 
                       const SizedBox(height: 16),
 
-                      // ── [PLACEHOLDER] Terms note ─────────────────────
+                      // [PLACEHOLDER] Terms note 
                       // TODO: link to actual Terms & Privacy pages
                       _TermsNote(
                         onTermsTap: () {
@@ -724,43 +707,6 @@ class _SocialButton extends StatelessWidget {
                     ),
                   ],
                 ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BiometricButton extends StatelessWidget {
-  const _BiometricButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 46,
-        decoration: BoxDecoration(
-          color: AppTheme.forestLight,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.forest.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.fingerprint_rounded, size: 20, color: AppTheme.forest),
-            SizedBox(width: 8),
-            Text(
-              'Sign in with biometrics',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.forest,
-              ),
-            ),
-          ],
         ),
       ),
     );

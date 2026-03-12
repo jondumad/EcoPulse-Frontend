@@ -56,6 +56,8 @@ dependencies:
   flutter_compass: ^0.8.1
   sensors_plus: ^7.0.0
   fl_chart: ^1.1.1
+  google_sign_in: ^6.2.2
+  uuid: ^4.3.3
 
 dev_dependencies:
   flutter_test:

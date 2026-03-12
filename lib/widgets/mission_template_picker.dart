@@ -42,7 +42,7 @@ class _MissionTemplatePickerState extends State<MissionTemplatePicker> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.75,
       decoration: const BoxDecoration(
-        color: EcoColors.clay,
+        color: AppTheme.clay,
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
@@ -83,14 +83,14 @@ class _MissionTemplatePickerState extends State<MissionTemplatePicker> {
                       ),
                       Text(
                         'Quick-start with a saved setup',
-                        style: TextStyle(color: EcoColors.ink.withValues(alpha: 0.6), fontSize: 13),
+                        style: TextStyle(color: AppTheme.ink.withValues(alpha: 0.6), fontSize: 13),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, color: EcoColors.ink),
+                  icon: const Icon(Icons.close, color: AppTheme.ink),
                   style: IconButton.styleFrom(backgroundColor: Colors.white, padding: const EdgeInsets.all(8)),
                 ),
               ],
@@ -157,7 +157,7 @@ class _TemplateCard extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: EcoColors.clay,
+                    color: AppTheme.clay,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Center(
@@ -174,7 +174,7 @@ class _TemplateCard extends StatelessWidget {
                     children: [
                       Text(
                         template.title,
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: EcoColors.ink),
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppTheme.ink),
                       ),
                       const SizedBox(height: 4),
                       Row(

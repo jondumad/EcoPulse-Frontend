@@ -13,6 +13,8 @@ class MissionProvider extends BaseProvider {
   bool _isLoading = false;
   String? _error;
   LatLng? _userLocation;
+  final Set<int> _selectedMissions = {};
+  bool _isSelectionMode = false;
 
   List<Mission> get missions => _missions;
   List<Mission> get templates => _templates;
@@ -20,6 +22,8 @@ class MissionProvider extends BaseProvider {
   bool get isLoading => _isLoading;
   String? get error => _error;
   LatLng? get userLocation => _userLocation;
+  Set<int> get selectedMissions => _selectedMissions;
+  bool get isSelectionMode => _isSelectionMode;
 
   Future<void> fetchTemplates() async {
     _isLoading = true;
@@ -222,6 +226,31 @@ class MissionProvider extends BaseProvider {
 
   String get currentSort => _sortOption;
 
+  void toggleMissionSelection(int missionId) {
+    if (_selectedMissions.contains(missionId)) {
+      _selectedMissions.remove(missionId);
+      if (_selectedMissions.isEmpty) {
+        _isSelectionMode = false;
+      }
+    } else {
+      _selectedMissions.add(missionId);
+      _isSelectionMode = true;
+    }
+    safeNotifyListeners();
+  }
+
+  void enterSelectionMode(int missionId) {
+    _isSelectionMode = true;
+    _selectedMissions.add(missionId);
+    safeNotifyListeners();
+  }
+
+  void clearSelection() {
+    _selectedMissions.clear();
+    _isSelectionMode = false;
+    safeNotifyListeners();
+  }
+
   Future<void> fetchMissions({
     String? category,
     String? search,
@@ -272,15 +301,19 @@ class MissionProvider extends BaseProvider {
 
   Future<void> toggleRegistration(
     int missionId,
-    bool currentlyRegistered,
-  ) async {
+    bool currentlyRegistered, {
+    String? reason,
+  }) async {
     _error = null;
     safeNotifyListeners();
 
     try {
       bool success;
       if (currentlyRegistered) {
-        success = await _missionService.cancelRegistration(missionId);
+        success = await _missionService.cancelRegistration(
+          missionId,
+          reason: reason,
+        );
       } else {
         success = await _missionService.registerForMission(missionId);
       }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../eco_pulse_widgets.dart'; // To use EcoColors
+import 'package:frontend/theme/app_theme.dart';
 
 enum CardVariant { paper, hero }
 
@@ -22,7 +22,7 @@ class EcoPulseCard extends StatelessWidget {
     if (variant == CardVariant.hero) {
       return Container(
         decoration: BoxDecoration(
-          color: EcoColors.ink,
+          color: AppTheme.ink,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(

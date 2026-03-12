@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../eco_pulse_widgets.dart'; // To use EcoColors
+import 'package:frontend/theme/app_theme.dart';
 
 class EcoTextField extends StatelessWidget {
   final TextEditingController controller;
@@ -36,7 +36,7 @@ class EcoTextField extends StatelessWidget {
             fontFamily: 'Inter',
             fontSize: 11,
             fontWeight: FontWeight.w800,
-            color: EcoColors.forest,
+            color: AppTheme.forest,
             letterSpacing: 0.5,
           ),
         ),
@@ -51,12 +51,12 @@ class EcoTextField extends StatelessWidget {
           style: const TextStyle(
             fontFamily: 'Inter',
             fontSize: 16,
-            color: EcoColors.ink,
+            color: AppTheme.ink,
           ),
           decoration: InputDecoration(
             hintText: hint,
             errorText: errorText,
-            hintStyle: TextStyle(color: EcoColors.ink.withValues(alpha: 0.3)),
+            hintStyle: TextStyle(color: AppTheme.ink.withValues(alpha: 0.3)),
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.all(16),
@@ -70,7 +70,7 @@ class EcoTextField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: EcoColors.forest, width: 2),
+              borderSide: const BorderSide(color: AppTheme.forest, width: 2),
             ),
           ),
         ),

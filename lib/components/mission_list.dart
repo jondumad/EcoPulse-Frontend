@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/theme/app_theme.dart';
 import 'package:frontend/widgets/empty_state.dart';
 import '../models/mission_model.dart';
 import '../screens/volunteer/mission_detail_screen.dart';
@@ -95,7 +96,7 @@ class _MissionListState extends State<MissionList> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: EcoColors.ink.withValues(alpha: 0.1)),
+        border: Border.all(color: AppTheme.ink.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -111,12 +112,12 @@ class _MissionListState extends State<MissionList> {
         decoration: InputDecoration(
           hintText: 'Search missions, locations, or categories...',
           hintStyle: TextStyle(
-            color: EcoColors.ink.withValues(alpha: 0.3),
+            color: AppTheme.ink.withValues(alpha: 0.3),
             fontSize: 14,
           ),
           prefixIcon: Icon(
             Icons.search_rounded,
-            color: EcoColors.ink.withValues(alpha: 0.4),
+            color: AppTheme.ink.withValues(alpha: 0.4),
             size: 20,
           ),
           suffixIcon: _searchQuery.isNotEmpty
@@ -145,7 +146,7 @@ class _MissionListState extends State<MissionList> {
       style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: EcoColors.ink.withValues(alpha: 0.5),
+        color: AppTheme.ink.withValues(alpha: 0.5),
         letterSpacing: 0.5,
       ),
     );
@@ -206,8 +207,8 @@ class MissionListItem extends StatelessWidget {
               height: 44,
               decoration: BoxDecoration(
                 color: isHistory
-                    ? EcoColors.ink.withValues(alpha: 0.05)
-                    : EcoColors.forest.withValues(alpha: 0.1),
+                    ? AppTheme.ink.withValues(alpha: 0.05)
+                    : AppTheme.forest.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
@@ -235,8 +236,8 @@ class MissionListItem extends StatelessWidget {
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: isHistory
-                          ? EcoColors.ink.withValues(alpha: 0.7)
-                          : EcoColors.ink,
+                          ? AppTheme.ink.withValues(alpha: 0.7)
+                          : AppTheme.ink,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -245,7 +246,7 @@ class MissionListItem extends StatelessWidget {
                       Icon(
                         Icons.calendar_today_outlined,
                         size: 11,
-                        color: EcoColors.ink.withValues(alpha: 0.4),
+                        color: AppTheme.ink.withValues(alpha: 0.4),
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -253,7 +254,7 @@ class MissionListItem extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 12,
-                          color: EcoColors.ink.withValues(alpha: 0.4),
+                          color: AppTheme.ink.withValues(alpha: 0.4),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -263,7 +264,7 @@ class MissionListItem extends StatelessWidget {
                         height: 3,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: EcoColors.ink.withValues(alpha: 0.2),
+                          color: AppTheme.ink.withValues(alpha: 0.2),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -275,7 +276,7 @@ class MissionListItem extends StatelessWidget {
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 12,
-                            color: EcoColors.ink.withValues(alpha: 0.4),
+                            color: AppTheme.ink.withValues(alpha: 0.4),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -295,7 +296,7 @@ class MissionListItem extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: EcoColors.forest.withValues(alpha: 0.1),
+                  color: AppTheme.forest.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text(
@@ -304,7 +305,7 @@ class MissionListItem extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: EcoColors.forest,
+                    color: AppTheme.forest,
                   ),
                 ),
               ),
@@ -313,19 +314,19 @@ class MissionListItem extends StatelessWidget {
               if (mission.registrationStatus == 'Cancelled')
                 const Icon(
                   Icons.cancel_outlined,
-                  color: EcoColors.terracotta,
+                  color: AppTheme.terracotta,
                   size: 20,
                 )
               else if (mission.registrationStatus == 'Completed')
                 const Icon(
                   Icons.check_circle_rounded,
-                  color: EcoColors.forest,
+                  color: AppTheme.forest,
                   size: 20,
                 )
               else
                 const Icon(
                   Icons.pending_actions_rounded,
-                  color: EcoColors.violet,
+                  color: AppTheme.violet,
                   size: 20,
                 ),
             ],

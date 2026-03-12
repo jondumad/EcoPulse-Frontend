@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:frontend/models/mission_model.dart';
 import 'eco_pulse_widgets.dart';
 import 'atoms/eco_card.dart';
+import 'package:frontend/theme/app_theme.dart';
+
 
 class CoordinatorMissionCard extends StatefulWidget {
   final Mission mission;
@@ -44,7 +46,7 @@ class _CoordinatorMissionCardState extends State<CoordinatorMissionCard> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           border: isSelected
-              ? Border.all(color: EcoColors.forest, width: 3)
+              ? Border.all(color: AppTheme.forest, width: 3)
               : Border.all(color: Colors.transparent, width: 3),
         ),
         child: Stack(
@@ -62,12 +64,12 @@ class _CoordinatorMissionCardState extends State<CoordinatorMissionCard> {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: EcoColors.forest.withValues(alpha: 0.1),
+                          color: AppTheme.forest.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
                           Icons.forest_outlined,
-                          color: EcoColors.forest,
+                          color: AppTheme.forest,
                           size: 24,
                         ),
                       ),
@@ -85,7 +87,7 @@ class _CoordinatorMissionCardState extends State<CoordinatorMissionCard> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                Icon(Icons.calendar_today_rounded, size: 12, color: EcoColors.ink.withValues(alpha: 0.4)),
+                                Icon(Icons.calendar_today_rounded, size: 12, color: AppTheme.ink.withValues(alpha: 0.4)),
                                 const SizedBox(width: 4),
                                 Text(DateFormat('MMM d, h:mm a').format(mission.startTime), style: EcoText.bodySM(context)),
                               ],
@@ -93,7 +95,7 @@ class _CoordinatorMissionCardState extends State<CoordinatorMissionCard> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                Icon(Icons.location_on_outlined, size: 12, color: EcoColors.ink.withValues(alpha: 0.4)),
+                                Icon(Icons.location_on_outlined, size: 12, color: AppTheme.ink.withValues(alpha: 0.4)),
                                 const SizedBox(width: 4),
                                 Expanded(child: Text(mission.locationName, style: EcoText.bodySM(context), maxLines: 1, overflow: TextOverflow.ellipsis)),
                               ],
@@ -111,7 +113,7 @@ class _CoordinatorMissionCardState extends State<CoordinatorMissionCard> {
                           padding: const EdgeInsets.only(left: 8),
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(color: EcoColors.violet, borderRadius: BorderRadius.circular(12)),
+                            decoration: BoxDecoration(color: AppTheme.violet, borderRadius: BorderRadius.circular(12)),
                             child: Row(
                               children: [
                                 const Icon(Icons.verified_user, color: Colors.white, size: 10),
@@ -136,13 +138,13 @@ class _CoordinatorMissionCardState extends State<CoordinatorMissionCard> {
                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                           child: Row(
                             children: [
-                              Icon(Icons.people_outline_rounded, size: 16, color: EcoColors.ink.withValues(alpha: 0.6)),
+                              Icon(Icons.people_outline_rounded, size: 16, color: AppTheme.ink.withValues(alpha: 0.6)),
                               const SizedBox(width: 6),
                               RichText(
                                 text: TextSpan(
                                   children: [
-                                    TextSpan(text: '${mission.currentVolunteers}', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w700, color: EcoColors.ink)),
-                                    TextSpan(text: '/${mission.maxVolunteers}', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w500, color: EcoColors.ink.withValues(alpha: 0.5))),
+                                    TextSpan(text: '${mission.currentVolunteers}', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w700, color: AppTheme.ink)),
+                                    TextSpan(text: '/${mission.maxVolunteers}', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w500, color: AppTheme.ink.withValues(alpha: 0.5))),
                                   ],
                                 ),
                               ),
@@ -155,7 +157,7 @@ class _CoordinatorMissionCardState extends State<CoordinatorMissionCard> {
                           if (mission.status == 'Open')
                             IconButton(
                               onPressed: widget.onWaitlistTap,
-                              icon: Icon(Icons.hourglass_bottom_rounded, size: 18, color: EcoColors.violet.withValues(alpha: 0.7)),
+                              icon: Icon(Icons.hourglass_bottom_rounded, size: 18, color: AppTheme.violet.withValues(alpha: 0.7)),
                               tooltip: 'Manage Waitlist',
                               constraints: const BoxConstraints(),
                               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -181,7 +183,7 @@ class _CoordinatorMissionCardState extends State<CoordinatorMissionCard> {
                   duration: const Duration(milliseconds: 200),
                   child: Container(
                     decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                    child: const Icon(Icons.check_circle, color: EcoColors.forest, size: 28),
+                    child: const Icon(Icons.check_circle, color: AppTheme.forest, size: 28),
                   ),
                 ),
               ),
@@ -192,7 +194,7 @@ class _CoordinatorMissionCardState extends State<CoordinatorMissionCard> {
                 child: Container(
                   width: 24,
                   height: 24,
-                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: EcoColors.ink.withValues(alpha: 0.2), width: 2), color: Colors.white.withValues(alpha: 0.5)),
+                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppTheme.ink.withValues(alpha: 0.2), width: 2), color: Colors.white.withValues(alpha: 0.5)),
                 ),
               ),
           ],
@@ -205,15 +207,15 @@ class _CoordinatorMissionCardState extends State<CoordinatorMissionCard> {
     switch (status.toLowerCase()) {
       case 'active':
       case 'open':
-        return EcoColors.forest;
+        return AppTheme.forest;
       case 'inprogress':
-        return EcoColors.violet;
+        return AppTheme.violet;
       case 'completed':
-        return EcoColors.ink;
+        return AppTheme.ink;
       case 'cancelled':
-        return EcoColors.terracotta;
+        return AppTheme.terracotta;
       default:
-        return EcoColors.ink.withValues(alpha: 0.5);
+        return AppTheme.ink.withValues(alpha: 0.5);
     }
   }
 }

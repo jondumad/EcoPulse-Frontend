@@ -97,7 +97,7 @@ class _WaitlistManagementScreenState extends State<WaitlistManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: EcoColors.clay,
+      backgroundColor: AppTheme.clay,
       appBar: const EcoAppBar(
         title: 'Waitlist',
       ),
@@ -122,13 +122,13 @@ class _WaitlistManagementScreenState extends State<WaitlistManagementScreen> {
                               children: [
                                 EcoPulseTag(
                                   label: 'WAITLISTED: ${_waitlistedUsers.length}',
-                                  color: EcoColors.terracotta,
+                                  color: AppTheme.terracotta,
                                 ),
                                 const SizedBox(width: 8),
                                 if (widget.mission.maxVolunteers != null)
                                   EcoPulseTag(
                                     label: 'CAPACITY: ${widget.mission.maxVolunteers}',
-                                    color: EcoColors.ink.withValues(alpha: 0.6),
+                                    color: AppTheme.ink.withValues(alpha: 0.6),
                                   ),
                               ],
                             ),
@@ -148,14 +148,14 @@ class _WaitlistManagementScreenState extends State<WaitlistManagementScreen> {
                               Icon(
                                 Icons.check_circle_outline,
                                 size: 64,
-                                color: EcoColors.forest.withValues(alpha: 0.5),
+                                color: AppTheme.forest.withValues(alpha: 0.5),
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 'No users on waitlist',
                                 style: EcoText.bodyMD(
                                   context,
-                                ).copyWith(color: EcoColors.ink.withValues(alpha: 0.6)),
+                                ).copyWith(color: AppTheme.ink.withValues(alpha: 0.6)),
                               ),
                             ],
                           ),
@@ -174,8 +174,8 @@ class _WaitlistManagementScreenState extends State<WaitlistManagementScreen> {
                               child: ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: isPriority
-                                      ? EcoColors.terracotta
-                                      : EcoColors.violet,
+                                      ? AppTheme.terracotta
+                                      : AppTheme.violet,
                                   child: Text(
                                     user['name'][0].toUpperCase(),
                                     style: const TextStyle(
@@ -194,7 +194,7 @@ class _WaitlistManagementScreenState extends State<WaitlistManagementScreen> {
                                       const SizedBox(width: 8),
                                       const Icon(
                                         Icons.star,
-                                        color: EcoColors.terracotta,
+                                        color: AppTheme.terracotta,
                                         size: 16,
                                       ),
                                     ],
@@ -203,7 +203,7 @@ class _WaitlistManagementScreenState extends State<WaitlistManagementScreen> {
                                 subtitle: Text(
                                   '${user['totalPoints']} points',
                                   style: TextStyle(
-                                    color: EcoColors.ink.withValues(alpha: 0.6),
+                                    color: AppTheme.ink.withValues(alpha: 0.6),
                                   ),
                                 ),
                                 trailing: PopupMenuButton(

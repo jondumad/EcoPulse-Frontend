@@ -70,7 +70,7 @@ class _MissionSuccessSummaryScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: EcoColors.forest,
+      backgroundColor: AppTheme.forest,
       body: Stack(
         children: [
           // Background decorative elements (optional subtle gradients)
@@ -104,11 +104,11 @@ class _MissionSuccessSummaryScreenState
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        color: EcoColors.violet,
+                        color: AppTheme.violet,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: EcoColors.violet.withValues(alpha: 0.5),
+                            color: AppTheme.violet.withValues(alpha: 0.5),
                             blurRadius: 40,
                             spreadRadius: 10,
                           ),
@@ -180,7 +180,7 @@ class _MissionSuccessSummaryScreenState
                               decoration: const BoxDecoration(
                                 border: Border(
                                   bottom: BorderSide(
-                                    color: EcoColors.clay,
+                                    color: AppTheme.clay,
                                     width: 1,
                                   ),
                                 ),
@@ -190,7 +190,7 @@ class _MissionSuccessSummaryScreenState
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: EcoColors.clay,
+                                      color: AppTheme.clay,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: const Text(
@@ -239,13 +239,13 @@ class _MissionSuccessSummaryScreenState
                                   Container(
                                     width: 1,
                                     height: 50,
-                                    color: EcoColors.clay,
+                                    color: AppTheme.clay,
                                   ),
                                   Expanded(
                                     child: EcoAnimatedStatItem(
                                       label: 'POINTS EARNED',
                                       value: widget.pointsEarned.toDouble(),
-                                      color: EcoColors.forest,
+                                      color: AppTheme.forest,
                                     ),
                                   ),
                                 ],
@@ -259,13 +259,13 @@ class _MissionSuccessSummaryScreenState
                                 horizontal: 24,
                               ),
                               decoration: const BoxDecoration(
-                                color: EcoColors.clay,
+                                color: AppTheme.clay,
                               ),
                               child: Text(
                                 'Points pending final verification by coordinator',
                                 style: EcoText.monoSM(context).copyWith(
                                   fontSize: 9,
-                                  color: EcoColors.ink.withValues(alpha: 0.5),
+                                  color: AppTheme.ink.withValues(alpha: 0.5),
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -288,7 +288,7 @@ class _MissionSuccessSummaryScreenState
                         variant: EcoButtonVariant.secondary,
                         // White button with Forest text for contrast against Forest BG
                         backgroundColor: Colors.white,
-                        foregroundColor: EcoColors.forest,
+                        foregroundColor: AppTheme.forest,
                         onPressed: () {
                           Navigator.of(
                             context,

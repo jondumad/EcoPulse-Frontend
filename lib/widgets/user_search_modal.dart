@@ -91,7 +91,7 @@ class _UserSearchModalState extends State<UserSearchModal> {
       await Provider.of<MissionProvider>(context, listen: false).inviteUser(widget.missionId, userId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User invited successfully'), backgroundColor: EcoColors.forest),
+          const SnackBar(content: Text('User invited successfully'), backgroundColor: AppTheme.forest),
         );
         Navigator.pop(context);
       }
@@ -107,7 +107,7 @@ class _UserSearchModalState extends State<UserSearchModal> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.75,
       decoration: const BoxDecoration(
-        color: EcoColors.clay,
+        color: AppTheme.clay,
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
@@ -139,7 +139,7 @@ class _UserSearchModalState extends State<UserSearchModal> {
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Search by name or email...',
-                    prefixIcon: const Icon(Icons.search, color: EcoColors.forest),
+                    prefixIcon: const Icon(Icons.search, color: AppTheme.forest),
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
@@ -158,7 +158,7 @@ class _UserSearchModalState extends State<UserSearchModal> {
 
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: EcoColors.forest))
+                ? const Center(child: CircularProgressIndicator(color: AppTheme.forest))
                 : _searchResults.isEmpty
                     ? EmptyState(
                         icon: Icons.search,
@@ -178,10 +178,10 @@ class _UserSearchModalState extends State<UserSearchModal> {
                             ),
                             child: ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: EcoColors.forest.withValues(alpha: 0.1),
+                                backgroundColor: AppTheme.forest.withValues(alpha: 0.1),
                                 child: Text(
                                   user['name'][0].toUpperCase(),
-                                  style: const TextStyle(color: EcoColors.forest, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(color: AppTheme.forest, fontWeight: FontWeight.bold),
                                 ),
                               ),
                               title: Text(user['name'], style: EcoText.bodyBoldMD(context)),

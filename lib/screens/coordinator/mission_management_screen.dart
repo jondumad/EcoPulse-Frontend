@@ -32,7 +32,7 @@ class _MissionManagementScreenState extends State<MissionManagementScreen> {
               Text(
                 'MISSION HUB',
                 style: EcoText.monoSM(context).copyWith(
-                  color: EcoColors.ink.withValues(alpha: 0.4),
+                  color: AppTheme.ink.withValues(alpha: 0.4),
                   letterSpacing: 1.5,
                 ),
               ),
@@ -50,16 +50,16 @@ class _MissionManagementScreenState extends State<MissionManagementScreen> {
           children: [
             Container(
               decoration: const BoxDecoration(
-                color: EcoColors.clay,
+                color: AppTheme.clay,
                 border: Border(
                   bottom: BorderSide(color: Color.fromRGBO(0, 0, 0, 0.06), width: 1),
                 ),
               ),
               child: TabBar(
                 isScrollable: true,
-                indicatorColor: EcoColors.forest,
-                labelColor: EcoColors.forest,
-                unselectedLabelColor: EcoColors.ink.withValues(alpha: 0.4),
+                indicatorColor: AppTheme.forest,
+                labelColor: AppTheme.forest,
+                unselectedLabelColor: AppTheme.ink.withValues(alpha: 0.4),
                 labelStyle: const TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 11,

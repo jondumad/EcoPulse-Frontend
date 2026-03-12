@@ -151,7 +151,7 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
               ),
               const SizedBox(height: 40),
               if (_isLoading)
-                const CircularProgressIndicator(color: EcoColors.forest)
+                const CircularProgressIndicator(color: AppTheme.forest)
               else if (_isExpired())
                 Center(
                   child: Column(
@@ -198,11 +198,11 @@ class _QRDisplayScreenState extends State<QRDisplayScreen> {
                             size: 250.0,
                             eyeStyle: const QrEyeStyle(
                               eyeShape: QrEyeShape.square,
-                              color: EcoColors.forest,
+                              color: AppTheme.forest,
                             ),
                             dataModuleStyle: const QrDataModuleStyle(
                               dataModuleShape: QrDataModuleShape.square,
-                              color: EcoColors.forest,
+                              color: AppTheme.forest,
                             ),
                           ),
                           const SizedBox(height: 24),

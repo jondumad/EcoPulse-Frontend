@@ -82,6 +82,33 @@ class AuthProvider extends BaseProvider {
     }
   }
 
+  Future<Map<String, dynamic>> socialLogin({
+    required String provider,
+    required String idToken,
+    required String email,
+    String? name,
+    String? avatarUrl,
+  }) async {
+    _setLoading(true);
+    try {
+      final result = await _authService.socialLogin(
+        provider: provider,
+        idToken: idToken,
+        email: email,
+        name: name,
+        avatarUrl: avatarUrl,
+      );
+
+      if (result['success']) {
+        _user = User.fromJson(result['user']);
+        safeNotifyListeners();
+      }
+      return result;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   Future<void> logout() async {
     await _authService.logout();
     _user = null;

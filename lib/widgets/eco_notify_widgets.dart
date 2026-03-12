@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'eco_pulse_widgets.dart';
 import 'atoms/eco_button.dart';
-import 'atoms/eco_text_field.dart';
 import 'mission_filter_widgets.dart';
+import 'package:frontend/theme/app_theme.dart';
 
 class EcoNotifySheet extends StatefulWidget {
   final String title;
@@ -29,7 +29,7 @@ class EcoNotifySheet extends StatefulWidget {
     ],
   });
 
-  static void show(
+  static Future<void> show(
     BuildContext context, {
     required String title,
     required String subtitle,
@@ -38,10 +38,8 @@ class EcoNotifySheet extends StatefulWidget {
     required Future<void> Function(String) onSend,
     List<String>? quickMessages,
   }) {
-    showModalBottomSheet(
+    return showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (context) => EcoNotifySheet(
         title: title,
         subtitle: subtitle,
@@ -77,137 +75,76 @@ class _EcoNotifySheetState extends State<EcoNotifySheet> {
 
   @override
   Widget build(BuildContext context) {
-    return StatefulBuilder(
-      builder: (context, setModalState) => Container(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
+    return EcoDialog(
+      title: widget.title,
+      subtitle: widget.subtitle,
+      icon: Icon(widget.icon, color: AppTheme.violet, size: 24),
+      actions: [
+        EcoPulseButton(
+          label: 'Cancel',
+          variant: EcoButtonVariant.secondary,
+          isSmall: true,
+          onPressed: () => Navigator.pop(context),
         ),
-        decoration: const BoxDecoration(
-          color: EcoColors.clay,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: EcoColors.violet.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          widget.icon,
-                          color: EcoColors.violet,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.title,
-                              style: GoogleFonts.fraunces(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900,
-                                color: EcoColors.ink,
-                              ),
-                            ),
-                            Text(
-                              widget.subtitle,
-                              style: TextStyle(
-                                color: EcoColors.ink.withValues(alpha: 0.6),
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
+        EcoPulseButton(
+          label: 'Send',
+          icon: Icons.send_rounded,
+          isSmall: true,
+          isLoading: _isSending,
+          onPressed: () async {
+            final text = _controller.text.trim();
+            if (text.isEmpty) return;
 
-                  // Standardized "Quick Message" UI (Filter Chips)
-                  const EcoSectionHeader(title: 'Quick Presets'),
-                  const SizedBox(height: 12),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: widget.quickMessages
-                          .map(
-                            (msg) => EcoFilterChip(
-                              label: msg,
-                              isSelected: false,
-                              onTap: () {
-                                setState(() {
-                                  _controller.text = msg;
-                                });
-                              },
-                              color: EcoColors.forest,
-                            ),
-                          )
-                          .toList(),
+            setState(() => _isSending = true);
+
+            try {
+              await widget.onSend(text);
+              if (!context.mounted) return;
+              Navigator.pop(context);
+            } finally {
+              if (mounted) {
+                setState(() => _isSending = false);
+              }
+            }
+          },
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const EcoSectionHeader(title: 'Quick Presets'),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: widget.quickMessages
+                  .map(
+                    (msg) => Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: EcoFilterChip(
+                        label: msg,
+                        isSelected: _controller.text == msg,
+                        onTap: () {
+                          setState(() {
+                            _controller.text = msg;
+                          });
+                        },
+                        color: AppTheme.forest,
+                      ),
                     ),
-                  ),
-
-                  const SizedBox(height: 24),
-                  EcoTextField(
-                    controller: _controller,
-                    label: 'Message Content',
-                    hint: widget.hintText,
-                    maxLines: 4,
-                  ),
-                  const SizedBox(height: 24),
-                  EcoPulseButton(
-                    label: 'Send Message',
-                    icon: Icons.send_rounded,
-                    width: double.infinity,
-                    isLoading: _isSending,
-                    backgroundColor: EcoColors.forest,
-                    onPressed: () async {
-                      final text = _controller.text.trim();
-                      if (text.isEmpty) return;
-
-                      setModalState(() => _isSending = true);
-
-                      try {
-                        await widget.onSend(text);
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                        }
-                      } finally {
-                        if (context.mounted) {
-                          setModalState(() => _isSending = false);
-                        }
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                ],
-              ),
+                  )
+                  .toList(),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 24),
+          EcoTextField(
+            controller: _controller,
+            label: 'Message Content',
+            hintText: widget.hintText,
+            maxLines: 4,
+          ),
+        ],
       ),
     );
   }

@@ -169,7 +169,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
                   const Icon(
                     Icons.error_outline,
                     size: 48,
-                    color: EcoColors.terracotta,
+                    color: AppTheme.terracotta,
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -182,7 +182,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
                     _initError!,
                     style: TextStyle(
                       fontSize: 13,
-                      color: EcoColors.ink.withValues(alpha: 0.6),
+                      color: AppTheme.ink.withValues(alpha: 0.6),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -190,7 +190,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
                   ElevatedButton(
                     onPressed: _initializeCollaboration,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: EcoColors.forest,
+                      backgroundColor: AppTheme.forest,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,
@@ -209,7 +209,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
 
     return const Center(
       child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(EcoColors.forest),
+        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.forest),
       ),
     );
   }
@@ -217,7 +217,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
   Widget _buildPresenceHeader(List<dynamic> users) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      color: EcoColors.clay,
+      color: AppTheme.clay,
       child: Row(
         children: [
           // Active indicator with semantic pulse
@@ -226,13 +226,13 @@ class _CollaborationTabState extends State<CollaborationTab> {
             height: 10,
             decoration: BoxDecoration(
               color: users.isNotEmpty
-                  ? EcoColors.violet
-                  : EcoColors.ink.withValues(alpha: 0.1),
+                  ? AppTheme.violet
+                  : AppTheme.ink.withValues(alpha: 0.1),
               shape: BoxShape.circle,
               boxShadow: users.isNotEmpty
                   ? [
                       BoxShadow(
-                        color: EcoColors.violet.withValues(alpha: 0.4),
+                        color: AppTheme.violet.withValues(alpha: 0.4),
                         blurRadius: 8,
                         spreadRadius: 2,
                       ),
@@ -244,7 +244,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
           Text(
             'ACTIVE SQUAD',
             style: EcoText.monoSM(context).copyWith(
-              color: EcoColors.forest,
+              color: AppTheme.forest,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.2,
             ),
@@ -279,7 +279,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
                 '+$remainingCount',
                 style: EcoText.monoSM(context).copyWith(
                   fontWeight: FontWeight.w700,
-                  color: EcoColors.ink.withValues(alpha: 0.6),
+                  color: AppTheme.ink.withValues(alpha: 0.6),
                 ),
               ),
             ),
@@ -297,10 +297,10 @@ class _CollaborationTabState extends State<CollaborationTab> {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: EcoColors.violet, width: 2),
+        border: Border.all(color: AppTheme.violet, width: 2),
         boxShadow: [
           BoxShadow(
-            color: EcoColors.ink.withValues(alpha: 0.05),
+            color: AppTheme.ink.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -308,13 +308,13 @@ class _CollaborationTabState extends State<CollaborationTab> {
       ),
       child: CircleAvatar(
         radius: 14,
-        backgroundColor: EcoColors.clay,
+        backgroundColor: AppTheme.clay,
         child: Text(
           initial,
           style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
-            color: EcoColors.forest,
+            color: AppTheme.forest,
           ),
         ),
       ),
@@ -324,7 +324,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
   Widget _buildTabSelector() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-      color: EcoColors.clay,
+      color: AppTheme.clay,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final tabWidth =
@@ -349,11 +349,11 @@ class _CollaborationTabState extends State<CollaborationTab> {
                   height: 40,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: EcoColors.forest,
+                      color: AppTheme.forest,
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: EcoColors.forest.withValues(alpha: 0.25),
+                          color: AppTheme.forest.withValues(alpha: 0.25),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -415,7 +415,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
               letterSpacing: 1.0,
               color: isSelected
                   ? Colors.white
-                  : EcoColors.ink.withValues(alpha: 0.4),
+                  : AppTheme.ink.withValues(alpha: 0.4),
             ),
             child: Text(label),
           ),
@@ -432,7 +432,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
     final otherComments = provider.comments.where((c) => !c.isPinned).toList();
 
     return Container(
-      color: EcoColors.clay,
+      color: AppTheme.clay,
       child: Column(
         children: [
           if (pinnedComments.isNotEmpty)
@@ -473,9 +473,9 @@ class _CollaborationTabState extends State<CollaborationTab> {
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: EcoColors.violet.withValues(alpha: 0.08),
+        color: AppTheme.violet.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: EcoColors.violet.withValues(alpha: 0.15)),
+        border: Border.all(color: AppTheme.violet.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -485,13 +485,13 @@ class _CollaborationTabState extends State<CollaborationTab> {
               const Icon(
                 Icons.push_pin_rounded,
                 size: 16,
-                color: EcoColors.violet,
+                color: AppTheme.violet,
               ),
               const SizedBox(width: 8),
               Text(
                 'PINNED UPDATES',
                 style: EcoText.monoSM(context).copyWith(
-                  color: EcoColors.violet,
+                  color: AppTheme.violet,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -511,7 +511,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
                         height: 1.4,
-                        color: EcoColors.ink.withValues(alpha: 0.9),
+                        color: AppTheme.ink.withValues(alpha: 0.9),
                       ),
                     ),
                   ),
@@ -521,13 +521,13 @@ class _CollaborationTabState extends State<CollaborationTab> {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: EcoColors.violet.withValues(alpha: 0.1),
+                        color: AppTheme.violet.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.close_rounded,
                         size: 12,
-                        color: EcoColors.violet,
+                        color: AppTheme.violet,
                       ),
                     ),
                   ),
@@ -562,7 +562,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
                 comment.userName ?? 'Unknown',
                 style: EcoText.monoSM(context).copyWith(
                   fontSize: 9,
-                  color: EcoColors.ink.withValues(alpha: 0.5),
+                  color: AppTheme.ink.withValues(alpha: 0.5),
                 ),
               ),
             ),
@@ -580,7 +580,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: isMine ? EcoColors.forest : EcoColors.terracotta,
+                    color: isMine ? AppTheme.forest : AppTheme.terracotta,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
@@ -589,7 +589,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: EcoColors.ink.withValues(alpha: 0.03),
+                        color: AppTheme.ink.withValues(alpha: 0.03),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -629,7 +629,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
           child: Icon(
             Icons.push_pin_outlined,
             size: 14,
-            color: EcoColors.forest.withValues(alpha: 0.2),
+            color: AppTheme.forest.withValues(alpha: 0.2),
           ),
         ),
       ),
@@ -641,10 +641,10 @@ class _CollaborationTabState extends State<CollaborationTab> {
       // 1. Match the background color and padding to the input's intended look
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: EcoColors.clay, // The background now fills the whole bottom area
+        color: AppTheme.clay, // The background now fills the whole bottom area
         border: Border(
           top: BorderSide(
-            color: EcoColors.ink.withValues(alpha: 0.06),
+            color: AppTheme.ink.withValues(alpha: 0.06),
             width: 1,
           ),
         ),
@@ -663,7 +663,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
                   borderRadius: BorderRadius.circular(24),
                   // Optional: add a subtle border to define the input better
                   border: Border.all(
-                    color: EcoColors.ink.withValues(alpha: 0.05),
+                    color: AppTheme.ink.withValues(alpha: 0.05),
                   ),
                 ),
                 child: TextField(
@@ -696,7 +696,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
                     )
                   : const Icon(Icons.send_rounded, size: 20),
               style: IconButton.styleFrom(
-                backgroundColor: EcoColors.forest,
+                backgroundColor: AppTheme.forest,
                 foregroundColor: Colors.white,
                 // Match height of the single-line input
                 minimumSize: const Size(48, 48),
@@ -716,7 +716,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
 
   Widget _buildChecklistSection(CollaborationProvider provider) {
     return Container(
-      color: EcoColors.clay, // Consistent background with chat
+      color: AppTheme.clay, // Consistent background with chat
       child: Column(
         children: [
           Expanded(
@@ -755,12 +755,12 @@ class _CollaborationTabState extends State<CollaborationTab> {
         border: Border.all(
           color: isDone
               ? Colors.transparent
-              : EcoColors.forest.withValues(alpha: 0.1),
+              : AppTheme.forest.withValues(alpha: 0.1),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: EcoColors.ink.withValues(alpha: isDone ? 0.01 : 0.04),
+            color: AppTheme.ink.withValues(alpha: isDone ? 0.01 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -776,15 +776,15 @@ class _CollaborationTabState extends State<CollaborationTab> {
               fontWeight: isDone ? FontWeight.w500 : FontWeight.w600,
               decoration: isDone ? TextDecoration.lineThrough : null,
               color: isDone
-                  ? EcoColors.ink.withValues(alpha: 0.4)
-                  : EcoColors.ink,
+                  ? AppTheme.ink.withValues(alpha: 0.4)
+                  : AppTheme.ink,
               height: 1.4,
             ),
           ),
           value: isDone,
           onChanged: (value) =>
               provider.toggleChecklistItem(item.id, value ?? false),
-          activeColor: EcoColors.forest,
+          activeColor: AppTheme.forest,
           checkColor: Colors.white,
           checkboxShape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(5),
@@ -804,10 +804,10 @@ class _CollaborationTabState extends State<CollaborationTab> {
       // Match the Chat Input Container
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: EcoColors.clay,
+        color: AppTheme.clay,
         border: Border(
           top: BorderSide(
-            color: EcoColors.ink.withValues(alpha: 0.06),
+            color: AppTheme.ink.withValues(alpha: 0.06),
             width: 1,
           ),
         ),
@@ -824,7 +824,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24), // Capsule style
                   border: Border.all(
-                    color: EcoColors.ink.withValues(alpha: 0.05),
+                    color: AppTheme.ink.withValues(alpha: 0.05),
                   ),
                 ),
                 child: TextField(
@@ -860,7 +860,7 @@ class _CollaborationTabState extends State<CollaborationTab> {
                     )
                   : const Icon(Icons.add_rounded, size: 24),
               style: IconButton.styleFrom(
-                backgroundColor: EcoColors.forest,
+                backgroundColor: AppTheme.forest,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(48, 48),
                 shape: const CircleBorder(), // Perfect circle to match chat

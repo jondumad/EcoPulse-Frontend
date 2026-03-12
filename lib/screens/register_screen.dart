@@ -628,10 +628,6 @@ class _FormCard extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // ── [PLACEHOLDER] Referral code field ─────────────────
-            // TODO: optional — add backend redemption logic
-            // _EcoField(label: 'Referral code (optional)', hint: 'ECO-XXXX', ...),
-
             // ToS row
             _TosRow(
               accepted: tosAccepted,

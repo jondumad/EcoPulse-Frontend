@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/theme/app_theme.dart';
 import '../widgets/eco_pulse_widgets.dart';
 
 class MissionViewToggle extends StatelessWidget {
@@ -45,7 +46,7 @@ class MissionViewToggle extends StatelessWidget {
                 height: itemHeight,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: EcoColors.forest,
+                    color: AppTheme.forest,
                     borderRadius: BorderRadius.circular(22),
                   ),
                 ),
@@ -100,7 +101,7 @@ class _ToggleItem extends StatelessWidget {
             size: 20,
             color: isSelected
                 ? Colors.white
-                : EcoColors.forest.withValues(alpha: 0.7),
+                : AppTheme.forest.withValues(alpha: 0.7),
           ),
         ),
       ),

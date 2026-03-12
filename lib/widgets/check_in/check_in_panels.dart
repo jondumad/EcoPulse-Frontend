@@ -85,12 +85,12 @@ class CheckInContextualPanel extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: EcoColors.terracotta.withValues(alpha: 0.1),
+                      color: AppTheme.terracotta.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.location_on_outlined,
-                      color: EcoColors.terracotta,
+                      color: AppTheme.terracotta,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -104,7 +104,7 @@ class CheckInContextualPanel extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
-                            color: EcoColors.ink.withValues(alpha: 0.5),
+                            color: AppTheme.ink.withValues(alpha: 0.5),
                             letterSpacing: 1.0,
                           ),
                         ),
@@ -113,7 +113,7 @@ class CheckInContextualPanel extends StatelessWidget {
                           style: GoogleFonts.fraunces(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: EcoColors.ink,
+                            color: AppTheme.ink,
                           ),
                         ),
                       ],
@@ -125,7 +125,7 @@ class CheckInContextualPanel extends StatelessWidget {
                     child: Icon(
                       Icons.arrow_forward_ios,
                       size: 16,
-                      color: EcoColors.ink.withValues(alpha: 0.3),
+                      color: AppTheme.ink.withValues(alpha: 0.3),
                     ),
                   ),
                 ],
@@ -151,9 +151,9 @@ class CheckInContextualPanel extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: (1000 - distance.clamp(0, 1000)) / 900,
-                        backgroundColor: EcoColors.ink.withValues(alpha: 0.05),
+                        backgroundColor: AppTheme.ink.withValues(alpha: 0.05),
                         valueColor: const AlwaysStoppedAnimation(
-                          EcoColors.terracotta,
+                          AppTheme.terracotta,
                         ),
                         minHeight: 6,
                       ),
@@ -230,13 +230,13 @@ class CheckInContextualPanel extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: EcoColors.forest.withValues(alpha: 0.1),
+              color: AppTheme.forest.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.check_circle_outline,
               size: 32,
-              color: EcoColors.forest,
+              color: AppTheme.forest,
             ),
           ),
           const SizedBox(height: 16),
@@ -245,7 +245,7 @@ class CheckInContextualPanel extends StatelessWidget {
             style: GoogleFonts.fraunces(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              color: EcoColors.ink,
+              color: AppTheme.ink,
             ),
           ),
           const SizedBox(height: 8),
@@ -254,7 +254,7 @@ class CheckInContextualPanel extends StatelessWidget {
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: EcoColors.ink.withValues(alpha: 0.7),
+              color: AppTheme.ink.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 24),
@@ -284,12 +284,12 @@ class _SectionHeader extends StatelessWidget {
           style: GoogleFonts.inter(
             fontSize: 10,
             fontWeight: FontWeight.w800,
-            color: EcoColors.ink.withValues(alpha: 0.4),
+            color: AppTheme.ink.withValues(alpha: 0.4),
             letterSpacing: 1.2,
           ),
         ),
         const SizedBox(width: 8),
-        Expanded(child: Divider(color: EcoColors.ink.withValues(alpha: 0.1))),
+        Expanded(child: Divider(color: AppTheme.ink.withValues(alpha: 0.1))),
       ],
     );
   }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'eco_pulse_widgets.dart';
 import 'atoms/eco_button.dart';
 import 'atoms/eco_card.dart';
+import 'package:frontend/theme/app_theme.dart';
+
 
 class NetworkRetryOverlay extends StatelessWidget {
   final bool isVisible;
@@ -30,7 +32,7 @@ class NetworkRetryOverlay extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.wifi_off_rounded, size: 48, color: EcoColors.ink),
+            const Icon(Icons.wifi_off_rounded, size: 48, color: AppTheme.ink),
             const SizedBox(height: 16),
             Text('No Connection', style: EcoText.headerMD(context)),
             const SizedBox(height: 8),

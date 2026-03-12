@@ -20,6 +20,8 @@ import 'notification_inbox_screen.dart';
 import '../components/coordinator_speed_dial.dart';
 import '../widgets/compass_calibration_overlay.dart';
 import '../widgets/eco_pulse_widgets.dart';
+import '../components/selection_pill_menu.dart';
+import '../providers/mission_provider.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -100,7 +102,7 @@ class _MainShellState extends State<MainShell> {
 
     return Scaffold(
       extendBody: true,
-      backgroundColor: EcoColors.clay,
+      backgroundColor: AppTheme.clay,
       appBar: EcoAppBar(
         showBack: false,
         titleWidget: Column(
@@ -110,7 +112,7 @@ class _MainShellState extends State<MainShell> {
             Text(
               DateFormat('EEEE, MMM d · HH:mm').format(DateTime.now()),
               style: EcoText.monoSM(context).copyWith(
-                color: EcoColors.ink.withValues(alpha: 0.4),
+                color: AppTheme.ink.withValues(alpha: 0.4),
                 letterSpacing: 1.5,
               ),
             ),
@@ -119,7 +121,7 @@ class _MainShellState extends State<MainShell> {
               activeLabel,
               style: EcoText.displayLG(context).copyWith(
                 fontSize: 28,
-                color: EcoColors.ink,
+                color: AppTheme.ink,
                 letterSpacing: -1.0,
                 height: 1.1,
               ),
@@ -191,6 +193,10 @@ class _MainShellState extends State<MainShell> {
               },
             ),
           ),
+
+          // 5.1 Batch Selection Pill (Only for Coordinator in selection mode)
+          if (user.role == 'Coordinator' && selectedIndex == 0)
+            const SelectionPillMenu(),
 
           // 6. Global Compass Calibration Overlay
           const CompassCalibrationOverlay(),

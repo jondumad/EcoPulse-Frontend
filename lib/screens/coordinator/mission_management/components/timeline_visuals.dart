@@ -91,9 +91,9 @@ class TimelineVisuals extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        EcoColors.clay.withValues(alpha: 0.1),
-                        EcoColors.clay,
-                        EcoColors.clay.withValues(alpha: 0.1),
+                        AppTheme.clay.withValues(alpha: 0.1),
+                        AppTheme.clay,
+                        AppTheme.clay.withValues(alpha: 0.1),
                       ],
                     ),
                   ),
@@ -113,7 +113,7 @@ class TimelineVisuals extends StatelessWidget {
                     bottom: 32,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: EcoColors.ink.withValues(alpha: 0.05),
+                        color: AppTheme.ink.withValues(alpha: 0.05),
                         borderRadius: isSchedStartOffscreen
                             ? const BorderRadius.only(
                                 topRight: Radius.circular(6),
@@ -122,21 +122,21 @@ class TimelineVisuals extends StatelessWidget {
                             : BorderRadius.circular(6),
                         border: Border(
                           top: BorderSide(
-                            color: EcoColors.ink.withValues(alpha: 0.1),
+                            color: AppTheme.ink.withValues(alpha: 0.1),
                             width: 0.5,
                           ),
                           bottom: BorderSide(
-                            color: EcoColors.ink.withValues(alpha: 0.1),
+                            color: AppTheme.ink.withValues(alpha: 0.1),
                             width: 0.5,
                           ),
                           right: BorderSide(
-                            color: EcoColors.ink.withValues(alpha: 0.1),
+                            color: AppTheme.ink.withValues(alpha: 0.1),
                             width: 0.5,
                           ),
                           left: isSchedStartOffscreen
                               ? BorderSide.none
                               : BorderSide(
-                                  color: EcoColors.ink.withValues(alpha: 0.1),
+                                  color: AppTheme.ink.withValues(alpha: 0.1),
                                   width: 0.5,
                                 ),
                         ),
@@ -168,14 +168,14 @@ class TimelineVisuals extends StatelessWidget {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              EcoColors.forest,
-                              EcoColors.forest.withValues(alpha: 0.8),
+                              AppTheme.forest,
+                              AppTheme.forest.withValues(alpha: 0.8),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(4),
                           boxShadow: [
                             BoxShadow(
-                              color: EcoColors.forest.withValues(alpha: 0.15),
+                              color: AppTheme.forest.withValues(alpha: 0.15),
                               blurRadius: 8,
                               spreadRadius: -2,
                             ),
@@ -197,7 +197,7 @@ class TimelineVisuals extends StatelessWidget {
                   time: schedStart,
                   label: 'PLAN',
                   isTop: true,
-                  color: EcoColors.ink.withValues(alpha: 0.4),
+                  color: AppTheme.ink.withValues(alpha: 0.4),
                 ),
 
               _buildCompactMarker(
@@ -206,7 +206,7 @@ class TimelineVisuals extends StatelessWidget {
                 time: schedEnd,
                 label: 'END',
                 isTop: true,
-                color: EcoColors.ink.withValues(alpha: 0.4),
+                color: AppTheme.ink.withValues(alpha: 0.4),
                 isStaggered: staggerPlan,
               ),
 
@@ -218,7 +218,7 @@ class TimelineVisuals extends StatelessWidget {
                   time: actualStart,
                   label: 'START',
                   isTop: false,
-                  color: EcoColors.forest,
+                  color: AppTheme.forest,
                   isBold: true,
                 ),
 
@@ -229,7 +229,7 @@ class TimelineVisuals extends StatelessWidget {
                   time: actualEnd,
                   label: 'FINAL',
                   isTop: false,
-                  color: EcoColors.forest,
+                  color: AppTheme.forest,
                   isBold: true,
                   isStaggered: staggerActual,
                 ),
@@ -255,11 +255,11 @@ class TimelineVisuals extends StatelessWidget {
           width: 12,
           height: 12,
           decoration: BoxDecoration(
-            color: EcoColors.terracotta,
+            color: AppTheme.terracotta,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: EcoColors.terracotta.withValues(alpha: 0.4),
+                color: AppTheme.terracotta.withValues(alpha: 0.4),
                 blurRadius: 10,
                 spreadRadius: 2,
               ),
@@ -282,7 +282,7 @@ class TimelineVisuals extends StatelessWidget {
           style: GoogleFonts.inter(
             fontSize: 7,
             fontWeight: FontWeight.w900,
-            color: EcoColors.terracotta,
+            color: AppTheme.terracotta,
             letterSpacing: 0.5,
           ),
         ),
@@ -394,7 +394,7 @@ class _BrokenEdgePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // 1. Draw two professional parallel slants (//) representing a "Section Break"
     final slashPaint = Paint()
-      ..color = EcoColors.ink.withValues(alpha: 0.2)
+      ..color = AppTheme.ink.withValues(alpha: 0.2)
       ..strokeWidth = 1.5
       ..strokeCap = StrokeCap.round;
 

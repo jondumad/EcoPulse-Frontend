@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/eco_pulse_widgets.dart';
+import 'package:frontend/theme/app_theme.dart';
 
 class AuthErrorMessage extends StatelessWidget {
   final String? errorMessage;
@@ -35,9 +35,9 @@ class AuthErrorMessage extends StatelessWidget {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: EcoColors.terracotta.withValues(alpha: 0.1),
+                    color: AppTheme.terracotta.withValues(alpha: 0.1),
                     border: Border.all(
-                      color: EcoColors.terracotta.withValues(alpha: 0.3),
+                      color: AppTheme.terracotta.withValues(alpha: 0.3),
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -45,7 +45,7 @@ class AuthErrorMessage extends StatelessWidget {
                     children: [
                       const Icon(
                         Icons.error_outline,
-                        color: EcoColors.terracotta,
+                        color: AppTheme.terracotta,
                         size: 20,
                       ),
                       const SizedBox(width: 12),
@@ -55,7 +55,7 @@ class AuthErrorMessage extends StatelessWidget {
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w500,
-                            color: EcoColors.terracotta,
+                            color: AppTheme.terracotta,
                             fontSize: 14,
                           ),
                         ),

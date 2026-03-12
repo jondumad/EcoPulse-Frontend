@@ -14,7 +14,6 @@ import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
 import '../../widgets/atoms/eco_button.dart';
 import '../../widgets/eco_info_card.dart';
-// ── Componentised sub-widgets ───────────────────────────────────────────────
 import '../../widgets/mission_detail/mission_detail_hero.dart';
 import '../../widgets/mission_detail/mission_detail_stats.dart';
 import '../../widgets/mission_detail/mission_detail_actions.dart';
@@ -125,7 +124,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
           SafeArea(
             child: Stack(
               children: [
-                // ── Scrollable Content ────────────────────────────────────
+                // Scrollable Content
                 Column(
                   children: [
                     Expanded(
@@ -193,7 +192,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
                             ),
                           ),
 
-                          // ── Floating Action Buttons ───────────────────
+                          // Floating Action Buttons 
                           Positioned(
                             right: 16,
                             bottom: 16,
@@ -249,7 +248,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
                             ),
                           ),
 
-                          // ── Live check-in timer badge ─────────────────
+                          // Live check-in timer badge
                           if (currentMission.registrationStatus == 'CheckedIn')
                             Positioned(
                               top: 96,
@@ -301,7 +300,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
                   ],
                 ),
 
-                // ── Floating Top Navigation Bar ───────────────────────────
+                // Floating Top Navigation Bar
                 Positioned(
                   top: 0,
                   left: 0,
@@ -350,9 +349,9 @@ class _MissionDetailScreenState extends State<MissionDetailScreen>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+//
 // Top Navigation Button
-// ─────────────────────────────────────────────────────────────────────────────
+//
 
 class _TopButton extends StatelessWidget {
   final IconData icon;
@@ -375,9 +374,9 @@ class _TopButton extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+//
 // Mission Card (container for all sections)
-// ─────────────────────────────────────────────────────────────────────────────
+//
 
 class _MissionCard extends StatelessWidget {
   final Mission mission;
@@ -417,10 +416,10 @@ class _MissionCard extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // ── Extracted: Hero Section ─────────────────────────────
+              // Extracted: Hero Section
               MissionDetailHero(icon: categoryIcon, title: mission.title),
 
-              // ── Extracted: Quick Stats Grid ─────────────────────────
+              // Extracted: Quick Stats Grid
               MissionDetailStats(mission: mission),
 
               // Info Items
@@ -430,7 +429,7 @@ class _MissionCard extends StatelessWidget {
               if (mission.segments.isNotEmpty)
                 _TimelineSection(segments: mission.segments),
 
-              // ── Extracted: Map Quick View ───────────────────────────
+              // Extracted: Map Quick View
               MissionDetailMap(gps: mission.locationGps),
 
               // Emergency Justification (if applicable)
@@ -493,9 +492,9 @@ class _MissionCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+//
 // Status Stamp
-// ─────────────────────────────────────────────────────────────────────────────
+//
 
 class _StatusStamp extends StatelessWidget {
   final String status;
@@ -554,9 +553,9 @@ class _StatusStamp extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+//
 // Info Section
-// ─────────────────────────────────────────────────────────────────────────────
+//
 
 class _InfoSection extends StatelessWidget {
   final Mission mission;
@@ -657,9 +656,9 @@ class _InfoSection extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+//
 // Expandable Description
-// ─────────────────────────────────────────────────────────────────────────────
+//
 
 class _ExpandableDescription extends StatelessWidget {
   final String description;
@@ -746,9 +745,9 @@ class _ExpandableDescription extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+//
 // Timeline Section (Segments)
-// ─────────────────────────────────────────────────────────────────────────────
+//
 
 class _TimelineSection extends StatelessWidget {
   final List<MissionSegment> segments;

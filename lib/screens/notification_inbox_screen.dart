@@ -258,8 +258,8 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
                     icon: isRegistered ? Icons.check_circle_rounded : Icons.add_task_rounded,
                     isSmall: true,
                     variant: !isRegistered ? EcoButtonVariant.primary : EcoButtonVariant.secondary,
-                    backgroundColor: isRegistered ? EcoColors.forest.withValues(alpha: 0.1) : null,
-                    foregroundColor: isRegistered ? EcoColors.forest : null,
+                    backgroundColor: isRegistered ? AppTheme.forest.withValues(alpha: 0.1) : null,
+                    foregroundColor: isRegistered ? AppTheme.forest : null,
                     onPressed: isRegistered ? null : () => _handleRegisterFromNotification(notification),
                   );
                 },
@@ -279,7 +279,7 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
       await provider.toggleRegistration(notification.relatedId!, false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Successfully registered!'), backgroundColor: EcoColors.forest),
+          const SnackBar(content: Text('Successfully registered!'), backgroundColor: AppTheme.forest),
         );
         // Mark as read after successful action
         if (!notification.isRead) {
@@ -290,7 +290,7 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: EcoColors.terracotta),
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.terracotta),
         );
       }
     }

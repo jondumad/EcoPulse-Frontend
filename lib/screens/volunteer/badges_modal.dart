@@ -54,7 +54,7 @@ class _BadgesModalState extends State<BadgesModal> {
       maxChildSize: 0.95,
       builder: (context, scrollController) => Container(
         decoration: const BoxDecoration(
-          color: EcoColors.clay,
+          color: AppTheme.clay,
           borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: Column(
@@ -65,7 +65,7 @@ class _BadgesModalState extends State<BadgesModal> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: EcoColors.ink.withValues(alpha: 0.1),
+                color: AppTheme.ink.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -83,7 +83,7 @@ class _BadgesModalState extends State<BadgesModal> {
                       style: GoogleFonts.fraunces(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
-                        color: EcoColors.ink,
+                        color: AppTheme.ink,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -91,7 +91,7 @@ class _BadgesModalState extends State<BadgesModal> {
                       'Keep it up, you\'re doing great!',
                       style: GoogleFonts.inter(
                         fontSize: 14,
-                        color: EcoColors.ink.withValues(alpha: 0.6),
+                        color: AppTheme.ink.withValues(alpha: 0.6),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -159,7 +159,7 @@ class _BadgesModalState extends State<BadgesModal> {
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.5,
-                      color: EcoColors.violet,
+                      color: AppTheme.violet,
                     ),
                   ),
                   Text(
@@ -167,7 +167,7 @@ class _BadgesModalState extends State<BadgesModal> {
                     style: GoogleFonts.fraunces(
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
-                      color: EcoColors.ink,
+                      color: AppTheme.ink,
                     ),
                   ),
                 ],
@@ -175,12 +175,12 @@ class _BadgesModalState extends State<BadgesModal> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: EcoColors.violet.withValues(alpha: 0.1),
+                  color: AppTheme.violet.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.workspace_premium,
-                  color: EcoColors.violet,
+                  color: AppTheme.violet,
                 ),
               ),
             ],
@@ -191,7 +191,7 @@ class _BadgesModalState extends State<BadgesModal> {
               Container(
                 height: 12,
                 decoration: BoxDecoration(
-                  color: EcoColors.clay,
+                  color: AppTheme.clay,
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),
@@ -201,12 +201,12 @@ class _BadgesModalState extends State<BadgesModal> {
                   height: 12,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [EcoColors.violet, Color(0xFFA370FF)],
+                      colors: [AppTheme.violet, Color(0xFFA370FF)],
                     ),
                     borderRadius: BorderRadius.circular(6),
                     boxShadow: [
                       BoxShadow(
-                        color: EcoColors.violet.withValues(alpha: 0.3),
+                        color: AppTheme.violet.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -225,7 +225,7 @@ class _BadgesModalState extends State<BadgesModal> {
                 style: GoogleFonts.jetBrainsMono(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: EcoColors.ink.withValues(alpha: 0.4),
+                  color: AppTheme.ink.withValues(alpha: 0.4),
                 ),
               ),
               Text(
@@ -233,7 +233,7 @@ class _BadgesModalState extends State<BadgesModal> {
                 style: GoogleFonts.jetBrainsMono(
                   fontSize: 12,
                   fontWeight: FontWeight.w900,
-                  color: EcoColors.violet,
+                  color: AppTheme.violet,
                 ),
               ),
             ],
@@ -278,7 +278,7 @@ class _BadgesModalState extends State<BadgesModal> {
             child: EcoStatItem(
               label: 'Impact',
               value: '${(points * 1.5).toInt()}',
-              color: EcoColors.violet,
+              color: AppTheme.violet,
             ),
           ),
         ),
@@ -298,7 +298,7 @@ class _BadgesModalState extends State<BadgesModal> {
           child: Text(
             'No badges available yet.',
             style: GoogleFonts.inter(
-              color: EcoColors.ink.withValues(alpha: 0.4),
+              color: AppTheme.ink.withValues(alpha: 0.4),
             ),
           ),
         ),
@@ -331,7 +331,7 @@ class _BadgesModalState extends State<BadgesModal> {
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
                       color: unlocked
-                          ? EcoColors.violet.withValues(alpha: 0.2)
+                          ? AppTheme.violet.withValues(alpha: 0.2)
                           : Colors.transparent,
                     ),
                     boxShadow: [
@@ -350,7 +350,7 @@ class _BadgesModalState extends State<BadgesModal> {
                           child: Container(
                             margin: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: EcoColors.violet.withValues(alpha: 0.05),
+                              color: AppTheme.violet.withValues(alpha: 0.05),
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -359,8 +359,8 @@ class _BadgesModalState extends State<BadgesModal> {
                         _getIconForBadge(badge.name),
                         size: 32,
                         color: unlocked
-                            ? EcoColors.violet
-                            : EcoColors.ink.withValues(alpha: 0.2),
+                            ? AppTheme.violet
+                            : AppTheme.ink.withValues(alpha: 0.2),
                       ),
                       if (unlocked)
                         Positioned(
@@ -369,7 +369,7 @@ class _BadgesModalState extends State<BadgesModal> {
                           child: Container(
                             padding: const EdgeInsets.all(2),
                             decoration: const BoxDecoration(
-                              color: EcoColors.forest,
+                              color: AppTheme.forest,
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -392,8 +392,8 @@ class _BadgesModalState extends State<BadgesModal> {
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.5,
                   color: unlocked
-                      ? EcoColors.ink
-                      : EcoColors.ink.withValues(alpha: 0.3),
+                      ? AppTheme.ink
+                      : AppTheme.ink.withValues(alpha: 0.3),
                 ),
               ),
             ],
@@ -421,16 +421,16 @@ class _BadgesModalState extends State<BadgesModal> {
               height: 80,
               decoration: BoxDecoration(
                 color: unlocked
-                    ? EcoColors.violet.withValues(alpha: 0.1)
-                    : EcoColors.clay,
+                    ? AppTheme.violet.withValues(alpha: 0.1)
+                    : AppTheme.clay,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 _getIconForBadge(badge.name),
                 size: 40,
                 color: unlocked
-                    ? EcoColors.violet
-                    : EcoColors.ink.withValues(alpha: 0.2),
+                    ? AppTheme.violet
+                    : AppTheme.ink.withValues(alpha: 0.2),
               ),
             ),
             const SizedBox(height: 24),
@@ -439,7 +439,7 @@ class _BadgesModalState extends State<BadgesModal> {
               style: GoogleFonts.fraunces(
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
-                color: EcoColors.ink,
+                color: AppTheme.ink,
               ),
             ),
             const SizedBox(height: 12),
@@ -448,7 +448,7 @@ class _BadgesModalState extends State<BadgesModal> {
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 16,
-                color: EcoColors.ink.withValues(alpha: 0.6),
+                color: AppTheme.ink.withValues(alpha: 0.6),
                 height: 1.5,
               ),
             ),

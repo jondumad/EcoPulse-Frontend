@@ -9,6 +9,7 @@ import 'atoms/eco_button.dart';
 import 'atoms/eco_card.dart';
 import '../screens/volunteer/mission_success_summary.dart';
 import '../screens/volunteer/mission_detail_screen.dart';
+import 'package:frontend/theme/app_theme.dart';
 import '../models/mission_model.dart';
 import '../utils/formatters.dart';
 
@@ -137,12 +138,12 @@ class _ActiveMissionTrackerState extends State<ActiveMissionTracker> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: EcoColors.clay,
+                            color: AppTheme.clay,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
                             Icons.record_voice_over_outlined,
-                            color: EcoColors.forest,
+                            color: AppTheme.forest,
                             size: 24,
                           ),
                         ),
@@ -154,7 +155,7 @@ class _ActiveMissionTrackerState extends State<ActiveMissionTracker> {
                               Text(
                                 'ACTIVE SESSION',
                                 style: EcoText.monoSM(context).copyWith(
-                                  color: EcoColors.ink.withValues(alpha: 0.5),
+                                  color: AppTheme.ink.withValues(alpha: 0.5),
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -180,7 +181,7 @@ class _ActiveMissionTrackerState extends State<ActiveMissionTracker> {
                                   style: EcoText.displayMD(context).copyWith(
                                     fontSize: 18,
                                     decoration: TextDecoration.underline,
-                                    decorationColor: EcoColors.forest
+                                    decorationColor: AppTheme.forest
                                         .withValues(alpha: 0.3),
                                   ),
                                   overflow: TextOverflow.ellipsis,
@@ -192,7 +193,7 @@ class _ActiveMissionTrackerState extends State<ActiveMissionTracker> {
                                 Text(
                                   mission?['locationName'],
                                   style: EcoText.bodySM(context).copyWith(
-                                    color: EcoColors.ink.withValues(alpha: 0.4),
+                                    color: AppTheme.ink.withValues(alpha: 0.4),
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -207,7 +208,7 @@ class _ActiveMissionTrackerState extends State<ActiveMissionTracker> {
                               Icons.contact_mail_outlined,
                               size: 20,
                             ),
-                            color: EcoColors.forest.withValues(alpha: 0.7),
+                            color: AppTheme.forest.withValues(alpha: 0.7),
                             tooltip: 'Contact Coordinator',
                             onPressed: () async {
                               _handleInteraction();
@@ -227,7 +228,7 @@ class _ActiveMissionTrackerState extends State<ActiveMissionTracker> {
                           style: GoogleFonts.jetBrainsMono(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
-                            color: EcoColors.forest,
+                            color: AppTheme.forest,
                             letterSpacing: -0.5,
                           ),
                         ),
@@ -271,7 +272,7 @@ class _ActiveMissionTrackerState extends State<ActiveMissionTracker> {
                                       ).showSnackBar(
                                         SnackBar(
                                           content: Text('Error: $e'),
-                                          backgroundColor: EcoColors.terracotta,
+                                          backgroundColor: AppTheme.terracotta,
                                         ),
                                       );
                                     }

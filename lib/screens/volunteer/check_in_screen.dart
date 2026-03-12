@@ -10,6 +10,7 @@ import '../../providers/mission_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eco_pulse_widgets.dart';
+import '../../widgets/atoms/eco_button.dart';
 import '../../widgets/eco_app_bar.dart';
 import '../../utils/map_utils.dart';
 
@@ -146,7 +147,7 @@ class _CheckInScreenState extends State<CheckInScreen>
             color: Colors.white,
           ),
         ),
-        backgroundColor: isError ? EcoColors.terracotta : EcoColors.forest,
+        backgroundColor: isError ? AppTheme.terracotta : AppTheme.forest,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(20),
@@ -186,22 +187,19 @@ class _CheckInScreenState extends State<CheckInScreen>
       if (!mounted) return;
 
       if (result['isEarly'] == true) {
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: const Text('You are Early!'),
-            content: const Text(
-              'We have notified the coordinator that you are here.\n'
-              'Please wait for them to start the mission.',
+        await EcoDialog.show(
+          context,
+          title: 'You are Early!',
+          subtitle: 'We have notified the coordinator that you are here. Please wait for them to start the mission.',
+          icon: const Icon(Icons.timer_outlined, color: AppTheme.amber),
+          child: const SizedBox.shrink(),
+          actions: [
+            EcoPulseButton(
+              label: 'Okay, I\'ll Wait',
+              isSmall: true,
+              onPressed: () => Navigator.pop(context),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Okay, I\'ll Wait'),
-              ),
-            ],
-          ),
+          ],
         );
         if (!mounted) return;
         Navigator.pop(context);
@@ -253,7 +251,7 @@ class _CheckInScreenState extends State<CheckInScreen>
               Text(
                 'MISSION VERIFICATION',
                 style: EcoText.monoSM(context).copyWith(
-                  color: EcoColors.ink.withValues(alpha: 0.4),
+                  color: AppTheme.ink.withValues(alpha: 0.4),
                   letterSpacing: 1.5,
                 ),
               ),
@@ -361,16 +359,16 @@ class _CheckInScreenState extends State<CheckInScreen>
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: isDone
-                  ? EcoColors.forest.withValues(alpha: 0.1)
-                  : EcoColors.ink.withValues(alpha: 0.05),
+                  ? AppTheme.forest.withValues(alpha: 0.1)
+                  : AppTheme.ink.withValues(alpha: 0.05),
               shape: BoxShape.circle,
             ),
             child: Icon(
               isDone ? Icons.check : icon,
               size: 16,
               color: isDone
-                  ? EcoColors.forest
-                  : EcoColors.ink.withValues(alpha: 0.4),
+                  ? AppTheme.forest
+                  : AppTheme.ink.withValues(alpha: 0.4),
             ),
           ),
           const SizedBox(width: 12),
@@ -383,7 +381,7 @@ class _CheckInScreenState extends State<CheckInScreen>
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
-                    color: isDone ? EcoColors.forest : EcoColors.ink,
+                    color: isDone ? AppTheme.forest : AppTheme.ink,
                     decoration: isDone ? TextDecoration.lineThrough : null,
                   ),
                 ),
@@ -391,7 +389,7 @@ class _CheckInScreenState extends State<CheckInScreen>
                   subtitle,
                   style: GoogleFonts.inter(
                     fontSize: 11,
-                    color: EcoColors.ink.withValues(alpha: 0.5),
+                    color: AppTheme.ink.withValues(alpha: 0.5),
                   ),
                 ),
               ],
@@ -426,7 +424,7 @@ class _CheckInScreenState extends State<CheckInScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          border: Border.all(color: EcoColors.ink.withValues(alpha: 0.1)),
+          border: Border.all(color: AppTheme.ink.withValues(alpha: 0.1)),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -434,14 +432,14 @@ class _CheckInScreenState extends State<CheckInScreen>
               ? MainAxisAlignment.center
               : MainAxisAlignment.start,
           children: [
-            Icon(icon, size: 18, color: EcoColors.ink),
+            Icon(icon, size: 18, color: AppTheme.ink),
             const SizedBox(width: 8),
             Text(
               label,
               style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: EcoColors.ink,
+                color: AppTheme.ink,
               ),
             ),
           ],

@@ -25,7 +25,7 @@ class MissionMapPreviewScreen extends StatelessWidget {
               icon: const Icon(
                 Icons.arrow_back_ios_new_rounded,
                 size: 18,
-                color: EcoColors.ink,
+                color: AppTheme.ink,
               ),
               onPressed: () => Navigator.pop(context),
             ),
@@ -56,7 +56,7 @@ class MissionMapPreviewScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: EcoColors.forest.withValues(alpha: 0.1),
+                          color: AppTheme.forest.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -107,10 +107,10 @@ class MissionMapPreviewScreen extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: EcoColors.forest.withValues(alpha: 0.1),
+                          color: AppTheme.forest.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(100),
                           border: Border.all(
-                            color: EcoColors.forest.withValues(alpha: 0.2),
+                            color: AppTheme.forest.withValues(alpha: 0.2),
                           ),
                         ),
                         child: Row(
@@ -119,13 +119,13 @@ class MissionMapPreviewScreen extends StatelessWidget {
                             const Icon(
                               Icons.location_on,
                               size: 10,
-                              color: EcoColors.forest,
+                              color: AppTheme.forest,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               'MEETING POINT',
                               style: EcoText.monoSM(context).copyWith(
-                                color: EcoColors.forest,
+                                color: AppTheme.forest,
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -152,7 +152,7 @@ class MissionMapPreviewScreen extends StatelessWidget {
   ) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: EcoColors.ink.withValues(alpha: 0.4)),
+        Icon(icon, size: 14, color: AppTheme.ink.withValues(alpha: 0.4)),
         const SizedBox(width: 6),
         Expanded(
           child: Column(

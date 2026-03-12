@@ -82,7 +82,7 @@ class _MissionHistoryScreenState extends State<MissionHistoryScreen> with Ticker
     final groupedMissions = _groupMissions(filteredHistory);
 
     return Scaffold(
-      backgroundColor: EcoColors.clay,
+      backgroundColor: AppTheme.clay,
       appBar: EcoAppBar(
         titleWidget: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,7 +93,7 @@ class _MissionHistoryScreenState extends State<MissionHistoryScreen> with Ticker
               style: GoogleFonts.fraunces(
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
-                color: EcoColors.ink,
+                color: AppTheme.ink,
                 letterSpacing: -1.0,
                 height: 1.1,
               ),
@@ -101,7 +101,7 @@ class _MissionHistoryScreenState extends State<MissionHistoryScreen> with Ticker
             Text(
               'Your legacy of environmental impact',
               style: EcoText.bodySM(context).copyWith(
-                color: EcoColors.ink.withValues(alpha: 0.4),
+                color: AppTheme.ink.withValues(alpha: 0.4),
                 letterSpacing: 0.5,
               ),
             ),
@@ -177,7 +177,7 @@ class _MissionHistoryScreenState extends State<MissionHistoryScreen> with Ticker
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1.5,
-                            color: EcoColors.ink.withValues(alpha: 0.3),
+                            color: AppTheme.ink.withValues(alpha: 0.3),
                           ),
                         ),
                       ),
@@ -219,19 +219,19 @@ class _MissionHistoryScreenState extends State<MissionHistoryScreen> with Ticker
             child: EcoStatItem(
               label: 'COMPLETED',
               value: '$completedCount',
-              color: EcoColors.forest,
+              color: AppTheme.forest,
             ),
           ),
           Container(
             height: 40,
             width: 1,
-            color: EcoColors.ink.withValues(alpha: 0.08),
+            color: AppTheme.ink.withValues(alpha: 0.08),
           ),
           Expanded(
             child: EcoStatItem(
               label: 'POINTS EARNED',
               value: '$totalPoints',
-              color: EcoColors.violet,
+              color: AppTheme.violet,
             ),
           ),
         ],
@@ -244,10 +244,10 @@ class _MissionHistoryScreenState extends State<MissionHistoryScreen> with Ticker
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: EcoColors.ink.withValues(alpha: 0.06)),
+        border: Border.all(color: AppTheme.ink.withValues(alpha: 0.06)),
         boxShadow: [
           BoxShadow(
-            color: EcoColors.ink.withValues(alpha: 0.03),
+            color: AppTheme.ink.withValues(alpha: 0.03),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),
@@ -255,17 +255,17 @@ class _MissionHistoryScreenState extends State<MissionHistoryScreen> with Ticker
       ),
       child: TextField(
         onChanged: (val) => setState(() => _searchQuery = val),
-        style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: EcoColors.ink),
+        style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.ink),
         decoration: InputDecoration(
           hintText: 'Search the archives...',
           hintStyle: GoogleFonts.inter(
-            color: EcoColors.ink.withValues(alpha: 0.2),
+            color: AppTheme.ink.withValues(alpha: 0.2),
             fontWeight: FontWeight.w500,
           ),
           prefixIcon: Icon(
             Icons.search_rounded,
             size: 20,
-            color: EcoColors.forest.withValues(alpha: 0.6),
+            color: AppTheme.forest.withValues(alpha: 0.6),
           ),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
@@ -294,10 +294,10 @@ class _MissionHistoryScreenState extends State<MissionHistoryScreen> with Ticker
               curve: Curves.easeOutCubic,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? EcoColors.ink : Colors.white,
+                color: isSelected ? AppTheme.ink : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected ? EcoColors.ink : EcoColors.ink.withValues(alpha: 0.08),
+                  color: isSelected ? AppTheme.ink : AppTheme.ink.withValues(alpha: 0.08),
                   width: 1.5,
                 ),
               ),
@@ -306,7 +306,7 @@ class _MissionHistoryScreenState extends State<MissionHistoryScreen> with Ticker
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: isSelected ? Colors.white : EcoColors.ink.withValues(alpha: 0.5),
+                  color: isSelected ? Colors.white : AppTheme.ink.withValues(alpha: 0.5),
                 ),
               ),
             ),
@@ -342,7 +342,7 @@ class _HistoryMissionCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: EcoColors.ink.withValues(alpha: 0.05)),
+          border: Border.all(color: AppTheme.ink.withValues(alpha: 0.05)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.02),
@@ -361,10 +361,10 @@ class _HistoryMissionCard extends StatelessWidget {
                   height: 56,
                   decoration: BoxDecoration(
                     color: isCancelled 
-                        ? EcoColors.terracotta.withValues(alpha: 0.08)
+                        ? AppTheme.terracotta.withValues(alpha: 0.08)
                         : (isCompleted 
-                            ? EcoColors.forest.withValues(alpha: 0.08)
-                            : EcoColors.violet.withValues(alpha: 0.08)),
+                            ? AppTheme.forest.withValues(alpha: 0.08)
+                            : AppTheme.violet.withValues(alpha: 0.08)),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Center(
@@ -386,8 +386,8 @@ class _HistoryMissionCard extends StatelessWidget {
                           : (isCompleted ? Icons.check_circle_rounded : Icons.history_rounded),
                       size: 18,
                       color: isCancelled 
-                          ? EcoColors.terracotta 
-                          : (isCompleted ? EcoColors.forest : EcoColors.violet),
+                          ? AppTheme.terracotta 
+                          : (isCompleted ? AppTheme.forest : AppTheme.violet),
                     ),
                   ),
                 ),
@@ -407,13 +407,13 @@ class _HistoryMissionCard extends StatelessWidget {
                     style: GoogleFonts.fraunces(
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
-                      color: isCancelled ? EcoColors.ink.withValues(alpha: 0.4) : EcoColors.ink,
+                      color: isCancelled ? AppTheme.ink.withValues(alpha: 0.4) : AppTheme.ink,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.location_on_outlined, size: 12, color: EcoColors.ink.withValues(alpha: 0.4)),
+                      Icon(Icons.location_on_outlined, size: 12, color: AppTheme.ink.withValues(alpha: 0.4)),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -423,7 +423,7 @@ class _HistoryMissionCard extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: EcoColors.ink.withValues(alpha: 0.4),
+                            color: AppTheme.ink.withValues(alpha: 0.4),
                           ),
                         ),
                       ),
@@ -435,7 +435,7 @@ class _HistoryMissionCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: EcoColors.clay,
+                          color: AppTheme.clay,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -443,7 +443,7 @@ class _HistoryMissionCard extends StatelessWidget {
                           style: GoogleFonts.jetBrainsMono(
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
-                            color: EcoColors.ink.withValues(alpha: 0.6),
+                            color: AppTheme.ink.withValues(alpha: 0.6),
                           ),
                         ),
                       ),
@@ -454,7 +454,7 @@ class _HistoryMissionCard extends StatelessWidget {
                           style: GoogleFonts.jetBrainsMono(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
-                            color: EcoColors.forest,
+                            color: AppTheme.forest,
                           ),
                         ),
                     ],
@@ -465,7 +465,7 @@ class _HistoryMissionCard extends StatelessWidget {
             
             Icon(
               Icons.chevron_right_rounded, 
-              color: EcoColors.ink.withValues(alpha: 0.1),
+              color: AppTheme.ink.withValues(alpha: 0.1),
               size: 20,
             ),
           ],

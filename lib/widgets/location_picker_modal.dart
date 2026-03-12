@@ -161,7 +161,7 @@ class _LocationPickerModalState extends State<LocationPickerModal>
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
       decoration: const BoxDecoration(
-        color: EcoColors.clay,
+        color: AppTheme.clay,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -377,7 +377,7 @@ class _LocationPickerModalState extends State<LocationPickerModal>
                                     child: const Icon(
                                       Icons.location_on,
                                       size: 60,
-                                      color: EcoColors.terracotta,
+                                      color: AppTheme.terracotta,
                                     ),
                                   );
                                 },

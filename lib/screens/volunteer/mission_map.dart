@@ -176,7 +176,7 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
       indicators.add(
         MapOffScreenIndicator(
           position: userLatLng,
-          color: EcoColors.violet,
+          color: AppTheme.violet,
           icon: Icons.person,
           camera: camera,
           constraints: constraints,
@@ -198,7 +198,7 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
         indicators.add(
           MapOffScreenIndicator(
             position: missionLatLng,
-            color: EcoColors.forest,
+            color: AppTheme.forest,
             icon: Icons.flag,
             camera: camera,
             constraints: constraints,
@@ -362,7 +362,7 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                               builder: (context, markers) {
                                 return Container(
                                   // Reveal the enlarged hit-area (60x60)
-                                  color: EcoColors.terracotta.withValues(
+                                  color: AppTheme.terracotta.withValues(
                                     alpha: 0.25,
                                   ),
                                   child: Center(
@@ -370,7 +370,7 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                                       width: 44,
                                       height: 44,
                                       decoration: BoxDecoration(
-                                        color: EcoColors.terracotta,
+                                        color: AppTheme.terracotta,
                                         shape: BoxShape.circle,
                                         border: Border.all(
                                           color: Colors.white,
@@ -521,7 +521,7 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: EcoColors.forest.withValues(alpha: 0.1),
+                color: AppTheme.forest.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
@@ -579,7 +579,7 @@ class MissionMapState extends State<MissionMap> with TickerProviderStateMixin {
                           vertical: 1.5,
                         ),
                         decoration: BoxDecoration(
-                          color: EcoColors.forest,
+                          color: AppTheme.forest,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(

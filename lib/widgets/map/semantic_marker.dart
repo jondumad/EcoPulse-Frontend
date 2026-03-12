@@ -109,7 +109,7 @@ class _SemanticMarkerState extends State<SemanticMarker>
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: EcoColors.forest.withValues(
+                            color: AppTheme.forest.withValues(
                               alpha: 1.0 - _pulseController.value,
                             ),
                             width: 2,

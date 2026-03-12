@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/eco_pulse_widgets.dart';
 import '../widgets/atoms/eco_button.dart';
 import '../widgets/atoms/eco_card.dart';
-import '../widgets/atoms/eco_text_field.dart';
 import '../widgets/auth_error_message.dart';
 import '../utils/validation_utils.dart';
 import '../widgets/eco_app_bar.dart';
+
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -73,7 +74,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.lock_reset, size: 60, color: EcoColors.forest),
+                const Icon(Icons.lock_reset, size: 60, color: AppTheme.forest),
                 const SizedBox(height: 24),
                 Text(
                   'Forgot Password',

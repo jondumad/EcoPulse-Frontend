@@ -149,7 +149,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Dismiss QR',
-      barrierColor: EcoColors.ink.withValues(alpha: 0.85),
+      barrierColor: AppTheme.ink.withValues(alpha: 0.85),
       transitionDuration: const Duration(milliseconds: 400),
       pageBuilder: (context, anim1, anim2) {
         return Center(
@@ -157,7 +157,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
             width: MediaQuery.of(context).size.width * 0.85,
             padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
             decoration: BoxDecoration(
-              color: EcoColors.clay,
+              color: AppTheme.clay,
               borderRadius: BorderRadius.circular(40),
               border: Border.all(
                 color: Colors.white.withValues(alpha: 0.2),
@@ -183,7 +183,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: EcoColors.forest.withValues(alpha: 0.1),
+                      color: AppTheme.forest.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: Row(
@@ -192,13 +192,13 @@ class _LogisticsTabState extends State<LogisticsTab> {
                         const Icon(
                           Icons.verified_user_rounded,
                           size: 14,
-                          color: EcoColors.forest,
+                          color: AppTheme.forest,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'SECURE CHECK-IN PASS',
                           style: EcoText.monoSM(context).copyWith(
-                            color: EcoColors.forest,
+                            color: AppTheme.forest,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.5,
                             fontSize: 9,
@@ -217,7 +217,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
                   Text(
                     mission.locationName.toUpperCase(),
                     style: EcoText.monoSM(context).copyWith(
-                      color: EcoColors.ink.withValues(alpha: 0.4),
+                      color: AppTheme.ink.withValues(alpha: 0.4),
                       letterSpacing: 1,
                     ),
                     textAlign: TextAlign.center,
@@ -233,7 +233,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
                       borderRadius: BorderRadius.circular(32),
                       boxShadow: [
                         BoxShadow(
-                          color: EcoColors.ink.withValues(alpha: 0.05),
+                          color: AppTheme.ink.withValues(alpha: 0.05),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -244,11 +244,11 @@ class _LogisticsTabState extends State<LogisticsTab> {
                       size: MediaQuery.of(context).size.width * 0.55,
                       eyeStyle: const QrEyeStyle(
                         eyeShape: QrEyeShape.square,
-                        color: EcoColors.ink,
+                        color: AppTheme.ink,
                       ),
                       dataModuleStyle: const QrDataModuleStyle(
                         dataModuleShape: QrDataModuleShape.square,
-                        color: EcoColors.ink,
+                        color: AppTheme.ink,
                       ),
                     ),
                   ),
@@ -270,7 +270,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
                         Text(
                           'TOKEN ROTATION',
                           style: EcoText.monoSM(context).copyWith(
-                            color: EcoColors.ink.withValues(alpha: 0.4),
+                            color: AppTheme.ink.withValues(alpha: 0.4),
                             fontWeight: FontWeight.w800,
                             fontSize: 8,
                           ),
@@ -288,7 +288,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
                     child: Text(
                       'TAP ANYWHERE TO DISMISS',
                       style: EcoText.monoSM(context).copyWith(
-                        color: EcoColors.ink.withValues(alpha: 0.3),
+                        color: AppTheme.ink.withValues(alpha: 0.3),
                         fontSize: 9,
                         letterSpacing: 1,
                       ),
@@ -361,19 +361,19 @@ class _LogisticsTabState extends State<LogisticsTab> {
           EcoStatItem(
             label: 'Registered',
             value: registered.toString(),
-            color: EcoColors.ink,
+            color: AppTheme.ink,
           ),
-          Container(width: 1, height: 40, color: EcoColors.clay),
+          Container(width: 1, height: 40, color: AppTheme.clay),
           EcoStatItem(
             label: 'Checked In',
             value: '0', // This would come from dynamic attendance state
-            color: EcoColors.forest,
+            color: AppTheme.forest,
           ),
-          Container(width: 1, height: 40, color: EcoColors.clay),
+          Container(width: 1, height: 40, color: AppTheme.clay),
           EcoStatItem(
             label: 'Capacity',
             value: max > 0 ? '${((registered / max) * 100).toInt()}%' : '100%',
-            color: EcoColors.violet,
+            color: AppTheme.violet,
           ),
         ],
       ),
@@ -412,26 +412,26 @@ class _LogisticsTabState extends State<LogisticsTab> {
     if (isCompleted) {
       statusLabel = endedEarly ? 'ENDED EARLY' : 'MISSION COMPLETED';
       statusIcon = Icons.check_circle_rounded;
-      statusColor = endedEarly ? EcoColors.terracotta : EcoColors.forest;
+      statusColor = endedEarly ? AppTheme.terracotta : AppTheme.forest;
       tagLabel = endedEarly ? 'FINISHED EARLY' : 'FINISHED';
     } else if (isExplicitlyLive) {
       statusLabel = 'MISSION IS LIVE';
       statusIcon = Icons.play_circle_fill_rounded;
-      statusColor = EcoColors.forest;
+      statusColor = AppTheme.forest;
       tagLabel = 'IN PROGRESS';
     } else if (isLateToStart) {
       statusLabel = 'PENDING START';
       statusIcon = Icons.pause_circle_filled_rounded;
-      statusColor = EcoColors.terracotta;
+      statusColor = AppTheme.terracotta;
       tagLabel = 'OVERDUE';
     } else if (isScheduled) {
       statusLabel = 'SCHEDULED';
       statusIcon = Icons.timer_outlined;
-      statusColor = EcoColors.ink.withValues(alpha: 0.4);
+      statusColor = AppTheme.ink.withValues(alpha: 0.4);
     } else {
       statusLabel = 'TOTAL DURATION';
       statusIcon = Icons.timer_outlined;
-      statusColor = EcoColors.ink.withValues(alpha: 0.4);
+      statusColor = AppTheme.ink.withValues(alpha: 0.4);
     }
 
     // Countdown Logic for Scheduled Missions
@@ -501,7 +501,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
                       subtitleValue,
                       style: EcoText.bodyBoldMD(
                         context,
-                      ).copyWith(color: isScheduled ? EcoColors.forest : null),
+                      ).copyWith(color: isScheduled ? AppTheme.forest : null),
                     ),
                   ],
                 ),
@@ -523,8 +523,8 @@ class _LogisticsTabState extends State<LogisticsTab> {
   Widget _buildStatusActionButton(Mission mission) {
     final bool isStarting = mission.status == 'Open';
     final Color actionColor = isStarting
-        ? EcoColors.forest
-        : EcoColors.terracotta;
+        ? AppTheme.forest
+        : AppTheme.terracotta;
     final IconData actionIcon = isStarting
         ? Icons.play_arrow_rounded
         : Icons.check_circle_rounded;
@@ -579,10 +579,10 @@ class _LogisticsTabState extends State<LogisticsTab> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: EcoColors.ink.withValues(alpha: 0.05)),
+          border: Border.all(color: AppTheme.ink.withValues(alpha: 0.05)),
         ),
         child: const Center(
-          child: CircularProgressIndicator(color: EcoColors.forest),
+          child: CircularProgressIndicator(color: AppTheme.forest),
         ),
       );
     }
@@ -594,7 +594,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
             Icon(
               Icons.lock_clock_rounded,
               size: 48,
-              color: EcoColors.ink.withValues(alpha: 0.2),
+              color: AppTheme.ink.withValues(alpha: 0.2),
             ),
             const SizedBox(height: 16),
             Text('Mission Ended', style: EcoText.bodyBoldMD(context)),
@@ -604,7 +604,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
               textAlign: TextAlign.center,
               style: EcoText.bodySM(
                 context,
-              ).copyWith(color: EcoColors.ink.withValues(alpha: 0.5)),
+              ).copyWith(color: AppTheme.ink.withValues(alpha: 0.5)),
             ),
           ],
         ),
@@ -617,7 +617,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
           children: [
             const Icon(
               Icons.error_outline_rounded,
-              color: EcoColors.terracotta,
+              color: AppTheme.terracotta,
               size: 32,
             ),
             const SizedBox(height: 12),
@@ -630,7 +630,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
               _qrError!,
               style: EcoText.bodySM(
                 context,
-              ).copyWith(color: EcoColors.terracotta),
+              ).copyWith(color: AppTheme.terracotta),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -656,8 +656,8 @@ class _LogisticsTabState extends State<LogisticsTab> {
                 child: IconButton.filledTonal(
                   onPressed: () => _showFullScreenQR(mission),
                   style: IconButton.styleFrom(
-                    backgroundColor: EcoColors.forest.withValues(alpha: 0.1),
-                    foregroundColor: EcoColors.forest,
+                    backgroundColor: AppTheme.forest.withValues(alpha: 0.1),
+                    foregroundColor: AppTheme.forest,
                   ),
                   icon: const Icon(Icons.fullscreen_rounded, size: 24),
                 ),
@@ -668,18 +668,18 @@ class _LogisticsTabState extends State<LogisticsTab> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: EcoColors.clay),
+                  border: Border.all(color: AppTheme.clay),
                 ),
                 child: QrImageView(
                   data: _qrToken!,
                   size: 180,
                   eyeStyle: const QrEyeStyle(
                     eyeShape: QrEyeShape.square,
-                    color: EcoColors.forest,
+                    color: AppTheme.forest,
                   ),
                   dataModuleStyle: const QrDataModuleStyle(
                     dataModuleShape: QrDataModuleShape.square,
-                    color: EcoColors.forest,
+                    color: AppTheme.forest,
                   ),
                 ),
               ),
@@ -687,7 +687,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
               Text(
                 'TOKEN REFRESH',
                 style: EcoText.monoSM(context).copyWith(
-                  color: EcoColors.ink.withValues(alpha: 0.4),
+                  color: AppTheme.ink.withValues(alpha: 0.4),
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -696,8 +696,8 @@ class _LogisticsTabState extends State<LogisticsTab> {
                 '${_qrSecondsLeft ~/ 60}:${(_qrSecondsLeft % 60).toString().padLeft(2, '0')}',
                 style: EcoText.displayMD(context).copyWith(
                   color: _qrSecondsLeft < 10
-                      ? EcoColors.terracotta
-                      : EcoColors.forest,
+                      ? AppTheme.terracotta
+                      : AppTheme.forest,
                 ),
               ),
             ],
@@ -726,7 +726,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
           ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
-            child: Divider(height: 1, color: EcoColors.clay),
+            child: Divider(height: 1, color: AppTheme.clay),
           ),
           _buildInfoRow(
             Icons.gps_fixed_rounded,
@@ -770,10 +770,10 @@ class _LogisticsTabState extends State<LogisticsTab> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: EcoColors.forest.withValues(alpha: 0.08),
+                color: AppTheme.forest.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, size: 18, color: EcoColors.forest),
+              child: Icon(icon, size: 18, color: AppTheme.forest),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -783,7 +783,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
                   Text(
                     label.toUpperCase(),
                     style: EcoText.monoSM(context).copyWith(
-                      color: EcoColors.ink.withValues(alpha: 0.4),
+                      color: AppTheme.ink.withValues(alpha: 0.4),
                       fontWeight: FontWeight.w800,
                       fontSize: 9,
                     ),
@@ -793,7 +793,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
                     value,
                     style: EcoText.bodyBoldMD(
                       context,
-                    ).copyWith(color: EcoColors.ink, fontSize: 15),
+                    ).copyWith(color: AppTheme.ink, fontSize: 15),
                   ),
                 ],
               ),
@@ -802,7 +802,7 @@ class _LogisticsTabState extends State<LogisticsTab> {
               Icon(
                 Icons.arrow_outward_rounded,
                 size: 16,
-                color: EcoColors.ink.withValues(alpha: 0.2),
+                color: AppTheme.ink.withValues(alpha: 0.2),
               ),
           ],
         ),
@@ -843,7 +843,7 @@ class _DialogTimerState extends State<_DialogTimer> {
       '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}',
       style: EcoText.displayMD(
         context,
-      ).copyWith(color: seconds < 10 ? EcoColors.terracotta : EcoColors.forest),
+      ).copyWith(color: seconds < 10 ? AppTheme.terracotta : AppTheme.forest),
     );
   }
 }
@@ -864,8 +864,8 @@ class _TimeBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final titleColor = isWarning
-        ? EcoColors.terracotta
-        : (isActual ? EcoColors.forest : EcoColors.ink.withValues(alpha: 0.4));
+        ? AppTheme.terracotta
+        : (isActual ? AppTheme.forest : AppTheme.ink.withValues(alpha: 0.4));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -891,7 +891,7 @@ class _TimeBox extends StatelessWidget {
           DateFormat('HH:mm').format(time),
           style: EcoText.bodyBoldMD(context).copyWith(
             fontSize: 18,
-            color: isWarning ? EcoColors.terracotta : null,
+            color: isWarning ? AppTheme.terracotta : null,
           ),
         ),
         Text(
@@ -899,7 +899,7 @@ class _TimeBox extends StatelessWidget {
           style: EcoText.bodySM(context).copyWith(
             fontSize: 10,
             color: isWarning
-                ? EcoColors.terracotta.withValues(alpha: 0.7)
+                ? AppTheme.terracotta.withValues(alpha: 0.7)
                 : null,
           ),
         ),

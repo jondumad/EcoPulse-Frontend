@@ -7,7 +7,6 @@ import '../theme/app_theme.dart';
 import 'eco_pulse_widgets.dart';
 import 'atoms/eco_button.dart';
 import 'atoms/eco_card.dart';
-import 'atoms/eco_text_field.dart';
 import 'user_search_modal.dart';
 
 class VolunteerListModal extends StatefulWidget {
@@ -64,7 +63,7 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
       maxChildSize: 0.95,
       builder: (context, scrollController) => Container(
         decoration: const BoxDecoration(
-          color: EcoColors.clay,
+          color: AppTheme.clay,
           borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: Column(
@@ -75,7 +74,7 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: EcoColors.ink.withValues(alpha: 0.1),
+                color: AppTheme.ink.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -96,7 +95,7 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
                           style: GoogleFonts.fraunces(
                             fontSize: 32,
                             fontWeight: FontWeight.w900,
-                            color: EcoColors.ink,
+                            color: AppTheme.ink,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -106,7 +105,7 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1,
-                            color: EcoColors.ink.withValues(alpha: 0.4),
+                            color: AppTheme.ink.withValues(alpha: 0.4),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -179,8 +178,8 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
                               height: 48,
                               decoration: BoxDecoration(
                                 color: isCheckedIn
-                                    ? EcoColors.forest.withValues(alpha: 0.1)
-                                    : EcoColors.clay,
+                                    ? AppTheme.forest.withValues(alpha: 0.1)
+                                    : AppTheme.clay,
                                 shape: BoxShape.circle,
                               ),
                               child: Center(
@@ -190,8 +189,8 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
                                     fontSize: 18,
                                     fontWeight: FontWeight.w900,
                                     color: isCheckedIn
-                                        ? EcoColors.forest
-                                        : EcoColors.ink,
+                                        ? AppTheme.forest
+                                        : AppTheme.ink,
                                   ),
                                 ),
                               ),
@@ -206,7 +205,7 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
                                     style: GoogleFonts.inter(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
-                                      color: EcoColors.ink,
+                                      color: AppTheme.ink,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
@@ -214,7 +213,7 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
                                     email,
                                     style: GoogleFonts.inter(
                                       fontSize: 12,
-                                      color: EcoColors.ink.withValues(
+                                      color: AppTheme.ink.withValues(
                                         alpha: 0.4,
                                       ),
                                     ),
@@ -230,7 +229,7 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
                               icon: const Icon(
                                 Icons.chat_bubble_outline_rounded,
                                 size: 20,
-                                color: EcoColors.ink,
+                                color: AppTheme.ink,
                               ),
                               onPressed: () =>
                                   _showNotifySheet(user['id'], name),
@@ -264,7 +263,7 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           decoration: const BoxDecoration(
-            color: EcoColors.clay,
+            color: AppTheme.clay,
             borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
           ),
           child: Column(
@@ -291,12 +290,12 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: EcoColors.forest.withValues(alpha: 0.1),
+                            color: AppTheme.forest.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
                             Icons.chat_bubble_outline_rounded,
-                            color: EcoColors.forest,
+                            color: AppTheme.forest,
                             size: 24,
                           ),
                         ),
@@ -310,13 +309,13 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
                                 style: GoogleFonts.fraunces(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w900,
-                                  color: EcoColors.ink,
+                                  color: AppTheme.ink,
                                 ),
                               ),
                               Text(
                                 'Send a direct notification',
                                 style: TextStyle(
-                                  color: EcoColors.ink.withValues(alpha: 0.6),
+                                  color: AppTheme.ink.withValues(alpha: 0.6),
                                   fontSize: 13,
                                 ),
                               ),
@@ -338,7 +337,7 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
                       icon: Icons.send_rounded,
                       width: double.infinity,
                       isLoading: isSending,
-                      backgroundColor: EcoColors.forest,
+                      backgroundColor: AppTheme.forest,
                       onPressed: () async {
                         final message = notifyController.text.trim();
                         if (message.isEmpty) return;
@@ -365,7 +364,7 @@ class _VolunteerListModalState extends State<VolunteerListModal> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('Message sent to $userName'),
-                              backgroundColor: EcoColors.forest,
+                              backgroundColor: AppTheme.forest,
                             ),
                           );
                         } catch (e) {
@@ -403,7 +402,7 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCheckedIn = status == 'CheckedIn';
-    final color = isCheckedIn ? EcoColors.forest : EcoColors.ink;
+    final color = isCheckedIn ? AppTheme.forest : AppTheme.ink;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
